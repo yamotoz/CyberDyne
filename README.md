@@ -26,10 +26,12 @@ O projeto nasce em resposta a um problema urgente do mundo moderno: **a explosã
 
 ## 🎯 Missão
 
-- ✅ Testar **no mínimo 50 vulnerabilidades** conhecidas e documentadas
+- ✅ Testar **no mínimo 100 vulnerabilidades** conhecidas e documentadas
 - ✅ Cobrir o **OWASP Top 10** integralmente
 - ✅ Focar nas falhas mais comuns geradas por **código assistido por IA**
 - ✅ Gerar um **relatório PDF completo** com cada teste: aprovado/reprovado, onde falhou, por que falhou, e como você pode reproduzir manualmente
+- ✅ Gerar um **Prompt_recall.md** onde vai explicar apenas as vulnerabilidades que foram
+encontradas no sistema e como sanitiza-las do sistema.
 - ✅ Ser **assertivo** — cada teste é validado com evidência, não apenas suposição
 
 ---
