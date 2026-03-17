@@ -1,0 +1,73 @@
+# =============================================================================
+#  CyberDyne — .gitignore
+# =============================================================================
+
+# ── Segredos — NUNCA commitar ─────────────────────────────────────────────────
+.env
+.env.local
+.env.production
+.env.staging
+*.pem
+*.key
+id_rsa
+id_ed25519
+
+# ── Resultados de scans — dados sensíveis do alvo ────────────────────────────
+# Cada projeto gera uma pasta com relatórios; não commitar por padrão
+*/cyberdyne_report.pdf
+*/prompt_recall.md
+*/raw_results.json
+*/recon_*.json
+*/bruteforce_probe.json
+*/paramspider/
+
+# Ou ignore todas as pastas de output (ajuste conforme o padrão de nome)
+cyberdyne_output_*/
+scan_*/
+
+# ── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+
+# ── Virtual environments ──────────────────────────────────────────────────────
+venv/
+.venv/
+env/
+ENV/
+.env/
+
+# ── IDEs ─────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/

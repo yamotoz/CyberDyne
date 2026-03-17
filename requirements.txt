@@ -6,12 +6,11 @@ requests>=2.31.0
 beautifulsoup4>=4.12.0
 urllib3>=2.0.0
 
-# Terminal colorido e barra de progresso
+# Terminal colorido
 colorama>=0.4.6
-tqdm>=4.66.0
 
 # Geração de PDF
-fpdf2>=2.7.9
+reportlab>=4.0.0
 
 # Análise de tokens JWT
 PyJWT>=2.8.0
@@ -21,9 +20,6 @@ dnspython>=2.4.0
 
 # Criptografia e verificação de certificados TLS
 cryptography>=42.0.0
-
-# Análise de repositórios Git
-gitpython>=3.1.40
 
 # Verificação de versões de pacotes
 packaging>=24.0
