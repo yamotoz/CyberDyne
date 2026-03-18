@@ -1,0 +1,180 @@
+{
+  "info": {
+    "name": "Firebase Security Vectors",
+    "author": "CyberDyne Security",
+    "version": "2.0",
+    "description": "Firebase security testing for Firestore, Storage, Realtime DB, Auth, and Cloud Functions. 2026 updated.",
+    "category": "Cloud",
+    "severity": "CRITICAL",
+    "owasp": "A01:2021 - Broken Access Control"
+  },
+  "services": {
+    "firestore": {
+      "endpoints": [
+        {"url": "GET /v1/projects/{project}/databases/(default)/documents:listCollectionIds", "description": "List collections", "risk": "HIGH"},
+        {"url": "GET /v1/projects/{project}/databases/(default)/documents/{collection}", "description": "List documents in collection", "risk": "CRITICAL"},
+        {"url": "GET /v1/projects/{project}/databases/(default)/documents/{collection}/{docId}", "description": "Get specific document", "risk": "CRITICAL"},
+        {"url": "POST /v1/projects/{project}/databases/(default)/documents/{collection}", "description": "Create document", "risk": "CRITICAL"},
+        {"url": "PATCH /v1/projects/{project}/databases/(default)/documents/{collection}/{docId}", "description": "Update document", "risk": "CRITICAL"},
+        {"url": "DELETE /v1/projects/{project}/databases/(default)/documents/{collection}/{docId}", "description": "Delete document", "risk": "CRITICAL"},
+        {"url": "POST /v1/projects/{project}/databases/(default)/documents:runQuery", "description": "Run query", "risk": "CRITICAL"}
+      ],
+      "common_collections": [
+        "users",
+        "profiles",
+        "accounts",
+        "customers",
+        "orders",
+        "products",
+        "payments",
+        "transactions",
+        "sessions",
+        "tokens",
+        "credentials",
+        "secrets",
+        "settings",
+        "config",
+        "admins",
+        "messages",
+        "notifications",
+        "feedback",
+        "logs"
+      ]
+    },
+    "realtime_database": {
+      "endpoints": [
+        {"url": "GET /.json", "description": "Get entire database", "risk": "CRITICAL"},
+        {"url": "GET /{path}.json", "description": "Get specific path", "risk": "CRITICAL"},
+        {"url": "GET /{path}.json?auth={token}", "description": "Get with token", "risk": "HIGH"},
+        {"url": "PUT /{path}.json", "description": "Write to path", "risk": "CRITICAL"},
+        {"url": "PATCH /{path}.json", "description": "Patch path", "risk": "CRITICAL"},
+        {"url": "DELETE /{path}.json", "description": "Delete path", "risk": "CRITICAL"},
+        {"url": "GET /.json?shallow=true", "description": "Shallow get", "risk": "HIGH"},
+        {"url": "GET /{path}.json?orderBy=\"$key\"", "description": "Order by key", "risk": "HIGH"},
+        {"url": "GET /{path}.json?orderBy=\"$value\"", "description": "Order by value", "risk": "HIGH"}
+      ],
+      "common_paths": [
+        "users",
+        "users/{userId}",
+        "profiles",
+        "accounts",
+        "auth",
+        "tokens",
+        "sessions",
+        "messages",
+        "notifications",
+        "posts",
+        "comments",
+        "likes",
+        "followers",
+        "settings",
+        "config",
+        "admin"
+      ]
+    },
+    "storage": {
+      "endpoints": [
+        {"url": "GET /v0/b/{bucket}/o", "description": "List files in bucket", "risk": "CRITICAL"},
+        {"url": "GET /v0/b/{bucket}/o/{path}?download=true", "description": "Download file", "risk": "CRITICAL"},
+        {"url": "POST /v0/b/{bucket}/o", "description": "Upload file", "risk": "CRITICAL"},
+        {"url": "DELETE /v0/b/{bucket}/o/{path}", "description": "Delete file", "risk": "CRITICAL"},
+        {"url": "GET /v0/b/{bucket}/o?prefix={folder}/", "description": "List folder contents", "risk": "HIGH"}
+      ],
+      "common_bucket_names": [
+        "{app-name}.appspot.com",
+        "{project-id}.firebasestorage.app",
+        "profile-images",
+        "user-uploads",
+        "attachments",
+        "documents",
+        "backups",
+        "private",
+        "public",
+        "media"
+      ],
+      "common_paths": [
+        "avatars/",
+        "profiles/",
+        "documents/",
+        "uploads/",
+        "images/",
+        "videos/",
+        "backups/",
+        "private/",
+        "public/",
+        "user-files/"
+      ]
+    },
+    "firebase_auth": {
+      "endpoints": [
+        {"url": "POST /identitytoolkit/v3/relyingparty/signupNewUser", "description": "Create user (signup)", "risk": "HIGH"},
+        {"url": "POST /identitytoolkit/v3/relyingparty/getAccountInfo", "description": "Get account info", "risk": "HIGH"},
+        {"url": "POST /identitytoolkit/v3/relyingparty/verifyPassword", "description": "Verify password", "risk": "HIGH"},
+        {"url": "POST /identitytoolkit/v3/relyingparty/setAccountInfo", "description": "Set account info", "risk": "CRITICAL"},
+        {"url": "POST /identitytoolkit/v3/relyingparty/deleteAccount", "description": "Delete account", "risk": "CRITICAL"},
+        {"url": "POST /identitytoolkit/v3/relyingparty/getRecaptchaParam", "description": "Get reCAPTCHA params", "risk": "MEDIUM"},
+        {"url": "POST /identitytoolkit/v1/accounts:signInWithCustomToken", "description": "Sign in with custom token", "risk": "HIGH"},
+        {"url": "POST /identitytoolkit/v1/accounts:signInWithIdp", "description": "Sign in with IDP", "risk": "HIGH"}
+      ]
+    },
+    "cloud_functions": {
+      "endpoints": [
+        {"url": "GET /{region}/{project}/{functionName}", "description": "Call function GET", "risk": "CRITICAL"},
+        {"url": "POST /{region}/{project}/{functionName}", "description": "Call function POST", "risk": "CRITICAL"},
+        {"url": "GET /{project}/{region}/{functionName}", "description": "Call function alt path", "risk": "CRITICAL"}
+      ],
+      "common_function_patterns": [
+        "api",
+        "webhook",
+        "trigger",
+        "process",
+        "notify",
+        "send",
+        "handle",
+        "onCall",
+        "onRequest"
+      ]
+    },
+    "cloud_messaging": {
+      "endpoints": [
+        {"url": "POST /v1/projects/{project}/messages:send", "description": "Send notification", "risk": "HIGH"},
+        {"url": "POST /v1/projects/{project}/messages:sendAll", "description": "Send multiple", "risk": "HIGH"},
+        {"url": "POST /v1/projects/{project}/topics/{topic}:subscribers", "description": "Subscribe to topic", "risk": "MEDIUM"}
+      ]
+    }
+  },
+  "detection_patterns": [
+    "firebaseio.com",
+    "firebaseapp.com",
+    "firestore.googleapis.com",
+    "firebasestorage.googleapis.com",
+    "identitytoolkit.googleapis.com",
+    "cloudfunctions.net",
+    "firebase",
+    "apiKey",
+    "authDomain",
+    "projectId",
+    "storageBucket",
+    "messagingSenderId",
+    "applicationId",
+    "databaseURL"
+  ],
+  "config_extraction": [
+    {"pattern": "firebase\\.initializeApp\\({[^}]*}\\);?", "description": "Firebase config JS"},
+    {"pattern": "apiKey\\s*[:=]\\s*[\"']([^\"']+)[\"']", "description": "API Key extraction"},
+    {"pattern": "projectId\\s*[:=]\\s*[\"']([^\"']+)[\"']", "description": "Project ID extraction"},
+    {"pattern": "storageBucket\\s*[:=]\\s*[\"']([^\"']+)[\"']", "description": "Storage bucket extraction"}
+  ],
+  "api_key_restrictions_bypass": [
+    {"test": "Test with different HTTP referer", "description": "Referer restriction bypass"},
+    {"test": "Test with different IP", "description": "IP restriction bypass"},
+    {"test": "Test from localhost", "description": "Localhost bypass"},
+    {"test": "Test without API key", "description": "No key test"},
+    {"test": "Test with null referer", "description": "Null referer test"}
+  ],
+  "rules_bypass_indicators": [
+    {"indicator": "Permission denied", "status": "BLOCKED"},
+    {"indicator": "Missing or insufficient permissions", "status": "BLOCKED"},
+    {"indicator": "Unexpected data in response", "status": "VULNERABLE"}
+  ]
+}

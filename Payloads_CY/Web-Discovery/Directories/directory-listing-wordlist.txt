@@ -1,0 +1,741 @@
+# Directory Listing Wordlist
+# CyberDyne Security - Version 2.0
+# 2026 Updated - 250+ paths for sensitive file and directory enumeration
+# Organized by category for comprehensive coverage
+
+# ============================================
+# CONFIGURATION & ENVIRONMENT FILES
+# ============================================
+.env
+.env.local
+.env.production
+.env.staging
+.env.development
+.env.test
+.env.backup
+.env.old
+.env.bak
+.env.save
+.env.example
+.env.sample
+.env.dev
+.env.prod
+.env.qa
+config.env
+.local.env
+.secrets
+.secret
+secrets.env
+secrets.json
+secrets.yml
+secrets.yaml
+config.json
+config.yml
+config.yaml
+config.php
+config.inc.php
+config.inc
+configuration.php
+configuration.yml
+configuration.yaml
+settings.py
+settings.json
+settings.yml
+settings.yaml
+settings.php
+local_settings.py
+local_settings.pyc
+database.yml
+database.json
+db.json
+db.yml
+db.php
+db.inc
+application.yml
+application.properties
+application.yaml
+app.config
+app.json
+web.config
+config.inc
+config.php.bak
+config.php.old
+config.php.save
+settings.inc
+
+# ============================================
+# ADMIN & MANAGEMENT PANELS
+# ============================================
+/admin/
+/admin/login
+/admin/dashboard
+/admin/index
+/admin/home
+/admin/panel
+/admin/control
+/administrator/
+/administrator/index.php
+/administrator/login
+/phpmyadmin/
+/phpmyadmin/index.php
+/phpMyAdmin/
+/phpMyAdmin-4.8.5/
+/phpPgAdmin/
+/pma/
+/myadmin/
+/mysql/
+/mysqladmin/
+/sqlweb/
+/webdb/
+/adminer.php
+/adminer/
+/cpanel/
+/cpanel/login
+/whm/
+/whmcs/
+/webmail/
+/roundcube/
+/roundcube/
+/squirrelmail/
+/horde/
+/panel/
+/controlpanel/
+/manage/
+/management/
+/siteadmin/
+/system/
+/portal/
+/console/
+/backend/
+/backoffice/
+/cp/
+/account/login
+/auth/login
+/login
+/signin
+/signin/
+
+# ============================================
+# WORDPRESS SPECIFIC
+# ============================================
+/wp-config.php
+/wp-config.php.bak
+/wp-config.php.old
+/wp-config.php~
+/wp-config.php.save
+/wp-config.txt
+/wpg-config.php
+/wp-login.php
+/wp-admin/
+/wp-admin/admin-ajax.php
+/wp-admin/admin-post.php
+/wp-admin/network/
+/wp-admin/options-reading.php
+/wp-admin/options-permalink.php
+/wp-admin/options-discussion.php
+/wp-content/
+/wp-content/plugins/
+/wp-content/themes/
+/wp-content/uploads/
+/wp-content/upgrade/
+/wp-includes/
+/wp-json/
+/wp-json/wp/v2/users
+/xmlrpc.php
+/readme.html
+/readme.txt
+/readme.md
+/license.txt
+/license.md
+/install/
+/wp-admin/install.php
+/wp-admin/upgrade.php
+
+# ============================================
+# DRUPAL SPECIFIC
+# ============================================
+/sites/default/settings.php
+/sites/default/settings.php.bak
+/sites/default/settings.php.old
+/sites/default/files/
+/modules/
+/themes/
+/profiles/
+/core/
+/update.php
+/install.php
+authorize.php
+
+# ============================================
+# JOOMLA SPECIFIC
+# ============================================
+/configuration.php
+/configuration.php.bak
+/configuration.php.old
+/administrator/
+/administrator/index.php
+/installation/
+/tmp/
+/logs/
+
+# ============================================
+# LARAVEL / PHP FRAMEWORKS
+# ============================================
+/.env
+/.env
+/.env.backup
+/.env.production
+/.env.staging
+/artisan
+/storage/logs/
+/storage/logs/laravel.log
+/bootstrap/cache/
+/bootstrap/cache/.gitignore
+/vendor/
+/vendor/autoload.php
+/routes/web.php
+/routes/api.php
+/config/app.php
+/config/database.php
+
+# ============================================
+# SPRING BOOT / JAVA
+# ============================================
+/actuator
+/actuator/health
+/actuator/healthz
+/actuator/info
+/actuator/env
+/actuator/beans
+/actuator/configprops
+/actuator/mappings
+/actuator/httptrace
+/actuator/threaddump
+/actuator/heapdump
+/actuator/logfile
+/actuator/auditevents
+/actuator/sessions
+/actuator/features
+/trace
+/debug/
+/debug/vars
+/debug/pprof/
+/debug/routes
+/jolokia/
+/h2-console/
+/h2/
+/actuator/gateway/routes
+/swagger-ui/
+/swagger-ui.html
+/swagger-ui/index.html
+/v2/api-docs
+/v3/api-docs
+/api-docs
+/openapi/
+/openapi.yaml
+/openapi.json
+
+# ============================================
+# NODE.JS / EXPRESS
+# ============================================
+/node_modules/
+/node_modules/.bin/
+/package.json
+/package-lock.json
+/yarn.lock
+/npm-debug.log
+/.npmrc
+/.node_repl_history
+/server.js
+/app.js
+/index.js
+/routes/
+/controllers/
+/views/
+/public/
+/static/
+/staticfiles/
+
+# ============================================
+# PYTHON / DJANGO
+# ============================================
+/requirements.txt
+/Pipfile
+/Pipfile.lock
+/venv/
+/.venv/
+/env/
+/.env
+/manage.py
+/settings.py
+/urls.py
+/wsgi.py
+/asgi.py
+/db.sqlite3
+DEBUG.log
+error.log
+debug.log
+
+# ============================================
+# RUBY / RAILS
+# ============================================
+/Gemfile
+/Gemfile.lock
+/config.ru
+/db/schema.rb
+/db/migrate/
+/log/
+/tmp/
+/public/system/
+/config/database.yml
+/config/secrets.yml
+/secret_key_base
+
+# ============================================
+# .NET / ASP.NET
+# ============================================
+/Web.config
+/Web.config.bak
+/Web.Debug.config
+/Web.Release.config
+/appsettings.json
+/appsettings.Development.json
+/Views/Shared/
+/Views/_ViewStart.cshtml
+/bin/
+/obj/
+
+# ============================================
+# JAVA / JSP
+# ============================================
+/WEB-INF/web.xml
+/WEB-INF/applicationContext.xml
+/WEB-INF/classes/
+/WEB-INF/lib/
+/WEB-INF/disp-servlet.xml
+/struts-config.xml
+/faces-config.xml
+/build.gradle
+/pom.xml
+/build.xml
+/log4j.xml
+/application.properties
+/spring-security-config.xml
+
+# ============================================
+# GIT / VERSION CONTROL
+# ============================================
+/.git/
+/.git/config
+/.git/HEAD
+/.git/index
+/.git/objects/
+/.git/refs/
+/.git/COMMIT_EDITMSG
+/.git/packed-refs
+/.gitignore
+/.gitattributes
+/.svn/
+/.svn/entries
+/.svn/wc.db
+/.hg/
+/.hg/hgrc
+/.hg/branch
+/.bzr/
+/.bzr/branch/branch.conf
+
+# ============================================
+# CI/CD & DEPLOYMENT
+# ============================================
+/.travis.yml
+/.travis.yml
+/.circleci/config.yml
+/.circleci/
+/.github/workflows/
+/.github/
+/.gitlab-ci.yml
+/.gitlab-ci.yml
+/bitbucket-pipelines.yml
+/bitbucket-pipelines/
+/Jenkinsfile
+/Jenkinsfile.backup
+/jenkins/
+/deploy.sh
+/deploy.php
+/deploy/
+/deployment/
+/release/
+/releases/
+
+# ============================================
+# DOCKER & CONTAINERIZATION
+# ============================================
+/Dockerfile
+/docker-compose.yml
+/docker-compose.yaml
+/docker-compose.prod.yml
+/docker-compose.staging.yml
+/dockerignore
+/.dockerignore
+/.docker/
+/Containerfile
+
+# ============================================
+# CLOUD & INFRASTRUCTURE
+# ============================================
+/.aws/credentials
+/.aws/credentials
+/.aws/config
+/aws/credentials
+/.kube/config
+/kubeconfig
+/.terraform/
+/terraform.tfstate
+/terraform.tfvars
+/terraform.tfstate.backup
+/serverless.yml
+/serverless.yaml
+/sam.yaml
+/cloudformation/
+/cloudformation.json
+/.cloudformation/
+/kubernetes/
+/kubernetes.json
+/k8s/
+
+# ============================================
+# MONITORING & LOGGING
+# ============================================
+/health
+/healthz
+/healthcheck
+/status
+/ping
+/version
+/server-status
+/server-info
+/nginx_status
+/nginx_status/
+/_status
+/_health
+/_version
+/metrics
+/info
+/ready
+/live
+/liveness
+/readiness
+/prometheus
+/graphite
+/grafana/
+/kibana/
+/elasticsearch/
+/splunk/
+/datadog/
+
+# ============================================
+# DEBUG & DEVELOPMENT TOOLS
+# ============================================
+/debug/
+/debug/vars
+/debug/pprof/
+/debug/routes
+/console/
+/console.html
+/shell/
+/_shell/
+/profiler/
+//_profiler/
+/telescope/
+/horizon/
+/_debugbar/
+/__debugbar__/
+/__clockwork__/
+/debugger/
+/webdebugger/
+/phpinfo.php
+/info.php
+/phpinfo/
+/test.php
+/test/
+/php.php
+/ping
+/echo
+/debug
+
+# ============================================
+# BACKUP & ARCHIVE FILES
+# ============================================
+/backup.zip
+/backup.tar.gz
+/backup.tar
+/backup.sql
+/backup.sql.gz
+/backup.sql.bak
+/db.sql
+/db.sql.gz
+/database.sql
+/database.sql.gz
+/dump.sql
+/dump.sql.gz
+/export.sql
+/import.sql
+/backup/
+/bkp/
+/old/
+/archive/
+/archive.zip
+/archives/
+/site.zip
+/www.zip
+/web.zip
+/html.zip
+/backup.tar.bz2
+/dump.tar.gz
+
+# ============================================
+# LOG FILES
+# ============================================
+/logs/
+/log/
+/log.txt
+/debug.log
+/error.log
+/access.log
+/app.log
+/application.log
+/laravel.log
+/storage/logs/laravel.log
+/apache.log
+/access_log
+/error_log
+/mysql.log
+/postgres.log
+/nginx.log
+/elasticsearch.log
+/application.log
+/system.log
+/event.log
+
+# ============================================
+# SENSITIVE DATA PATHS
+# ============================================
+/var/log/
+/var/log/apache2/
+/var/log/nginx/
+/var/log/mysql/
+/var/log/syslog
+/tmp/
+/temp/
+/cache/
+/cache/data/
+/sessions/
+/uploads/
+/upload/
+/files/
+/private/
+/private/tmp/
+
+# ============================================
+# API & WEB SERVICE PATHS
+# ============================================
+/api/
+/api/v1/
+/api/v2/
+/api/v3/
+/api-docs/
+/swagger/
+/swagger-ui/
+/swagger.json
+/openapi.json
+/graphql
+/graphiql
+/graphql-console
+/api/swagger.json
+/api/health
+/api/status
+/rest/
+/rest/api/
+/soap/
+/soap?wsdl
+/api/1.0/
+/api/2.0/
+
+# ============================================
+# CONTENT MANAGEMENT
+# ============================================
+/cms/
+/manage/
+/editor/
+/filemanager/
+/fileman/
+/file-manager/
+/files/
+/media/
+/images/
+/uploads/
+/documents/
+/attachments/
+/downloads/
+
+# ============================================
+# ERROR & REDIRECT PAGES
+# ============================================
+/error
+/errors
+/error404
+/error500
+/notfound
+/404
+/403
+/500
+/forbidden
+/internalerror
+/maintenance
+
+# ============================================
+# SECURITY & POLICY
+# ============================================
+/.well-known/security.txt
+/security.txt
+/security-policy
+/.well-known/host-meta.json
+/host-meta.json
+/.well-known/dnt-policy.txt
+/dnt-policy.txt
+
+# ============================================
+# OAUTH & AUTHENTICATION
+# ============================================
+/oauth/
+/oauth/authorize
+/oauth/token
+/oauth2/
+/oauth2/authorize
+/oauth2/token
+/auth/
+/auth/authorize
+/auth/token
+/authenticate
+/.auth/
+/auth0/
+
+# ============================================
+# WEB SOCKET & REALTIME
+# ============================================
+/ws
+/wss
+/socket.io/
+/socket.io
+/signalr/
+/signalr/hubs
+/graphql/ws
+/subscriptions
+
+# ============================================
+# FILE DISCLOSURE PATTERNS
+# ============================================
+crossdomain.xml
+clientaccesspolicy.xml
+/.htaccess
+/.htpasswd
+/.htusers
+/.htgroup
+/web.config
+/web.config.bak
+/global.asax
+/applicationhost.config
+
+# ============================================
+# CLOUD STORAGE PATTERNS
+# ============================================
+/api/storage
+/storage
+/files
+/filemanager
+/s3
+/bucket
+/backup
+/backups
+/static
+/assets
+/uploads
+/user-uploads
+/media
+/documents
+/cdn/
+
+# ============================================
+# SEARCH & INDEXING
+# ============================================
+/search
+/search?q=
+/query
+/lookup
+/index
+/indexes
+/sitemap.xml
+/robots.txt
+/sitemap.xml
+/feeds/
+/rss/
+/atom/
+
+# ============================================
+# PAYMENT & ECOMMERCE
+# ============================================
+/checkout
+/payment
+/pay
+/billing
+/invoice
+/invoices
+/order
+/orders
+/cart
+/wishlist
+/checkout/payment
+/api/payment
+/stripe/webhook
+/paypal/ipn
+
+# ============================================
+# USER & ACCOUNT MANAGEMENT
+# ============================================
+/users
+/user
+/profile
+/account
+/accounts
+/registration
+/register
+/signup
+/signup/
+/forgot-password
+/forgot-password/
+/reset-password
+/reset-password/
+/change-password
+/change-password/
+/settings
+/account/settings
+/profile/edit
+/users/admin
+/api/users
+/api/admin/users
+
+# ============================================
+# DOCUMENTATION
+# ============================================
+/docs/
+/documentation/
+/api/docs/
+/wiki/
+/readme
+/README
+/license
+/CHANGELOG
+/changelog
+/CHANGELOG.txt
+/HISTORY
+/history

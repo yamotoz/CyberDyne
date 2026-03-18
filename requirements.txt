@@ -1,29 +1,30 @@
 # =============================================================================
-#  CyberDyne v3.0 — Dependências
+#  CyberDyne v4.0 — Dependencias
 #  Instale com: pip install -r requirements.txt
 #  Python 3.10+ recomendado
+#  Apos instalar: playwright install chromium
 # =============================================================================
 
-# ── Requisições HTTP ─────────────────────────────────────────────────────────
-requests>=2.31.0                # Todas as requisições HTTP do scanner
-urllib3>=2.0.0                  # Suporte SSL + disable warnings
+# ── Core ─────────────────────────────────────────────────────────────────────
+requests>=2.31.0
+urllib3>=2.0.0
+beautifulsoup4>=4.12.0
+colorama>=0.4.6
+python-dotenv>=1.0.0
 
-# ── Parsing HTML/XML ─────────────────────────────────────────────────────────
-beautifulsoup4>=4.12.0          # Forms, inputs, links, DOM analysis
+# ── Relatorios PDF ───────────────────────────────────────────────────────────
+reportlab>=4.0.0
 
-# ── Terminal ─────────────────────────────────────────────────────────────────
-colorama>=0.4.6                 # Output colorido (verde/vermelho/amarelo)
+# ── Seguranca & Criptografia ────────────────────────────────────────────────
+PyJWT>=2.8.0
+cryptography>=42.0.0
+dnspython>=2.4.0
+packaging>=24.0
 
-# ── Relatórios ───────────────────────────────────────────────────────────────
-reportlab>=4.0.0                # Geração do relatório executivo em PDF
+# ── Live Dashboard (--live) ──────────────────────────────────────────────────
+flask>=3.0.0
 
-# ── Segurança & Criptografia ────────────────────────────────────────────────
-PyJWT>=2.8.0                    # Decode/análise de tokens JWT (Supabase, auth)
-cryptography>=42.0.0            # Análise de certificados TLS/SSL
-
-# ── DNS ──────────────────────────────────────────────────────────────────────
-dnspython>=2.4.0                # Subdomain enumeration, zone transfer, takeover
-
-# ── Utilidades ───────────────────────────────────────────────────────────────
-packaging>=24.0                 # Comparação de versões de dependências
-python-dotenv>=1.0.0            # Carregamento de API keys via .env
+# ── Browser Mimic (--browser-mimic) ──────────────────────────────────────────
+playwright>=1.40.0
+playwright-stealth>=1.0.6
+fake-useragent>=1.4.0

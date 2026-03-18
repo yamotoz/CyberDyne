@@ -1,10 +1,10 @@
 # Diario de Bordo -- CyberDyne (Agente Principal)
 
-## Status Atual: v3.0 -- Em Desenvolvimento Ativo
+## Status Atual: v4.0 -- Em Desenvolvimento Ativo
 
-* **Ultima atualizacao:** 18/03/2026
+* **Ultima atualizacao:** 19/03/2026
 * **Scripts ativos:** `CyberDyneWeb.py` (scanner web)
-* **Total de linhas:** ~10.000
+* **Total de linhas:** ~11.400
 * **Total de checks de vulnerabilidade:** 111+
 
 ---
@@ -528,37 +528,201 @@ Aplica um dos 5 metodos de encoding ao payload:
 
 ---
 
-## Changelog Resumido
+## Novas Features v4.0
 
-### v3.0 -- 18/03/2026
-- **~10.000 linhas** (era ~8.100 na v2.0)
-- **111+ checks** (era 107)
-- **7 ferramentas integradas**: sqlmap, XSStrike, LinkFinder, graphql-cop, supabase-rls-checker, waf-bypass, prompt-inject-fuzzer
-- **linkfinder_scan()**: novo step 12 no recon (JS endpoint discovery + API key detection)
-- **SQLi reescrito**: 140 error patterns, time-based multi-DBMS, boolean blind (108), UNION (109), tamper bypass
-- **XSS reescrito**: filter checking, context detection, similarity, XSStrike WAF bypass, DOM variable tracking
-- **GraphQL reescrito**: introspection+suggestions+trace+IDE (61), DoS 5 testes (62), CSRF audit (110)
-- **Supabase reescrito**: 60+ tabelas RLS, storage, auth, RPC, JWT decode (36, 37)
-- **WAF Bypass Audit** (111): 120 payloads, 5 encodings, 5 zones, vendor detection
-- **AI checks reescritos**: 35 payloads, 8 categorias, mutations, behavioral detection (26, 27)
-- **9 bug fixes**: RFI, XSS Stored, Broken Auth, LFI params, SSRF params, NoSQL, CSRF, SSTI, urllib3 import
-- **Novos Payloads_CY**: WAF-Bypass/, XSS/xsstrike-*, SQLi/sqlmap-*, SQLi/common-*, AI-LLM/prompt-inject-payloads.json
+### CLI com argparse (substituiu modo interativo como padrao)
 
-### v2.0 -- 17/03/2026
-- Gemini AI: sumario executivo inteligente no PDF + prompt_recall.md gerado por IA
-- PDF elegante: cover com header dark, risk gauge, severity badges, vulnerability cards coloridos, page numbers
-- Payloads_CY: 16 pastas conectadas ao script
-- VulnScanner paralelo: 8 grupos x max_workers=8 (~80min -> ~14min)
-- Chaos API: substituiu DNS BF por wordlist
-- 8 APIs integradas: Gemini, Shodan, VirusTotal, SecurityTrails, Chaos, Hunter.io, HIBP, GitHub
-- `.gitignore` e `.env.example` adicionados
-- `BASE_DELAY` reduzido de 0.5s para 0.1s
+O `main()` agora usa `argparse` completo. O modo interativo (perguntas no terminal) continua funcionando como fallback quando nenhum `--url` e passado.
 
-### v1.0 -- Criacao inicial
-- Primeira estrutura do scanner
-- Checks basicos de vulnerabilidade
-- Relatorio simples
+**Flags disponiveis:**
+| Flag | Descricao |
+|---|---|
+| `--url URL` | URL alvo (se omitido, entra no modo interativo) |
+| `--login URL` | URL do painel de login |
+| `-ul` / `--userlogin` | Email ou usuario para scan autenticado |
+| `-pl` / `--passlogin` | Senha para scan autenticado |
+| `--all` | Executa tudo: recon + vuln + relatorios (default se nenhum modo especificado) |
+| `--recon` | Apenas reconhecimento |
+| `--vuln` | Apenas scan de vulnerabilidades |
+| `--stealth` | Modo fantasma |
+| `--ai-payloads` | Gemini gera payloads contextuais |
+| `--live` | Dashboard Flask em localhost:5000 |
+| `--browser-mimic` | Playwright: DOM XSS real, clickjacking iframe, storage leaks, SPA routes |
+| `--project NOME` | Nome da pasta de output |
+
+**Decisao de design:** Se nem `--all`, `--recon` ou `--vuln` forem passados, o padrao e `--all` (faz tudo). Isso mantem a experiencia simples para quem so quer `python CyberDyneWeb.py --url X`.
+
+### --browser-mimic (Playwright Browser Testing)
+
+**Classe:** `CyberBrowser` (~400 linhas)
+**Dependencias:** `playwright`, `playwright-stealth`, `fake-useragent` (opcionais — try/except)
+**Fase:** 2.5 — roda DEPOIS dos 111+ checks, ANTES dos relatorios
+**Lifecycle:** 1 browser + 1 context + N pages (1 por check)
+
+**Anti-Fingerprinting:**
+- `playwright-stealth` mascara `navigator.webdriver: true`
+- `--disable-blink-features=AutomationControlled`
+- User-Agent randomico via `fake-useragent`
+
+**Interacao Humana:**
+- `_bezier_move()`: mouse em curva cubica (2 control points aleatorios, 20-35 steps, delay 5-12ms)
+- `_human_type()`: char-by-char com delay 50-150ms, fallback para `.fill()` se seletor falhar
+
+**6 Checks Browser-Based:**
+
+| Vuln ID | Check | Tecnica |
+|---------|-------|---------|
+| 201 | DOM XSS Real | Injeta payloads com marker `CYBERDYNE_XSS_201` em params + forms. `page.on("console")` monitora. Se marker aparece → XSS confirmado + screenshot |
+| 202 | AI-Output Injection | Navega a 8 AI endpoints. Envia prompt com HTML malicioso via human typing. Se console.error dispara → output renderizado como HTML |
+| 203 | Prototype Pollution | URL com `?__proto__[polluted]=MARKER`. `page.evaluate("({}).polluted")` verifica. Se retorna marker → pollution confirmada |
+| 204 | Storage Leak | `page.evaluate()` extrai localStorage+sessionStorage. 8 regex patterns (JWT, Stripe, AWS, GitHub, Slack, Supabase). Dump salvo em `browser_storage_dump.json` |
+| 205 | SPA Hidden Routes | Detecta framework (Next/Nuxt/Vue/Angular/React). Extrai routes de JS bundles. Tenta acessar routes admin sem auth |
+| 206 | Clickjacking Real | `page.set_content()` com iframe apontando pro alvo. Se renderiza → X-Frame-Options/CSP nao bloqueia |
+
+**Evidencia Visual:**
+- Screenshots PNG em `output_dir/screenshots/` — embedados no PDF via `RLImage`
+- Console logs em `browser_console_logs.json`
+- DOM dumps no campo evidence do VulnResult
+- `VulnResult.screenshot_path` = caminho do PNG (novo atributo)
+- `ReportGenerator._vuln_card()` detecta screenshot_path e embeda imagem no card do PDF
+
+**Coisas Para Nao Mudar:**
+- **Nunca** tornar playwright obrigatorio — `HAS_PLAYWRIGHT` controla tudo
+- **Nunca** rodar CyberBrowser dentro do ThreadPoolExecutor dos grupos — roda sequencial na main()
+- **Nunca** usar async playwright — tudo sync para consistencia com o resto do codebase
+
+### --stealth (Modo Fantasma)
+
+**Global:** `_STEALTH_MODE` (bool)
+**Funcao:** `_stealth_delay()` — chamada automaticamente em `safe_get()`, `safe_head()` e `adaptive_request()`
+
+Quando ativo:
+1. Aplica delay aleatorio entre 0.3s e 1.5s antes de cada request
+2. Rotaciona User-Agent entre 8 UAs reais (Chrome/Firefox/Safari/Edge, desktop+mobile)
+3. Altera `HEADERS_BASE["User-Agent"]` a cada request
+
+**Integrado em:** `safe_get()`, `safe_head()`, `adaptive_request()` — afeta TODOS os requests do sistema automaticamente.
+
+### --ai-payloads (Gemini Payloads Contextuais)
+
+**Global:** `_AI_PAYLOADS_MODE` (bool), `_gemini_tokens_used` (int)
+**Funcao:** `_ai_generate_payloads(vuln_type, context_html, url="")`
+**Modelo:** `gemini-2.0-flash-lite` (mais barato, free tier de 1M tokens/min)
+
+Fluxo:
+1. No inicio de cada check, se `_AI_PAYLOADS_MODE` esta ativo, o check faz `safe_get(self.target)` para capturar o HTML
+2. O HTML (primeiros 2000 chars) e enviado ao Gemini junto com o tipo de vulnerabilidade
+3. Gemini retorna 15 payloads especificos para aquele contexto
+4. Payloads sao **somados** aos existentes (nao substituem)
+5. No final do scan, imprime quantos tokens foram usados e quantos restam no free tier
+
+**Checks com AI payloads:**
+- `check_xss_reflected()` — XSS contextuais
+- `check_sqli_classic()` — SQLi contextuais
+- `check_lfi()` — LFI/Path Traversal
+- `check_cmd_injection()` — Command Injection / RCE
+- `check_ssti()` — SSTI
+- `check_ssrf()` — SSRF
+
+**Decisao:** Escolhemos esses 6 porque sao os que mais se beneficiam de payloads adaptados ao contexto (campos de form, nomes de variaveis, frameworks detectados). Checks como JWT, GraphQL, WAF Bypass ja tem payloads especializados que nao ganham com contexto HTML.
+
+### --live (Dashboard Visual em Tempo Real)
+
+**Dependencia:** Flask (opcional — `pip install flask`)
+**Funcao:** `_start_live_dashboard(port=5000)`
+**Data store:** `_live_data` (dict global)
+**Update:** `_live_update(phase, progress, total, vuln)` — chamado do `main()` e de `VulnScanner._add()`
+
+O dashboard:
+- Roda como thread daemon (nao bloqueia o scan)
+- Serve HTML+CSS+JS inline (sem arquivos externos)
+- UI dark com cards de severidade (Critico/Alto/Medio/Baixo/Seguro)
+- Barra de progresso animada
+- Lista de vulns encontradas em tempo real (ultimas 30, scroll)
+- Polling a cada 2s via fetch() no browser
+- API endpoint: `GET /api/status` retorna JSON com estado atual
+
+Apos o scan finalizar, o dashboard fica ativo para consulta ate o usuario dar Ctrl+C.
+
+### jwt_tool Integration (v3.0 -> v4.0)
+
+**Tecnicas extraidas do jwt_tool v2.3.0:**
+
+| Ataque | CVE | Vuln ID | Descricao |
+|---|---|---|---|
+| alg:none (4 variantes) | CVE-2015-2951 | 21 | none, None, NONE, nOnE — testa aceitacao sem assinatura |
+| Null signature | CVE-2020-28042 | 21 | Assinatura vazia aceita |
+| Psychic ECDSA | CVE-2022-21449 | 21 | Assinatura fixa `MAYCAQACAQA` aceita |
+| Blank password HMAC | — | 21 | HMAC com key vazia aceita |
+| Weak secret cracking | — | 22 | 330+ senhas (jwt-tool-common.txt + scraped) × HS256/384/512 |
+| JWKS endpoint exposure | — | 23 | 7 paths de JWKS |
+| KID path traversal | — | 23 | `../../dev/null`, blank kid |
+| KID SQL injection | — | 23 | `x' UNION SELECT '1';--` com key=`1` |
+| Claim tampering | — | 23 | 6 claims de escalacao (role=admin, is_admin=True, etc.) |
+
+**Payload copiado:** `Payloads_CY/Passwords/JWT-Secrets/jwt-tool-common.txt` (130 senhas)
+
+### ReconReportGenerator (Recon.md + Recon.pdf)
+
+Classe nova que consolida todos os dados de reconhecimento em 2 arquivos unicos. Substitui a necessidade de abrir 10+ JSONs individuais.
+
+**Dados incluidos:** WHOIS, stack tecnologica, subdominios com status, takeover, portas abertas, Shodan, emails, GitHub dorking, fuzzing paths, LinkFinder endpoints/secrets, AI/BaaS endpoints, URLs com parametros, brute force probe.
+
+**Integrado no main():** Chamado na Fase 3 (Relatorios), depois do prompt_recall.md.
+
+### GitHub Dorking Bug Fix
+
+**Problema:** Rate-limit sem retry → query perdida → 0 findings.
+**Fix:** Agora le `X-RateLimit-Reset` header, calcula espera exata, e faz **retry automatico** da query que falhou.
+**Bonus:** Conectou `GitHub/github-dorks.json` (80 dorks extras).
+
+### Payloads_CY — 29 pastas totais
+
+Novos payloads conectados na v4.0:
+- `NoSQL/nosql-injection-payloads.json` (45 payloads) → `check_nosql_injection()`
+- `LDAP/ldap-injection-payloads.json` (45 payloads) → `check_ldap_injection()`
+- `XPath/xpath-injection-payloads.json` (40 payloads) → `check_xpath_injection()`
+- `CRLF/crlf-injection-payloads.json` (40 payloads) → `check_crlf_injection()`
+- `Upload/` (file-upload-bypass + zip-slip) → `check_file_upload()`
+- `Kubernetes/k8s-endpoints-paths.json` (60 endpoints) → `fuzz_paths()`
+- `IaC/iac-sensitive-files.json` (80 files) → `fuzz_paths()`
+- `AWS/aws-attack-vectors.json` (100+ vectors) → ja conectado
+- `Firebase/firebase-attack-vectors.json` (60 vectors) → `check_firebase_rules()`
+- `GitHub/github-dorks.json` (80 dorks) → `github_dorking()`
+- `GraphQL/graphql-attack-vectors.json` (40 vectors) → `check_graphql_introspection()`
+- `Business-Logic/` (3 JSONs, 165 vectors) → `check_business_logic_errors()`
+- `Web-Discovery/Directories/directory-listing-wordlist.txt` (350 paths) → `check_directory_listing()` + `fuzz_paths()`
 
 ---
 
-*Agente responsavel pela ultima atualizacao: Claude Opus 4.6 -- 18/03/2026*
+## Changelog Resumido
+
+### v4.0 -- 19/03/2026
+- **~12.000 linhas** (era ~10.000 na v3.0)
+- **CLI completa com argparse**: `--url`, `--login`, `-ul`, `-pl`, `--all`, `--recon`, `--vuln`, `--stealth`, `--ai-payloads`, `--live`, `--project`
+- **--stealth**: delay random 0.3-1.5s + rotacao de 8 User-Agents reais em safe_get/safe_head/adaptive_request
+- **--ai-payloads**: Gemini 2.0 Flash Lite gera 15 payloads contextuais por alvo (XSS, SQLi, LFI, RCE, SSTI, SSRF)
+- **--live**: Dashboard Flask em localhost:5000 — progresso, severidades, vulns em tempo real
+- **jwt_tool integrado**: alg:none 4 variantes, null sig, psychic ECDSA (CVE-2022-21449), blank password, 330+ weak secrets, JWKS exposure, KID injection/SQLi, claim tampering
+- **ReconReportGenerator**: Recon.md + Recon.pdf consolidam todos os dados de reconhecimento
+- **29 pastas de payloads**: +12 novos JSONs conectados (NoSQL, LDAP, XPath, K8s, IaC, Firebase, GraphQL, Business-Logic, GitHub dorks, directory-listing)
+- **GitHub Dorking fix**: retry automatico apos rate-limit + X-RateLimit-Reset header
+- **--browser-mimic**: CyberBrowser com Playwright — 6 checks client-side (DOM XSS real, AI-Output Injection, Prototype Pollution, Storage Leak, SPA Hidden Routes, Clickjacking Real)
+- **Evidencia visual**: screenshots PNG embedados no PDF via RLImage + console logs + DOM dumps
+- **Anti-fingerprinting**: playwright-stealth + Bezier mouse + human typing + fake UA
+- **README.md reescrito**: novo formato curto e direto, sem nomes de ferramentas, sem regras de contribuicao
+
+### v3.0 -- 18/03/2026
+- ~10.000 linhas, 111+ checks, 7 ferramentas integradas
+- SQLi/XSS/GraphQL/Supabase/WAF/AI checks reescritos com tecnicas avancadas
+- linkfinder_scan() como step 12 do recon
+
+### v2.0 -- 17/03/2026
+- Gemini AI, PDF elegante, Payloads_CY, VulnScanner paralelo, Chaos API, 8 APIs
+
+### v1.0 -- Criacao inicial
+- Primeira estrutura, checks basicos, relatorio simples
+
+---
+
+*Agente responsavel pela ultima atualizacao: Claude Opus 4.6 -- 19/03/2026*

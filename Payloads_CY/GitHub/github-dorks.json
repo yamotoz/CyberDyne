@@ -1,0 +1,185 @@
+{
+  "info": {
+    "name": "GitHub Dorking Queries",
+    "author": "CyberDyne Security",
+    "version": "2.0",
+    "description": "GitHub search dorks for exposed secrets, credentials, API keys, and sensitive data discovery. 2026 updated.",
+    "category": "Recon",
+    "severity": "CRITICAL",
+    "owasp": "A02:2021 - Cryptographic Failures"
+  },
+  "dorks": {
+    "aws_credentials": [
+      {"query": "AKIA[0-9A-Z]{16} repo:github_username", "description": "AWS Access Key ID", "risk": "CRITICAL"},
+      {"query": "\"aws_access_key\" \"github.com\"", "description": "AWS access key string", "risk": "CRITICAL"},
+      {"query": "\"aws_secret_key\" \"github.com\"", "description": "AWS secret key string", "risk": "CRITICAL"},
+      {"query": "filename:.env AWS_ACCESS_KEY", "description": "AWS key in .env", "risk": "CRITICAL"},
+      {"query": "path:.env AWS_SECRET", "description": "AWS secret in .env", "risk": "CRITICAL"}
+    ],
+    "api_keys": [
+      {"query": "\"api_key\" \"github.com\"", "description": "Generic API key", "risk": "HIGH"},
+      {"query": "filename:credentials.json apiKey", "description": "API key in credentials.json", "risk": "HIGH"},
+      {"query": "filename:secrets.yml api_key", "description": "API key in secrets.yml", "risk": "HIGH"},
+      {"query": "filename:config.json apiKey", "description": "API key in config.json", "risk": "HIGH"},
+      {"query": "extension:json \"api_key\"", "description": "API key in JSON", "risk": "HIGH"},
+      {"query": "extension:yaml \"api_key\"", "description": "API key in YAML", "risk": "HIGH"},
+      {"query": "extension:yml \"api_key\"", "description": "API key in YML", "risk": "HIGH"},
+      {"query": "extension:ini \"api_key\"", "description": "API key in INI", "risk": "HIGH"},
+      {"query": "extension:toml \"api_key\"", "description": "API key in TOML", "risk": "HIGH"}
+    ],
+    "google_api": [
+      {"query": "AIza[0-9A-Za-z_-]{35}", "description": "Google API Key", "risk": "HIGH"},
+      {"query": "\"AIza\" \"github.com\"", "description": "Google API Key string", "risk": "HIGH"},
+      {"query": "filename:.env GOOGLE_API_KEY", "description": "Google API in .env", "risk": "HIGH"},
+      {"query": "filename:credentials.json google", "description": "Google creds JSON", "risk": "HIGH"}
+    ],
+    "stripe_api": [
+      {"query": "sk_live_[0-9a-zA-Z]{24,}", "description": "Stripe Live Secret Key", "risk": "CRITICAL"},
+      {"query": "sk_test_[0-9a-zA-Z]{24,}", "description": "Stripe Test Secret Key", "risk": "HIGH"},
+      {"query": "pk_live_[0-9a-zA-Z]{24,}", "description": "Stripe Live Publishable Key", "risk": "MEDIUM"},
+      {"query": "rk_live_[0-9a-zA-Z]{24,}", "description": "Stripe Restricted Key", "risk": "HIGH"},
+      {"query": "\"sk_live_\" \"github.com\"", "description": "Stripe live key string", "risk": "CRITICAL"}
+    ],
+    "github_tokens": [
+      {"query": "ghp_[0-9a-zA-Z]{36}", "description": "GitHub Personal Access Token", "risk": "CRITICAL"},
+      {"query": "ghs_[0-9a-zA-Z]{36}", "description": "GitHub Server Access Token", "risk": "CRITICAL"},
+      {"query": "gho_[0-9a-zA-Z]{36}", "description": "GitHub OAuth Token", "risk": "CRITICAL"},
+      {"query": "ghu_[0-9a-zA-Z]{36}", "description": "GitHub User Access Token", "risk": "CRITICAL"},
+      {"query": "ghp_[0-9a-zA-Z]{36} repo", "description": "GitHub PAT in code", "risk": "CRITICAL"},
+      {"query": "filename:.netrc github.com password", "description": ".netrc with GitHub", "risk": "CRITICAL"}
+    ],
+    "sendgrid": [
+      {"query": "SG\\.[0-9A-Za-z_-]{22}\\.[0-9A-Za-z_-]{43}", "description": "SendGrid API Key", "risk": "CRITICAL"},
+      {"query": "\"SG.\" \"github.com\"", "description": "SendGrid key string", "risk": "CRITICAL"},
+      {"query": "filename:.env SENDGRID_API_KEY", "description": "SendGrid key in .env", "risk": "CRITICAL"}
+    ],
+    "twilio": [
+      {"query": "SK[0-9a-fA-F]{32}", "description": "Twilio API Key", "risk": "HIGH"},
+      {"query": "AC[0-9a-fA-F]{32}", "description": "Twilio Account SID", "risk": "HIGH"},
+      {"query": "filename:.env TWILIO", "description": "Twilio in .env", "risk": "HIGH"}
+    ],
+    "slack": [
+      {"query": "xox[baprs]-[0-9a-zA-Z-]{10,}", "description": "Slack Token", "risk": "HIGH"},
+      {"query": "filename:.env SLACK_TOKEN", "description": "Slack token in .env", "risk": "HIGH"},
+      {"query": "\"xoxb\" \"github.com\"", "description": "Slack bot token", "risk": "HIGH"}
+    ],
+    "database_credentials": [
+      {"query": "filename:.env DB_PASSWORD", "description": "Database password in .env", "risk": "CRITICAL"},
+      {"query": "filename:.env DATABASE_URL", "description": "Database URL in .env", "risk": "CRITICAL"},
+      {"query": "filename:database.yml password", "description": "Password in database.yml", "risk": "CRITICAL"},
+      {"query": "filename:database.php password", "description": "Password in database.php", "risk": "CRITICAL"},
+      {"query": "filename:settings.py DATABASE", "description": "DB settings in settings.py", "risk": "HIGH"},
+      {"query": "mysql:// username password", "description": "MySQL connection string", "risk": "CRITICAL"},
+      {"query": "postgres:// username password", "description": "PostgreSQL connection string", "risk": "CRITICAL"},
+      {"query": "mongodb:// username password", "description": "MongoDB connection string", "risk": "CRITICAL"},
+      {"query": "redis:// password", "description": "Redis connection string", "risk": "HIGH"}
+    ],
+    "private_keys": [
+      {"query": "filename:id_rsa", "description": "SSH private key", "risk": "CRITICAL"},
+      {"query": "filename:id_dsa", "description": "SSH DSA private key", "risk": "CRITICAL"},
+      {"query": "filename:id_ecdsa", "description": "SSH ECDSA private key", "risk": "CRITICAL"},
+      {"query": "filename:id_ed25519", "description": "SSH ED25519 private key", "risk": "CRITICAL"},
+      {"query": "filename:private_key.pem", "description": "PEM private key", "risk": "CRITICAL"},
+      {"query": "filename:.ssh/id_rsa", "description": "SSH key in .ssh", "risk": "CRITICAL"},
+      {"query": "filename:.pem private", "description": "PEM file with private", "risk": "CRITICAL"},
+      {"query": "-----BEGIN RSA PRIVATE KEY-----", "description": "RSA key header", "risk": "CRITICAL"},
+      {"query": "-----BEGIN OPENSSH PRIVATE KEY-----", "description": "OpenSSH key header", "risk": "CRITICAL"},
+      {"query": "-----BEGIN EC PRIVATE KEY-----", "description": "EC key header", "risk": "CRITICAL"}
+    ],
+    "jwt_secrets": [
+      {"query": "filename:.env JWT_SECRET", "description": "JWT secret in .env", "risk": "HIGH"},
+      {"query": "filename:config.json JWT", "description": "JWT in config.json", "risk": "HIGH"},
+      {"query": "secretOrKey", "description": "JWT secretOrKey string", "risk": "HIGH"},
+      {"query": "jwtSecret", "description": "jwtSecret string", "risk": "HIGH"},
+      {"query": "ACCESS_TOKEN_SECRET", "description": "Access token secret", "risk": "HIGH"}
+    ],
+    "passwords_in_code": [
+      {"query": "password= \"\" language:javascript", "description": "Hardcoded password JS", "risk": "HIGH"},
+      {"query": "password: \"\" language:python", "description": "Hardcoded password Python", "risk": "HIGH"},
+      {"query": "password = \"\"", "description": "Hardcoded password assignment", "risk": "HIGH"},
+      {"query": "\"password\" \"github.com\"", "description": "Password string in code", "risk": "HIGH"},
+      {"query": "password\\s*=\\s*[\"'][^\"']{4,}[\"']", "description": "Password assignment pattern", "risk": "HIGH"},
+      {"query": "passwd\\s*=\\s*[\"'][^\"']{4,}[\"']", "description": "Passwd assignment pattern", "risk": "HIGH"},
+      {"query": "pass\\s*=\\s*[\"'][^\"']{4,}[\"']", "description": "Pass assignment pattern", "risk": "HIGH"}
+    ],
+    "sensitive_files": [
+      {"query": "filename:wp-config.php", "description": "WordPress config", "risk": "CRITICAL"},
+      {"query": "filename:configuration.php.bak", "description": "Joomla config backup", "risk": "HIGH"},
+      {"query": "filename:settings.py SECRET", "description": "Django secret in settings.py", "risk": "HIGH"},
+      {"query": "filename:.env DEBUG", "description": "Debug enabled in .env", "risk": "MEDIUM"},
+      {"query": "filename:secrets.yaml", "description": "Secrets YAML", "risk": "HIGH"},
+      {"query": "filename:credentials.xml", "description": "Credentials XML", "risk": "HIGH"},
+      {"query": "filename:oauth.txt", "description": "OAuth credentials", "risk": "HIGH"},
+      {"query": "filename:backup.sql", "description": "SQL backup", "risk": "CRITICAL"},
+      {"query": "filename:dump.sql", "description": "SQL dump", "risk": "CRITICAL"},
+      {"query": "filename:.pgpass", "description": "PostgreSQL passfile", "risk": "HIGH"},
+      {"query": "filename:.npmrc _auth", "description": "NPM auth config", "risk": "HIGH"},
+      {"query": "filename:.htpasswd", "description": "Apache htpasswd", "risk": "HIGH"}
+    ],
+    "configuration_files": [
+      {"query": "filename:.env", "description": "Environment file", "risk": "CRITICAL"},
+      {"query": "filename:.env.prod", "description": "Production env", "risk": "CRITICAL"},
+      {"query": "filename:.env.local", "description": "Local env", "risk": "HIGH"},
+      {"query": "filename:config.json", "description": "Config JSON", "risk": "HIGH"},
+      {"query": "filename:config.yaml", "description": "Config YAML", "risk": "HIGH"},
+      {"query": "filename:config.yml", "description": "Config YML", "risk": "HIGH"},
+      {"query": "filename:config.php", "description": "Config PHP", "risk": "HIGH"},
+      {"query": "filename:application.json", "description": "Application JSON", "risk": "HIGH"},
+      {"query": "filename:app.json", "description": "App JSON", "risk": "HIGH"},
+      {"query": "filename:service-account.json", "description": "Service account JSON", "risk": "CRITICAL"}
+    ],
+    "frontend_credentials": [
+      {"query": "filename:credentials.json google_api", "description": "Google API JSON", "risk": "HIGH"},
+      {"query": "filename:firebase.json", "description": "Firebase config", "risk": "HIGH"},
+      {"query": "filename:client_secret.json", "description": "OAuth client secret", "risk": "HIGH"},
+      {"query": "filename:google-services.json", "description": "Google Services JSON", "risk": "HIGH"},
+      {"query": "filename:Amplifyconfiguration.json", "description": "AWS Amplify config", "risk": "HIGH"}
+    ],
+    "cloud_configs": [
+      {"query": "filename:cloud_credentials.json", "description": "Cloud credentials JSON", "risk": "CRITICAL"},
+      {"query": "filename:credentials aws", "description": "AWS credentials file", "risk": "CRITICAL"},
+      {"query": "filename:.aws/credentials", "description": "AWS credentials path", "risk": "CRITICAL"},
+      {"query": "filename:azureauth.json", "description": "Azure auth JSON", "risk": "CRITICAL"},
+      {"query": "filename:credentials.json gcp", "description": "GCP credentials JSON", "risk": "CRITICAL"}
+    ],
+    "miscellaneous": [
+      {"query": "filename:database.sql password", "description": "SQL with password", "risk": "CRITICAL"},
+      {"query": "filename:oauth.yaml", "description": "OAuth YAML", "risk": "HIGH"},
+      {"query": "filename:oidc.json", "description": "OIDC config", "risk": "HIGH"},
+      {"query": "filename:azure.keyvault", "description": "Azure Key Vault", "risk": "HIGH"},
+      {"query": "filename:*.key", "description": "Key files", "risk": "HIGH"},
+      {"query": "filename:.p12", "description": "PKCS#12 certificate", "risk": "HIGH"},
+      {"query": "filename:.pfx", "description": "PFX certificate", "risk": "HIGH"}
+    ]
+  },
+  "advanced_dorks": [
+    {"query": "filename:*.env repo:username", "description": "Environment files for specific repo"},
+    {"query": "filename:*.pem repo:username", "description": "PEM files for specific repo"},
+    {"query": "extension:env", "description": "All environment files"},
+    {"query": "extension:properties", "description": "Java properties files"},
+    {"query": "extension:config language:json", "description": "Config files JSON"},
+    {"query": "extension:cfg", "description": "Config files"},
+    {"query": "filename:app.config", "description": "App config"},
+    {"query": "filename:web.config", "description": "Web config"},
+    {"query": "filename:connectionstrings.config", "description": "Connection strings config"}
+  ],
+  "file_extensions_to_find": [
+    ".env",
+    ".env.local",
+    ".env.production",
+    ".pem",
+    ".key",
+    ".p12",
+    ".pfx",
+    ".crt",
+    ".cer",
+    ".config",
+    ".json",
+    ".yaml",
+    ".yml",
+    ".xml",
+    ".properties",
+    ".ini",
+    ".conf"
+  ]
+}
