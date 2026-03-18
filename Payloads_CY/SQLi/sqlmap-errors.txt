@@ -1,0 +1,140 @@
+# SQLMap DBMS Error Patterns — extraído de sqlmap/data/xml/errors.xml
+# Formato: cada linha é um regex pattern para re.search()
+# Usado em check_sqli_classic() para detecção error-based
+# MySQL
+SQL syntax.*?MySQL
+Warning.*?\Wmysqli?_
+MySQLSyntaxErrorException
+valid MySQL result
+check the manual that (corresponds to|fits) your MySQL server version
+check the manual that (corresponds to|fits) your MariaDB server version
+Unknown column '[^ ]+' in 'field list'
+MySqlClient\.
+com\.mysql\.jdbc
+Pdo[./_\\]Mysql
+MySqlException
+# PostgreSQL
+PostgreSQL.*?ERROR
+Warning.*?\Wpg_
+valid PostgreSQL result
+Npgsql\.
+PG::SyntaxError:
+org\.postgresql\.util\.PSQLException
+ERROR:\s+syntax error at or near
+PostgreSQL query failed
+org\.postgresql\.jdbc
+Pdo[./_\\]Pgsql
+PSQLException
+# Microsoft SQL Server
+Driver.*? SQL[\-\_\ ]*Server
+OLE DB.*? SQL Server
+\bSQL Server[^<"]+Driver
+Warning.*?\W(mssql|sqlsrv)_
+\bSQL Server[^<"]+[0-9a-fA-F]{8}
+System\.Data\.SqlClient\.(SqlException|SqlConnection\.OnError)
+Microsoft SQL Native Client error '[0-9a-fA-F]{8}
+\[SQL Server\]
+ODBC SQL Server Driver
+ODBC Driver \d+ for SQL Server
+SQLServer JDBC Driver
+com\.microsoft\.sqlserver\.jdbc
+Pdo[./_\\](Mssql|SqlSrv)
+SQL(Srv|Server)Exception
+Unclosed quotation mark after the character string
+# Oracle
+\bORA-\d{5}
+Oracle error
+Oracle.*?Driver
+Warning.*?\W(oci|ora)_
+quoted string not properly terminated
+SQL command not properly ended
+oracle\.jdbc
+Pdo[./_\\](Oracle|OCI)
+OracleException
+# SQLite
+SQLite/JDBCDriver
+SQLite\.Exception
+(Microsoft|System)\.Data\.SQLite\.SQLiteException
+Warning.*?\W(sqlite_|SQLite3::)
+\[SQLITE_ERROR\]
+SQLite error \d+:
+sqlite3.OperationalError:
+SQLite3::SQLException
+org\.sqlite\.JDBC
+Pdo[./_\\]Sqlite
+SQLiteException
+# IBM DB2
+CLI Driver.*?DB2
+DB2 SQL error
+\bdb2_\w+\(
+SQLCODE[=:\d, -]+SQLSTATE
+com\.ibm\.db2\.jcc
+Pdo[./_\\]Ibm
+DB2Exception
+# Informix
+Warning.*?\Wifx_
+Exception.*?Informix
+Informix ODBC Driver
+com\.informix\.jdbc
+# Firebird
+Dynamic SQL Error.{1,10}SQL error code
+Warning.*?\Wibase_
+org\.firebirdsql\.jdbc
+# Sybase
+Warning.*?\Wsybase_
+Sybase message
+Sybase.*?Server message
+SybSQLException
+com\.sybase\.jdbc
+# SAP MaxDB
+SQL error.*?POS([0-9]+)
+Warning.*?\Wmaxdb_
+-3014.*?Invalid end of SQL statement
+# Microsoft Access
+Microsoft Access (\d+ )?Driver
+JET Database Engine
+Access Database Engine
+ODBC Microsoft Access
+Syntax error \(missing operator\) in query expression
+# Ingres
+Warning.*?\Wingres_
+Ingres SQLSTATE
+Ingres\W.*?Driver
+# HSQLDB
+Unexpected end of command in statement \[
+Unexpected token.*?in statement \[
+org\.hsqldb\.jdbc
+# H2
+org\.h2\.jdbc
+\[42000-\d+\]
+# Apache Derby
+Syntax error: Encountered
+org\.apache\.derby
+ERROR 42X01
+# Vertica
+, Sqlstate: (3F|42).{3}, (Routine|Hint|Position):
+com\.vertica\.jdbc
+# Presto
+com\.facebook\.presto\.jdbc
+io\.prestosql\.jdbc
+UNION query has different number of fields: \d+, \d+
+# MonetDB
+![0-9]{5}![^\n]+(failed|unexpected|error|syntax|expected|violation|exception)
+\[MonetDB\]\[ODBC Driver
+# ClickHouse
+Code: \d+[., ]+DB::Exception:
+Syntax error: failed at position \d+
+# Virtuoso
+SQ074: Line \d+:
+Virtuoso S0002 Error
+\[(Virtuoso Driver|Virtuoso iODBC Driver)\]\[Virtuoso Server\]
+# Snowflake
+001003 \(42000\):
+SQL compilation error: (syntax )?error line \d+ at position \d+
+# Cache
+encountered after end of query
+A comparison operator is required here
+# CrateDB
+io\.crate\.client\.jdbc
+# Spanner
+type.googleapis.com/zetasql.ErrorMessageModeForPayload

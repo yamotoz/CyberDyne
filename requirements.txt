@@ -1,28 +1,29 @@
-# CyberDyne — Dependências
-# Instale com: pip install -r requirements.txt
+# =============================================================================
+#  CyberDyne v3.0 — Dependências
+#  Instale com: pip install -r requirements.txt
+#  Python 3.10+ recomendado
+# =============================================================================
 
-# Requisições HTTP e parsing
-requests>=2.31.0
-beautifulsoup4>=4.12.0
-urllib3>=2.0.0
+# ── Requisições HTTP ─────────────────────────────────────────────────────────
+requests>=2.31.0                # Todas as requisições HTTP do scanner
+urllib3>=2.0.0                  # Suporte SSL + disable warnings
 
-# Terminal colorido
-colorama>=0.4.6
+# ── Parsing HTML/XML ─────────────────────────────────────────────────────────
+beautifulsoup4>=4.12.0          # Forms, inputs, links, DOM analysis
 
-# Geração de PDF
-reportlab>=4.0.0
+# ── Terminal ─────────────────────────────────────────────────────────────────
+colorama>=0.4.6                 # Output colorido (verde/vermelho/amarelo)
 
-# Análise de tokens JWT
-PyJWT>=2.8.0
+# ── Relatórios ───────────────────────────────────────────────────────────────
+reportlab>=4.0.0                # Geração do relatório executivo em PDF
 
-# Consultas DNS (subdomain takeover)
-dnspython>=2.4.0
+# ── Segurança & Criptografia ────────────────────────────────────────────────
+PyJWT>=2.8.0                    # Decode/análise de tokens JWT (Supabase, auth)
+cryptography>=42.0.0            # Análise de certificados TLS/SSL
 
-# Criptografia e verificação de certificados TLS
-cryptography>=42.0.0
+# ── DNS ──────────────────────────────────────────────────────────────────────
+dnspython>=2.4.0                # Subdomain enumeration, zone transfer, takeover
 
-# Verificação de versões de pacotes
-packaging>=24.0
-
-# Variáveis de ambiente
-python-dotenv>=1.0.0
+# ── Utilidades ───────────────────────────────────────────────────────────────
+packaging>=24.0                 # Comparação de versões de dependências
+python-dotenv>=1.0.0            # Carregamento de API keys via .env

