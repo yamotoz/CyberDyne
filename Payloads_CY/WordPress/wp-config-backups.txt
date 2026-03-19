@@ -1,0 +1,16 @@
+wp-config.php.bak
+wp-config.php.old
+wp-config.php.orig
+wp-config.php~
+wp-config.php.swp
+wp-config.php.save
+wp-config.php.txt
+wp-config.php.dist
+wp-config.bak
+wp-config.old
+wp-config.txt
+wp-config.php_bak
+wp-config.php.backup
+wp-config.php.1
+wp-config.php.2
+wp-config-sample.php

