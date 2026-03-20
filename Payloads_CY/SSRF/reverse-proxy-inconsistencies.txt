@@ -16,12 +16,6 @@
 #/../manager/text/
 #/../html/
 #/../www/
-..;/console/
-..;/admin/
-..;/manager/html/
-..;/manager/text/
-..;/html/
-..;/www/
 ../console/
 ../admin/
 ../manager/html/

@@ -32,13 +32,11 @@ IEIeMerge:eMerge
 ADMIN:12345
 beijer:beijer
 Admin:admin
-admin:1234
 admin:1111
 root:admin
 se:1234
 admin:stingray
 device:apc
-apc:apc
 dm:ftp
 dmftp:ftp
 httpadmin:fhttpadmin

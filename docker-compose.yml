@@ -1,0 +1,36 @@
+# =============================================================================
+#  CyberDyne — Docker Compose
+#  Uso:
+#    docker compose run cyberdyne --url https://alvo.com --all -o outputs/scan01
+#    docker compose run cyberdyne --url https://alvo.com --all --live -o outputs/scan01
+#    docker compose run cyberdyne --resume outputs/scan01/.checkpoint.cyb
+# =============================================================================
+
+services:
+  # ── Versão leve (sem Playwright) ─────────────────────────────────────────
+  cyberdyne:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./outputs:/cyberdyne/outputs        # resultados saem para o host
+      - ./.env:/cyberdyne/.env:ro            # API keys (read-only)
+    ports:
+      - "5000:5000"                          # --live dashboard
+    stdin_open: true
+    tty: true
+    network_mode: host                       # acesso direto à rede (scans)
+
+  # ── Versão completa com Playwright (--browser-mimic) ─────────────────────
+  cyberdyne-full:
+    build:
+      context: .
+      dockerfile: Dockerfile.full
+    volumes:
+      - ./outputs:/cyberdyne/outputs
+      - ./.env:/cyberdyne/.env:ro
+    ports:
+      - "5000:5000"
+    stdin_open: true
+    tty: true
+    network_mode: host

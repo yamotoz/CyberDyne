@@ -124,7 +124,6 @@ hacker:compass
 samurai:samurai
 ubuntu:ubuntu
 root:openvpnas
-misp:Password1234
 root:wazuh
 student:password123
 root:roottoor

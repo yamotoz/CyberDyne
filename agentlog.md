@@ -1,11 +1,13 @@
 # Diario de Bordo -- CyberDyne (Agente Principal)
 
-## Status Atual: v4.0 -- Em Desenvolvimento Ativo
+## Status Atual: v4.5 -- Em Desenvolvimento Ativo
 
-* **Ultima atualizacao:** 19/03/2026
+* **Ultima atualizacao:** 20/03/2026
 * **Scripts ativos:** `CyberDyneWeb.py` (scanner web)
-* **Total de linhas:** ~11.400
-* **Total de checks de vulnerabilidade:** 111+
+* **Total de linhas:** ~14.600
+* **Total de checks de vulnerabilidade:** 113+ (core) + 6 browser-mimic + WP Audit
+* **Pastas de payload:** 33 (Payloads_CY/)
+* **Total de payloads:** ~32.000 linhas unicas
 
 ---
 
@@ -74,12 +76,17 @@ main()
   |                         -> TODOS os 111+ checks rodam autenticados automaticamente
   |
   +-- FASE 2: VulnScanner.run_all()
-  |     +-- 111+ checks em 8 GRUPOS PARALELOS (max_workers=8 por grupo)
+  |     +-- 113+ checks em 8 GRUPOS PARALELOS (workers dinamicos: 8/12/16 por intensity)
   |           -> cada check individual tem timeout=45s via ThreadPoolExecutor(1)
   |           -> OWASP Top 10, IA, BaaS/Cloud, Recon/DNS, Infra, Logica, Advanced
+  |           -> [NOVO v4.5] Spinner animado + percentual + ETA recalculado por check
+  |           -> [NOVO v4.5] check_js_vulnerable_libs (vuln 113) — Retire.js-style 27 libs
   |           -> se _auth_cookies esta preenchido, testa TAMBEM a area logada
   |           -> Grupos incluem: check_sqli_boolean_blind (108), check_sqli_union (109),
-  |              check_graphql_csrf (110), check_waf_bypass (111)
+  |              check_graphql_csrf (110), check_waf_bypass (111),
+  |              check_js_vulnerable_libs (113 — Retire.js-style)
+  |           -> [NOVO v4.5] Spinner animado + percentual + ETA recalculado
+  |           -> [NOVO v4.5] Workers dinamicos: medium=8, hard=12, insane=16
   |
   +-- FASE 3: Relatorios
   |     +-- [Gemini] _call_gemini() -> sumario executivo + prompt recall inteligente
@@ -365,6 +372,8 @@ Aplica um dos 5 metodos de encoding ao payload:
 - **Nao** reintroduzir DNS BF por wordlist -- gera 404s em massa, sem valor pratico
 - **Nao** bloquear o scan por falha de API -- `_call_gemini()` e todas as APIs devem ser `try/except` silencioso
 - **Nao** committar o `.env` no git -- `.gitignore` ja protege, mas nunca remover essa entrada
+- **Nao** remover `.checkpoint.cyb` da `.gitignore` -- contem estado do scan com URLs e cookies
+- **Nao** usar `safe_get()` dentro de `_regex_crawl()` ou `analyze_headers()` -- usar `requests.get()` direto para evitar stealth delay no crawl
 - **Nunca** remover WAF bypass payloads de `Payloads_CY/WAF-Bypass/` -- sao a fonte para `check_waf_bypass()` (vuln 111). Sem eles o check nao funciona.
 - **Nunca** simplificar os checks de SQLi de volta para keyword matching simples -- os 140 patterns do sqlmap sao criticos para deteccao precisa em 30+ DBMS. Keyword matching gera falsos positivos massivos.
 - **Nunca** remover o filter checking do XSS (`<>"'` test antes dos payloads) -- e o principal ganho de eficiencia vindo do XSStrike. Sem ele, o scanner gasta requests desnecessarios em alvos que filtram tudo.
@@ -697,6 +706,34 @@ Novos payloads conectados na v4.0:
 
 ## Changelog Resumido
 
+### v4.1 -- 20/03/2026
+- **~13.900 linhas** (era ~12.000 na v4.0)
+- **Checkpoint/Resume**: Auto-save `.checkpoint.cyb` apos cada grupo de vulns. `--resume FILE` retoma scan de onde parou.
+  - `_save_checkpoint()`: serializa estado completo (target, URLs, recon, results, cookies, modos)
+  - `_load_checkpoint()`: reconstitui VulnResults e restaura estado
+  - Auto-remove `.checkpoint.cyb` quando scan finaliza com sucesso
+  - `run_all(skip_ids=, resume_group=)`: pula checks ja completados
+- **Docker**: Dockerfile (leve ~250MB), Dockerfile.full (com Playwright ~1.5GB), docker-compose.yml, .dockerignore
+  - Volume monta `./outputs` e `.env` (read-only)
+  - `network_mode: host` para acesso direto a rede
+  - Porta 5000 exposta para --live dashboard
+- **WordPress Security Audit (--wp)**: classe WPAudit com 12 checks especializados
+  - Deteccao de versao WP (5 metodos: meta generator, feed, readme.html, login page, hash comparison)
+  - Enumeracao de plugins (top-500 wordlist, 20 threads, deteccao de versao via readme.txt)
+  - Enumeracao de temas (style.css version extraction)
+  - Enumeracao de usuarios (REST API /wp-json/wp/v2/users + author ID enumeration)
+  - xmlrpc.php testes (system.listMethods, pingback.ping, multicall amplification)
+  - wp-cron.php DoS check
+  - Debug log exposure (wp-content/debug.log)
+  - Config backup discovery (wp-config.php.bak, .old, .save, ~, .swp)
+  - REST API auth bypass
+  - Upload directory listing
+  - WP-Login brute force protection check
+  - CVE correlation via Vulners/NVD APIs para versoes detectadas
+  - Roda automaticamente se --all + WordPress detectado, ou com --wp explicito
+- **Crawl fix**: `_regex_crawl()` e `analyze_headers()` agora usam `requests.get()` direto em vez de `safe_get()` para evitar stealth delay no crawl
+- **Pylance fix**: `from concurrent.futures import ThreadPoolExecutor` adicionado para resolver warning
+
 ### v4.0 -- 19/03/2026
 - **~12.000 linhas** (era ~10.000 na v3.0)
 - **CLI completa com argparse**: `--url`, `--login`, `-ul`, `-pl`, `--all`, `--recon`, `--vuln`, `--stealth`, `--ai-payloads`, `--live`, `--project`
@@ -717,6 +754,17 @@ Novos payloads conectados na v4.0:
 - SQLi/XSS/GraphQL/Supabase/WAF/AI checks reescritos com tecnicas avancadas
 - linkfinder_scan() como step 12 do recon
 
+### v4.5 -- 20/03/2026
+- **Payload Intensity Levels**: --medium (30%), --hard (60%), --insane (100%)
+- **Crypto Audit Avancado**: ROT13, hex encoding, rainbow table expandida (30 hashes), cookies sequenciais, double-base64
+- **Retire.js Scanner** (vuln 113): 27 bibliotecas JS monitoradas com CVE correlation
+- **Progress Display**: spinner animado, percentual, ETA recalculado por check
+- **Threads Dinamicos**: 8/12/16 workers vinculados ao intensity level
+- **Extracao de Payloads**: +31.972 payloads de 5 pastas externas (kali, FUZZING, etc.)
+- **Go Turbo Recon** (--go): modulo Go para reconhecimento 10-50x mais rapido
+- **Deduplicacao**: 10.432 linhas duplicadas removidas, 65 arquivos vazios limpos
+- Pastas deletadas: payloads_diversos, Black-Hat-Python-main, PenTest-Scripts, FUZZING, payloadsallthethings
+
 ### v2.0 -- 17/03/2026
 - Gemini AI, PDF elegante, Payloads_CY, VulnScanner paralelo, Chaos API, 8 APIs
 
@@ -725,4 +773,35 @@ Novos payloads conectados na v4.0:
 
 ---
 
-*Agente responsavel pela ultima atualizacao: Claude Opus 4.6 -- 19/03/2026*
+## Notas Tecnicas para Futuros Agentes
+
+### _PAYLOAD_INTENSITY (v4.5)
+- Global float: 0.3 (medium), 0.6 (hard), 1.0 (insane)
+- Afeta TODAS as chamadas de `_load_payload()` automaticamente
+- Tambem controla threads: 8/12/16 workers por grupo
+- Para adicionar novo check com payloads, basta usar `_load_payload("caminho", limit)` — o intensity ja se aplica
+
+### _JS_VULN_DB (v4.5)
+- Dict de class em VulnScanner com 27 bibliotecas JS
+- Para adicionar nova lib: `"nome": [{"below": "X.Y.Z", "cves": [...], "severity": "...", "desc": "..."}]`
+- Helper `_version_lt(v1, v2)` compara semver (split por . e compara ints)
+
+### Crypto Audit (v4.5 expansion)
+- `_KNOWN_HASHES`: dict com ~30 hashes MD5/SHA1/SHA256 de senhas comuns
+- 10 checks: TLS, HTTP redirect, plaintext creds, base64 decode, MD5/SHA1 rainbow, entropia, timestamps, connection strings, ROT13, hex encoding, cookies sequenciais
+- Para expandir rainbow table: adicionar entrada `"hash_hex": "plaintext"` no dict
+
+---
+
+### Go Turbo Recon (v4.5)
+- Binario Go em `recon_go/main.go` — compile com `go build -o cyberdyne-recon .`
+- Recebe target URL como argumento, output JSON para stdout, progress para stderr
+- Python chama via `subprocess.run()` com timeout 300s
+- Se binario nao encontrado ou falhar, fallback automatico para Python
+- 4 fontes de subdominio em paralelo (crt.sh, HackerTarget, Wayback, OTX)
+- 100 goroutines para validacao de URLs, 50 para port scan
+- NÃO substitui steps do Python que requerem API keys (Shodan, VirusTotal, etc.)
+
+---
+
+*Agente responsavel pela ultima atualizacao: Claude Opus 4.6 -- 20/03/2026*

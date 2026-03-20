@@ -17,7 +17,6 @@ popen
 include
 create_function
 mysql_execute
-php_uname
 proc_open
 pcntl_exec
 ``
@@ -62,7 +61,6 @@ file_put_contents
 lchgrp
 lchown
 link
-mkdir
 move_uploaded_file
 symlink
 tempnam

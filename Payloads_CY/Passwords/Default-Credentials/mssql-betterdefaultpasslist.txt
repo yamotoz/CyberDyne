@@ -36,7 +36,6 @@ admin:gnos
 sa:Dr8gedog
 sa:dr8gedog
 sa:Password123
-sa:DBA!sa@EMSDB123
 sa:SECAdmin1
 sa:skf_admin1
 sa:SecurityMaster08

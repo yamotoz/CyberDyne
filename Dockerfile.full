@@ -1,0 +1,25 @@
+# =============================================================================
+#  CyberDyne — Dockerfile.full (~1.5GB)
+#  Versão COMPLETA com Playwright + Chromium (--browser-mimic)
+# =============================================================================
+FROM mcr.microsoft.com/playwright/python:v1.42.0-jammy
+
+WORKDIR /cyberdyne
+
+# Instalar todas as dependências Python
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt && \
+    playwright install chromium
+
+# Copiar código e payloads
+COPY CyberDyneWeb.py .
+COPY Payloads_CY/ Payloads_CY/
+
+# Porta do dashboard --live
+EXPOSE 5000
+
+# Volume para outputs e .env
+VOLUME ["/cyberdyne/outputs"]
+
+ENTRYPOINT ["python", "CyberDyneWeb.py"]
+CMD ["--help"]

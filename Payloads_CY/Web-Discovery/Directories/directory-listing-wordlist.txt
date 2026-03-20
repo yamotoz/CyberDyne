@@ -57,7 +57,6 @@ application.yaml
 app.config
 app.json
 web.config
-config.inc
 config.php.bak
 config.php.old
 config.php.save
@@ -94,7 +93,6 @@ settings.inc
 /whm/
 /whmcs/
 /webmail/
-/roundcube/
 /roundcube/
 /squirrelmail/
 /horde/
@@ -172,8 +170,6 @@ authorize.php
 /configuration.php
 /configuration.php.bak
 /configuration.php.old
-/administrator/
-/administrator/index.php
 /installation/
 /tmp/
 /logs/
@@ -181,7 +177,6 @@ authorize.php
 # ============================================
 # LARAVEL / PHP FRAMEWORKS
 # ============================================
-/.env
 /.env
 /.env.backup
 /.env.production
@@ -265,7 +260,6 @@ authorize.php
 /venv/
 /.venv/
 /env/
-/.env
 /manage.py
 /settings.py
 /urls.py
@@ -285,7 +279,6 @@ debug.log
 /db/schema.rb
 /db/migrate/
 /log/
-/tmp/
 /public/system/
 /config/database.yml
 /config/secrets.yml
@@ -348,12 +341,10 @@ debug.log
 # CI/CD & DEPLOYMENT
 # ============================================
 /.travis.yml
-/.travis.yml
 /.circleci/config.yml
 /.circleci/
 /.github/workflows/
 /.github/
-/.gitlab-ci.yml
 /.gitlab-ci.yml
 /bitbucket-pipelines.yml
 /bitbucket-pipelines/
@@ -383,7 +374,6 @@ debug.log
 # ============================================
 # CLOUD & INFRASTRUCTURE
 # ============================================
-/.aws/credentials
 /.aws/credentials
 /.aws/config
 /aws/credentials
@@ -436,11 +426,6 @@ debug.log
 # ============================================
 # DEBUG & DEVELOPMENT TOOLS
 # ============================================
-/debug/
-/debug/vars
-/debug/pprof/
-/debug/routes
-/console/
 /console.html
 /shell/
 /_shell/
@@ -459,7 +444,6 @@ debug.log
 /test.php
 /test/
 /php.php
-/ping
 /echo
 /debug
 
@@ -496,8 +480,6 @@ debug.log
 # ============================================
 # LOG FILES
 # ============================================
-/logs/
-/log/
 /log.txt
 /debug.log
 /error.log
@@ -505,7 +487,6 @@ debug.log
 /app.log
 /application.log
 /laravel.log
-/storage/logs/laravel.log
 /apache.log
 /access_log
 /error_log
@@ -513,7 +494,6 @@ debug.log
 /postgres.log
 /nginx.log
 /elasticsearch.log
-/application.log
 /system.log
 /event.log
 
@@ -525,7 +505,6 @@ debug.log
 /var/log/nginx/
 /var/log/mysql/
 /var/log/syslog
-/tmp/
 /temp/
 /cache/
 /cache/data/
@@ -545,9 +524,7 @@ debug.log
 /api/v3/
 /api-docs/
 /swagger/
-/swagger-ui/
 /swagger.json
-/openapi.json
 /graphql
 /graphiql
 /graphql-console
@@ -565,15 +542,12 @@ debug.log
 # CONTENT MANAGEMENT
 # ============================================
 /cms/
-/manage/
 /editor/
 /filemanager/
 /fileman/
 /file-manager/
-/files/
 /media/
 /images/
-/uploads/
 /documents/
 /attachments/
 /downloads/
@@ -676,7 +650,6 @@ clientaccesspolicy.xml
 /indexes
 /sitemap.xml
 /robots.txt
-/sitemap.xml
 /feeds/
 /rss/
 /atom/

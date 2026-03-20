@@ -200,7 +200,6 @@ publisher
 subscriber
 subscription
 cloud20
-uat
 git
 ai
 shell

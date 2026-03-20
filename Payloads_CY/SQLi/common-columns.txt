@@ -856,73 +856,9 @@ xar_pass
 
 # List from http://nibblesec.org/files/MSAccessSQLi/MSAccessSQLi.html
 
-account
-accnts
-accnt
-user_id
-members
-usrs
-usr2
-accounts
-admin
-admins
-adminlogin
-auth
-authenticate
-authentication
-account
-access
-customers
-customer
-config
-conf
-cfg
-hash
-login
 logout
-loginout
-log
-member
-memberid
-password
-pass_hash
-pass
-passwd
-passw
-pword
-pwrd
-pwd
-store
-store1
-store2
-store3
-store4
-setting
-username
-name
-user
-user_name
-user_username
-uname
-user_uname
-usern
 user_usern
-un
-user_un
-usrnm
-user_usrnm
-usr
-usernm
-user_usernm
 user_nm
-user_password
-userpass
-user_pass
-user_pword
-user_passw
-user_pwrd
-user_pwd
-user_passwd
 
 # List from hyrax (http://sla.ckers.org/forum/read.php?16,36047)
 
@@ -2624,7 +2560,6 @@ skype
 lastsearchtime
 bio
 lastpostid
-idcard
 postdatetime
 question
 poster
@@ -2726,13 +2661,8 @@ login_count
 
 credit
 card
-pin
-cvv
 pan
-password
 social
-ssn
-account
 confidential
 
 # site:nl
@@ -2750,13 +2680,11 @@ voornaam
 achternaam
 geslacht
 huisnummer
-gemeente
 leeftijd
 
 # site:cn
 
 yonghuming
-mima
 xingming
 xingbie
 touxiang
@@ -2775,7 +2703,6 @@ aikotoba
 amho
 bimilbeonho
 codewort
-contrasena
 contrasenya
 contrasinal
 esmeramz
@@ -2799,8 +2726,6 @@ kalimatumurur
 kalimatusirr
 kalmarsirri
 katalaluan
-katasandi
-kennwort
 kodeord
 kodikos
 kouling
@@ -2811,21 +2736,15 @@ kupuuru
 kupuwhakahipa
 losen
 losenord
-lozinka
 lykilord
-matkhau
-mima
 nenosiri
 nywila
 okwuntughe
 oroasina
 oroigbaniwole
 paeseuwodeu
-parol
-parola
 parolachiave
 paroladordine
-parole
 paroli
 parolja
 parool
@@ -2834,7 +2753,6 @@ pasahitza
 pasfhocal
 pasowardo
 passord
-passwort
 pasuwado
 pasvorto
 rahatphan
@@ -2842,13 +2760,9 @@ ramzobur
 salasana
 salasona
 santoysena
-senha
-sifra
-sifre
 sisma
 slaptazodis
 synthimatiko
 tunnussana
-wachtwoord
 wachtwurd
 wagwoord

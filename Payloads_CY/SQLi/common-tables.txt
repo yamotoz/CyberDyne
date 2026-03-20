@@ -1851,52 +1851,32 @@ Logins
 
 # List from http://nibblesec.org/files/MSAccessSQLi/MSAccessSQLi.html
 
-account
 accnts
 accnt
 user_id
-members
 usrs
 usr2
-accounts
-admin
-admins
 adminlogin
 auth
 authenticate
 authentication
-account
 access
-customers
-customer
-config
 conf
 cfg
 hash
-login
 logout
 loginout
-log
-member
 memberid
-password
 pass_hash
 pass
 passwd
 passw
 pword
 pwrd
-pwd
-store
 store1
 store2
 store3
 store4
-setting
-username
-name
-user
-user_name
 user_username
 uname
 user_uname
@@ -1933,7 +1913,6 @@ tblservers
 id
 uid
 userid
-user_id
 auid
 adminpass
 LoginID
@@ -2000,7 +1979,6 @@ adminusername
 admin_username
 adminname
 admin_name
-usr
 usr_n
 usrname
 usr_name
@@ -2016,9 +1994,6 @@ admin_password
 admin_passwords
 usrpass
 usr_pass
-pass
-userpass
-user_pass
 dbaccount
 dbstudent
 dbstudents
@@ -2032,13 +2007,10 @@ list
 lists
 dblist
 userpassword
-user_password
 userpwd
-user_pwd
 SecurityLevel
 LastLoginDate
 LoginIP
-pword
 ad
 Konto
 Konten
@@ -2148,7 +2120,6 @@ user_pw
 Benutzerliste
 userpasswd
 usr_pw
-usrs
 Benutzername
 Benutzernamen
 vip
@@ -2272,16 +2243,12 @@ jos_jf_content
 
 # site:fr
 
-facture
 factures
 devis
-commande
 bon_commande
 bon_livraison
-fournisseur
 panier
 paiement
-reglement
 Avion
 departement
 Compagnie
@@ -2849,7 +2816,6 @@ juese
 caidan
 xinxi
 shuju
-guanliyuan
 xitong
 peizhi
 canshu
@@ -3034,7 +3000,6 @@ fiyat
 fiyatlar
 odeme
 odemeler
-kategoriler
 tbl_Uye
 xml_kategoriler
 tbl_siparis
@@ -3211,64 +3176,31 @@ user_data
 
 # https://laurent22.github.io/so-injections/
 
-accounts
-admin
 baza_site
 benutzer
-category
-comments
-company
 credentials
 Customer
-customers
-data
 details
 dhruv_users
 dt_tb
-employees
-events
 forsale
-friends
 giorni
-images
-info
-items
 kontabankowe
-login
-logs
-markers
-members
-messages
-orders
 order_table
-photos
 player
 players
 points
-register
-reports
-rooms
 shells
 signup
 songs
-student
-students
-table
 table2
 tbl_images
-tblproduct
 testv2
 tickets
 topicinfo
 trabajo
-user
 user_auth
-userinfo
-user_info
 userregister
-users
-usuarios
-utenti
 wm_products
 wp_payout_history
 zamowienia
@@ -3279,34 +3211,21 @@ wp_blogmeta
 wp_blogs
 wp_blog_versions
 wp_commentmeta
-wp_comments
-wp_links
-wp_options
-wp_postmeta
-wp_posts
 wp_registration_log
 wp_signups
 wp_site
 wp_sitemeta
 wp_termmeta
-wp_term_relationships
-wp_terms
-wp_term_taxonomy
-wp_usermeta
-wp_users
 
 # https://docs.joomla.org/Tables
 
 assets
 bannerclient
-banner
 bannertrack
-categories
 components
 contact_details
 content_frontpage
 content_rating
-content
 core_acl_aro_groups
 core_acl_aro_map
 core_acl_aro_sections
@@ -3315,15 +3234,10 @@ core_acl_groups_aro_map
 core_log_items
 core_log_searches
 extensions
-groups
-languages
-menu
 menu_types
 messages_cfg
-messages
 migration_backlinks
 modules_menu
-modules
 newsfeeds
 plugins
 poll_data
@@ -3332,8 +3246,6 @@ poll_menu
 polls
 redirect_links
 Schemas
-sections
-session
 stats_agents
 templates_menu
 template_styles
@@ -3343,7 +3255,6 @@ update_sites
 updates
 usergroups
 user_profiles
-users
 user_usergroup_map
 viewlevels
 weblinks
@@ -3410,7 +3321,6 @@ oauth_refresh_tokens
 webhooks
 webhook_events
 secrets
-credentials
 audit_logs
 activity_logs
 system_settings

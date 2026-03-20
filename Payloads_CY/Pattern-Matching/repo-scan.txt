@@ -58,16 +58,11 @@ pcntl_exec
 eval
 preg_replace
 create_function
-exec
 passthru
-system
 shell_exec
-popen
 proc_open
-pcntl_exec
 assert
 preg_replace('/.*/e',
-create_function
 include
 include_once
 require
@@ -103,7 +98,6 @@ pfsockopen
 fsockopen
 apache_child_terminate
 posix_kill
-posix_mkfifo
 posix_setpgid
 posix_setsid
 posix_setuid

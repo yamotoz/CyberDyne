@@ -11,11 +11,11 @@
  ╚═════╝   ╚═╝   ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═════╝    ╚═╝   ╚═╝  ╚═══╝╚══════╝
 ```
 
-**v4.0 — Web Vulnerability Scanner & Recon Suite**
+**v4.5 — Web Vulnerability Scanner & Recon Suite**
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
-[![Checks](https://img.shields.io/badge/Vulnerability%20Checks-111%2B-red?style=flat-square)]()
+[![Checks](https://img.shields.io/badge/Vulnerability%20Checks-113%2B-red?style=flat-square)]()
 [![Zero Binaries](https://img.shields.io/badge/External%20Binaries-Zero-brightgreen?style=flat-square)]()
 
 > *"O codigo que voce nao testou e o ataque que voce nao viu vir."*
@@ -70,8 +70,11 @@ python CyberDyneWeb.py --url https://alvo.com --all
 | **Gemini AI** | Sumario executivo no PDF + prompt_recall.md com fixes tecnicos gerados por IA |
 | **PDF Elegante** | Capa dark, risk gauge, severity badges, vulnerability cards coloridos, paginacao |
 | **8 APIs OSINT** | Gemini, Shodan, VirusTotal, SecurityTrails, Chaos, Hunter.io, HIBP, GitHub |
-| **29 Pastas Payload** | SQLi, XSS, LFI, SSRF, SSTI, NoSQL, LDAP, XPath, CRLF, WAF-Bypass, Kubernetes, IaC, AWS, Firebase, GraphQL, AI-LLM, Business-Logic e mais |
-| **8 Grupos Paralelos** | ~14 min vs ~80 min sequencial |
+| **33 Pastas Payload** | SQLi, XSS, LFI, SSRF, SSTI, NoSQL, LDAP, XPath, CRLF, WAF-Bypass, XXE, Open-Redirect, User-Agents, Kubernetes, IaC, AWS, Firebase, GraphQL, AI-LLM, Business-Logic e mais |
+| **8 Grupos Paralelos** | 8-16 workers dinamicos por intensity level |
+| **Intensity Levels** | `--medium` (30% rapido) · `--hard` (60% padrao) · `--insane` (100% arsenal completo ~32K payloads) |
+| **Crypto Audit** | TLS + rainbow table MD5/SHA1/SHA256 + base64 decode + ROT13 + hex encoding + entropia de tokens + connection strings + cookies sequenciais |
+| **Retire.js Scanner** | 27 bibliotecas JS monitoradas (jQuery, Angular, Vue, React, Lodash, Moment, Bootstrap...) com CVE correlation |
 
 ---
 
@@ -117,8 +120,8 @@ Host Header Injection · HTTP Smuggling · HTTP Splitting · Cache Poisoning · 
 **Logica / Autenticacao (076-100)**
 Broken Auth · File Upload · Insecure Cookies · Account Enumeration · Password Reset · Session Fixation · Function-Level Auth · OAuth · 2FA Bypass · IDOR · Business Logic · NoSQL Injection · ReDoS · XML Bomb · ZIP Slip · LDAP Injection · XPath Injection · SSTI · HPP · Default Credentials · TLS/SSL · Certificate Transparency · Mixed Content · Sensitive Data in URL · Error Messages · Security.txt
 
-**Advanced (101-111)**
-Sensitive Paths (250+) · Swagger/API Docs · HPP · Default Credentials · Deserialization RCE · Web Cache Deception · JS Secrets (14 tipos + 13 patterns) · SQL Injection Boolean Blind · SQL Injection UNION · GraphQL CSRF · WAF Bypass (120 payloads x 5 zones x 5 encodings + vendor detection)
+**Advanced (101-113)**
+Sensitive Paths (250+) · Swagger/API Docs · HPP · Default Credentials · Deserialization RCE · Web Cache Deception · JS Secrets (14 tipos + 13 patterns) · SQL Injection Boolean Blind · SQL Injection UNION · GraphQL CSRF · WAF Bypass (120 payloads x 5 zones x 5 encodings + vendor detection) · 403 Bypass (path, header, method mutation) · **JS Libraries Vulneraveis (Retire.js-style, 27 libs, CVE correlation)**
 
 ### Fase 2.5 — Browser Mimic (`--browser-mimic`)
 
@@ -195,6 +198,39 @@ python CyberDyneWeb.py --url https://alvo.com --all
 > Se `reportlab` falhar: `pip install --no-build-isolation reportlab`
 > Se ainda falhar, o script roda sem PDF.
 
+### Docker
+
+**Versao leve (sem Playwright, ~250MB):**
+```bash
+docker build -t cyberdyne .
+docker run --rm -v $(pwd)/outputs:/cyberdyne/outputs -v $(pwd)/.env:/cyberdyne/.env:ro \
+  cyberdyne --url https://alvo.com --all -o outputs/scan01
+```
+
+**Versao completa com Playwright (~1.5GB):**
+```bash
+docker build -f Dockerfile.full -t cyberdyne-full .
+docker run --rm -v $(pwd)/outputs:/cyberdyne/outputs -v $(pwd)/.env:/cyberdyne/.env:ro \
+  cyberdyne-full --url https://alvo.com --all --browser-mimic -o outputs/scan01
+```
+
+**Com docker-compose:**
+```bash
+# Scan leve
+docker compose run cyberdyne --url https://alvo.com --all -o outputs/scan01
+
+# Scan completo com Playwright
+docker compose run cyberdyne-full --url https://alvo.com --all --browser-mimic -o outputs/scan01
+
+# Com dashboard --live
+docker compose run -p 5000:5000 cyberdyne --url https://alvo.com --all --live -o outputs/scan01
+
+# Retomar de checkpoint
+docker compose run cyberdyne --resume outputs/scan01/.checkpoint.cyb
+```
+
+> Resultados salvos em `./outputs/` no host. API keys lidas do `.env` em modo read-only.
+
 ---
 
 ## Execucao
@@ -224,10 +260,10 @@ python CyberDyneWeb.py --url https://alvo.com --all --ai-payloads -o ai_scan
 python CyberDyneWeb.py --url https://alvo.com --all --live -o live_scan
 
 # Browser Mimic — testes client-side com Chromium real
-python CyberDyneWeb.py --url https://alvo.com --all --browser-mimic -o browser_scan
+python CyberDyneWeb.py --url https://alvo.com --all --browser-mimic-ns -o browser_scan
 
 # Tudo junto — o scan mais completo possivel
-python CyberDyneWeb.py --url https://alvo.com --login https://alvo.com/login -ul admin -pl senha --all --stealth --ai-payloads --live --browser-mimic -o full_scan
+python CyberDyneWeb.py --url https://alvo.com --login https://alvo.com/login -ul admin -pl senha --all --stealth --ai-payloads --live --browser-mimic-s -o full_scan
 ```
 
 ### Modo Interativo
@@ -252,8 +288,116 @@ O script pergunta tudo interativamente: URL, login, credenciais, tipo de scan.
 | `--stealth` | Delay aleatorio (0.3-1.5s) + rotacao de User-Agent |
 | `--ai-payloads` | Gemini gera 15 payloads especificos por alvo (XSS, SQLi, LFI, RCE, SSTI, SSRF) |
 | `--live` | Dashboard Flask em `localhost:5000` |
-| `--browser-mimic` | Playwright: DOM XSS real, clickjacking iframe, storage leaks, SPA routes |
+| `--browser-mimic-s` | Browser Mimic **SHOW**: abre Chromium visivel — mouse mexendo, digitando, tudo ao vivo |
+| `--browser-mimic-ns` | Browser Mimic **NO-SHOW**: roda em background (headless, mais rapido) |
+| `--wp` | WordPress Security Audit (plugins, themes, users, xmlrpc, CVEs) |
+| `--medium` | 30% dos payloads — scan rapido, ideal para reconhecimento inicial |
+| `--hard` | 60% dos payloads — balanceado (padrao se nenhum nivel for especificado) |
+| `--insane` | 100% dos payloads — completo, sem piedade, arsenal total (~32K payloads) |
+| `--go` | Reconhecimento via Go (10-50x mais rapido que Python). Requer compilacao do binario |
+| `--resume FILE` | Retomar scan de checkpoint (`.cyb`) — scans longos podem ser pausados e retomados |
 | `-o NOME` / `--output` | Nome da pasta de output (ex: `-o meu_projeto`) |
+
+### Go Turbo Recon (`--go`)
+
+Reconhecimento **10-50x mais rapido** usando goroutines do Go. Essa feature e **opcional** — sem ela o script roda normalmente com Python.
+
+#### 1. Instalar o Go
+
+Baixe e instale em [https://go.dev/dl/](https://go.dev/dl/) (escolha o instalador do seu sistema).
+
+Apos instalar, **feche e abra o terminal** para o Go entrar no PATH. Confirme com:
+
+```bash
+go version
+# deve mostrar algo como: go version go1.22.0 windows/amd64
+```
+
+#### 2. Compilar o binario (uma unica vez)
+
+Abra o terminal na pasta do CyberDyne e execute:
+
+**Windows (CMD ou PowerShell):**
+```bash
+cd recon_go
+go build -o ../cyberdyne-recon.exe .
+cd ..
+```
+
+**Linux / macOS:**
+```bash
+cd recon_go
+go build -o ../cyberdyne-recon .
+cd ..
+```
+
+Isso gera o arquivo `cyberdyne-recon.exe` (ou `cyberdyne-recon` no Linux) na raiz do projeto. Esse passo so precisa ser feito **uma vez**.
+
+#### 3. Verificar se compilou
+
+```bash
+# Windows
+dir cyberdyne-recon.exe
+
+# Linux/Mac
+ls -la cyberdyne-recon
+```
+
+Deve mostrar o arquivo (~9MB). Se aparecer, esta pronto.
+
+#### 4. Usar
+
+Adicione `--go` em qualquer comando:
+
+```bash
+# Scan completo com Go Recon
+python CyberDyneWeb.py --url https://alvo.com --all --go -o meu_scan
+
+# Apenas recon com Go
+python CyberDyneWeb.py --url https://alvo.com --recon --go -o recon_rapido
+
+# Scan completo + stealth + Go
+python CyberDyneWeb.py --url https://alvo.com --all --go --stealth --hard -o full_scan
+```
+
+O terminal vai mostrar:
+
+```
+══════════════════════════════════════════════════════════
+  FASE 1 — RECONHECIMENTO (Go Turbo)
+══════════════════════════════════════════════════════════
+  [GO] Usando binário: cyberdyne-recon.exe
+  [GO-RECON] Alvo: https://alvo.com | Dominio: alvo.com
+  [GO-RECON] Enumerando subdomínios (4 fontes paralelas)...
+  [GO-RECON] 47 subdomínios encontrados
+  [GO-RECON] Coletando URLs (Wayback CDX)...
+  [GO-RECON] 312 URLs coletadas | 89 com params (FUZZ)
+  [GO-RECON] Validando URLs ativas (100 goroutines)...
+  [GO-RECON] 23 URLs ativas confirmadas
+  [GO-RECON] Port scan (37 portas)...
+  [GO-RECON] 3 portas abertas encontradas
+  [GO] Completo em 12.3s | 47 subs | 312 URLs | 89 FUZZ | 3 portas
+```
+
+#### Se o Go nao estiver instalado ou o binario nao existir
+
+O script **nao quebra** — ele mostra um aviso e usa o Python automaticamente:
+
+```
+  [GO] Binário não encontrado. Compile com: cd recon_go && go build -o cyberdyne-recon .
+  [GO] Usando Python para reconhecimento...
+```
+
+#### Comparativo de performance
+
+| Etapa | Python | Go |
+|-------|--------|-----|
+| Subdominios (4 fontes) | ~15s | ~2s |
+| Coleta de URLs | ~20s | ~3s |
+| Validacao de URLs | ~30s | ~3s |
+| Port scan (37 portas) | ~20s | ~2s |
+| Crawl HTML (depth=2) | ~25s | ~5s |
+| **Total** | **~2-5 min** | **~15-30s** |
 
 ---
 
@@ -272,6 +416,6 @@ O script pergunta tudo interativamente: URL, login, credenciais, tipo de scan.
 
 *"Seguranca nao e um produto. E um processo."* — Bruce Schneier
 
-*v4.0 — 19/03/2026*
+*v4.5 — 20/03/2026*
 
 </div>

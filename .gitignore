@@ -12,6 +12,12 @@
 id_rsa
 id_ed25519
 
+# ── Go binários compilados — cada pessoa compila o seu ───────────────────────
+cyberdyne-recon
+cyberdyne-recon.exe
+recon_go/cyberdyne-recon
+recon_go/cyberdyne-recon.exe
+
 # ── Resultados de scans — dados sensíveis do alvo ────────────────────────────
 # Cada projeto gera uma pasta com relatórios; não commitar por padrão
 */cyberdyne_report.pdf

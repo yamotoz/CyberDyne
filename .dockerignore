@@ -1,0 +1,56 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Outputs de scans anteriores
+outputs/
+*/cyberdyne_report.pdf
+*/prompt_recall.md
+*/raw_results.json
+*/recon_*.json
+*/.checkpoint.cyb
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+venv/
+.venv/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Pastas de ferramentas já integradas (não precisam ir pro container)
+sqlmap/
+XSStrike/
+jwt_tool/
+wpscan/
+wp-to-payload/
+Lockdoor-Framework/
+forbidden/
+Corscan/
+file-scraper/
+graphql-cop/
+supabase-rls-checker/
+waf-bypass/
+prompt-inject-fuzzer/
+LinkFinder/
+
+# Docs e imagens (não necessários no container)
+*.md
+!README.md
+Img_vid/
+cyber.png
+Logo_CY.png
+
+# OS
+.DS_Store
+Thumbs.db

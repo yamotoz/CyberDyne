@@ -18,7 +18,6 @@ X-Request-ID: f058ebd6-02f7-4d3f-942e-904344e8cde5
 X-Requested-With: XMLHttpRequest
 X-UIDH: 31337DEADBEEFCAFE
 X-Wap-Profile: http://wap.samsungmobile.com/uaprof/SGH-I777.xml
-X-XSRF-TOKEN: DECAFC0FFEEBAD
 Client-IP: 127.0.0.1
 True-Client-IP: 127.0.0.1
 Cluster-Client-IP: 127.0.0.1

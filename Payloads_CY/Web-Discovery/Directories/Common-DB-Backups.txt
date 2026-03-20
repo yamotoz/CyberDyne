@@ -328,7 +328,6 @@ back.sql
 backups.sql
 clients.sql
 customers.sql
-data.sql
 database.sql
 database.sqlite
 setup.sql

@@ -721,7 +721,6 @@ role
 role1
 roo
 root
-root
 root@localhost
 rsadmin
 rw

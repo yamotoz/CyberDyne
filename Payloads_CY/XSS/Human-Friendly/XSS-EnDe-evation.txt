@@ -78,7 +78,6 @@ jAvasCript:confirm(42)
 jAvas\Cript:confirm(42)
 jAvas	Cript:confirm(42)
 jAvas/* */Cript:confirm(42)
- javascript:alert(42)
 document
 document.
 top

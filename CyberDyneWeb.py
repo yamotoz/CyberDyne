@@ -59,7 +59,21 @@ except ImportError:
 
 try:
     from playwright.sync_api import sync_playwright
-    from playwright_stealth import stealth_sync
+    try:
+        from playwright_stealth import stealth_sync
+    except ImportError:
+        try:
+            from playwright_stealth import Stealth as _Stealth
+            _stealth_inst = _Stealth()
+            if hasattr(_stealth_inst, 'apply_stealth_sync'):
+                def stealth_sync(page):
+                    _stealth_inst.apply_stealth_sync(page)
+            else:
+                def stealth_sync(page):
+                    pass
+        except (ImportError, AttributeError):
+            def stealth_sync(page):
+                pass
     HAS_PLAYWRIGHT = True
 except ImportError:
     HAS_PLAYWRIGHT = False
@@ -1599,13 +1613,23 @@ def _call_gemini(prompt: str) -> str:
 # ── Payloads externos (Payloads_CY) ──────────────────────────────────────────
 PAYLOADS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Payloads_CY")
 
+# ── Intensity level — controla % de payloads carregados ──────────────────────
+#   0.3 = --medium (30% rápido)  |  0.6 = --hard (60% padrão)  |  1.0 = --insane (100% completo)
+_PAYLOAD_INTENSITY = 0.6
+
 def _load_payload(relative_path: str, limit: int = 0) -> list:
-    """Carrega arquivo de payload do Payloads_CY. Retorna linhas não-vazias/não-comentadas."""
+    """Carrega arquivo de payload do Payloads_CY. Aplica _PAYLOAD_INTENSITY automaticamente."""
     full_path = os.path.join(PAYLOADS_DIR, relative_path)
     try:
         with open(full_path, encoding="utf-8", errors="ignore") as _f:
             lines = [l.strip() for l in _f if l.strip() and not l.startswith("#")]
-        return lines[:limit] if limit else lines
+        # Aplicar intensity multiplier
+        if limit > 0:
+            adj_limit = max(1, int(limit * _PAYLOAD_INTENSITY))
+            return lines[:adj_limit]
+        else:
+            adj_total = max(1, int(len(lines) * _PAYLOAD_INTENSITY))
+            return lines[:adj_total]
     except FileNotFoundError:
         return []
 
@@ -1659,6 +1683,78 @@ class VulnResult:
         self.technique      = technique
         self.timestamp       = datetime.now().strftime("%H:%M:%S")
         self.screenshot_path = ""   # Caminho para screenshot (browser-mimic)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CHECKPOINT / RESUME — Auto-save para scans longos
+# ─────────────────────────────────────────────────────────────────────────────
+_CHECKPOINT_VERSION = "1.0"
+
+def _save_checkpoint(path, target, output_dir, scan_start, cli_args,
+                     recon_completed=False, recon_summary=None,
+                     subdomains=None, live_urls=None, all_urls=None,
+                     vuln_completed_ids=None, vuln_results=None,
+                     current_group=0, auth_cookies=None):
+    """Salva estado completo do scan em arquivo .cyb (JSON)."""
+    state = {
+        "checkpoint_version": _CHECKPOINT_VERSION,
+        "target": target,
+        "output_dir": output_dir,
+        "scan_start": scan_start.isoformat() if hasattr(scan_start, 'isoformat') else str(scan_start),
+        "checkpoint_time": datetime.now().isoformat(),
+        "cli_args": cli_args,
+        "recon_completed": recon_completed,
+        "recon_summary": recon_summary or {},
+        "subdomains": subdomains or [],
+        "live_urls": live_urls or [],
+        "all_urls": all_urls or [],
+        "vuln_completed_ids": vuln_completed_ids or [],
+        "vuln_results": [
+            {"vuln_id": r.vuln_id, "name": r.name, "category": r.category,
+             "severity": r.severity, "status": r.status, "url": r.url,
+             "evidence": r.evidence, "recommendation": r.recommendation,
+             "technique": r.technique, "timestamp": r.timestamp,
+             "screenshot_path": r.screenshot_path}
+            for r in (vuln_results or [])
+        ],
+        "current_group": current_group,
+        "auth_cookies": dict(auth_cookies) if auth_cookies else {},
+    }
+    try:
+        tmp = path + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(state, f, indent=2, ensure_ascii=False)
+        if os.path.exists(path):
+            os.replace(tmp, path)
+        else:
+            os.rename(tmp, path)
+    except Exception as e:
+        print(f"  [WARN] Checkpoint save failed: {e}", flush=True)
+
+
+def _load_checkpoint(path):
+    """Carrega checkpoint de um arquivo .cyb. Retorna dict ou None."""
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            state = json.load(f)
+        if state.get("checkpoint_version") != _CHECKPOINT_VERSION:
+            print(f"  [WARN] Versão do checkpoint incompatível", flush=True)
+            return None
+        # Reconstituir VulnResults
+        results = []
+        for r in state.get("vuln_results", []):
+            vr = VulnResult(
+                r["vuln_id"], r["name"], r["category"], r["severity"], r["status"],
+                url=r.get("url",""), evidence=r.get("evidence",""),
+                recommendation=r.get("recommendation",""), technique=r.get("technique",""))
+            vr.timestamp = r.get("timestamp", "")
+            vr.screenshot_path = r.get("screenshot_path", "")
+            results.append(vr)
+        state["vuln_results_objects"] = results
+        return state
+    except Exception as e:
+        print(f"  [ERRO] Falha ao carregar checkpoint: {e}", flush=True)
+        return None
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # UTILITÁRIOS DE REDE
@@ -2365,7 +2461,7 @@ class ReconEngine:
 
         # Usa subdomains enumerados + root domain como base
         # (roda ANTES da validação de status — gau precisa dos domínios, não das URLs vivas)
-        domains = list(set(self.subdomains) | {self.root_domain})[:15]
+        domains = [d for d in list(set(self.subdomains) | {self.root_domain}) if "*" not in d][:15]
 
         ps_dir = os.path.join(self.output_dir, "paramspider")
         os.makedirs(ps_dir, exist_ok=True)
@@ -2381,7 +2477,8 @@ class ReconEngine:
                 found_urls.update(urls)
                 log(f"  {Fore.GREEN}[ParamSpider] {domain}: +{len(urls)} URLs com params{Style.RESET_ALL}")
                 # Salva arquivo por domínio (igual ao ParamSpider original)
-                domain_file = os.path.join(ps_dir, f"{domain}.txt")
+                _safe_domain = domain.replace("*", "_wildcard_").replace(":", "_").replace("?", "_")
+                domain_file = os.path.join(ps_dir, f"{_safe_domain}.txt")
                 with open(domain_file, "w", encoding="utf-8") as f:
                     for u in sorted(urls):
                         f.write(u + "\n")
@@ -3917,7 +4014,7 @@ class ReconEngine:
 
     # ─── Orquestrador Principal ───────────────────────────────────────────────
 
-    def run_full_recon(self):
+    def run_full_recon(self, skip_fuzz=False):
         """Executa todas as fases de reconhecimento."""
         log(f"\n{Fore.CYAN + Style.BRIGHT}{'═'*60}")
         log(f"  FASE 1 — RECONHECIMENTO COMPLETO")
@@ -3943,7 +4040,11 @@ class ReconEngine:
             _rfn()
 
         _live_update(phase="FASE 1 — Recon [11/13] Fuzzing Paths", progress=11, total=13)
-        fuzz_results = self.fuzz_paths()     # 11. Fuzzing de caminhos sensíveis
+        if skip_fuzz:
+            log(f"  {Fore.CYAN}[FUZZ] Pulando — Go Turbo Fuzzer fará essa etapa{Style.RESET_ALL}")
+            fuzz_results = {}
+        else:
+            fuzz_results = self.fuzz_paths()     # 11. Fuzzing de caminhos sensíveis
         _live_update(phase="FASE 1 — Recon [12/13] LinkFinder", progress=12, total=13)
         linkfinder   = self.linkfinder_scan()# 12. LinkFinder — endpoints & secrets em JS
         _live_update(phase="FASE 1 — Recon [13/13] Shodan", progress=13, total=13)
@@ -5685,9 +5786,67 @@ class VulnScanner:
                 self._add(16, "Vulnerable & Outdated Components (CVE Scan)", "OWASP", "ALTO", "SEGURO",
                           technique="Nenhuma versão detectável")
 
+    # ── Rainbow table de hashes fracos comuns (MD5/SHA1) ──────────────────────
+    _KNOWN_HASHES = {
+        # MD5 (32 hex)
+        "5f4dcc3b5aa765d61d8327deb882cf99": "password",
+        "e10adc3949ba59abbe56e057f20f883e": "123456",
+        "827ccb0eea8a706c4c34a16891f84e7b": "12345",
+        "25d55ad283aa400af464c76d713c07ad": "12345678",
+        "d8578edf8458ce06fbc5bb76a58c5ca4": "qwerty",
+        "96e79218965eb72c92a549dd5a330112": "111111",
+        "e99a18c428cb38d5f260853678922e03": "abc123",
+        "25f9e794323b453885f5181f1b624d0b": "123456789",
+        "0192023a7bbd73250516f069df18b500": "admin123",
+        "21232f297a57a5a743894a0e4a801fc3": "admin",
+        "d41d8cd98f00b204e9800998ecf8427e": "(vazio)",
+        "fcea920f7412b5da7be0cf42b8c93759": "1234567",
+        "ee11cbb19052e40b07aac5ae8c4e8402": "user",
+        "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8": "password",  # SHA-256
+        "7c222fb2927d828af22f592134e8932480637c0d": "12345",  # SHA-1
+        "aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d": "hello",  # SHA-1
+        "f7c3bc1d808e04732adf679965ccc34ca7ae3441": "123456789",  # SHA-1
+        "7c6a180b36896a65c4413f1f7e13a6b7": "password1",
+        "6c569aabbf7775ef8fc570e228c16b98": "password!",
+        "b7e94be513e96e8c45cd23f162275e5a": "strongpassword",
+        "0d107d09f5bbe40cade3de5c71e9e9b7": "letmein",
+        "8afa847f50a716e64932d995c8e7435a": "welcome",
+        "d0763edaa9d9bd2a9516280e9044d885": "monkey",
+        "6eea9b7ef19179a06954edd0f6c05ceb": "dragon",
+        "7110eda4d09e062aa5e4a390b0a572ac0d2c0220": "1234",  # SHA-1
+        "40bd001563085fc35165329ea1ff5c5ecbdbbeef": "123",   # SHA-1
+        "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f": "password123",  # SHA-256
+        "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92": "123456",  # SHA-256
+        "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5": "12345",  # SHA-256
+    }
+
+    # ── Patterns de dados sensíveis em claro ────────────────────────────────
+    _SENSITIVE_PATTERNS = [
+        (r'(?i)["\']?password["\']?\s*[:=]\s*["\']([^"\']{4,60})["\']', "Senha em claro"),
+        (r'(?i)["\']?passwd["\']?\s*[:=]\s*["\']([^"\']{4,60})["\']', "Senha em claro"),
+        (r'(?i)["\']?secret["\']?\s*[:=]\s*["\']([^"\']{8,60})["\']', "Secret em claro"),
+        (r'(?i)["\']?db_password["\']?\s*[:=]\s*["\']([^"\']{4,60})["\']', "DB password em claro"),
+        (r'(?i)["\']?database_url["\']?\s*[:=]\s*["\']([^"\']{10,200})["\']', "Database URL exposta"),
+        (r'(?i)mysql://[a-zA-Z0-9_]+:[^@]+@', "MySQL connection string com senha"),
+        (r'(?i)postgres://[a-zA-Z0-9_]+:[^@]+@', "PostgreSQL connection string com senha"),
+        (r'(?i)mongodb(\+srv)?://[a-zA-Z0-9_]+:[^@]+@', "MongoDB connection string com senha"),
+        (r'(?i)redis://:[^@]+@', "Redis connection string com senha"),
+    ]
+
     def check_crypto_failures(self):
+        """
+        Crypto Audit completo:
+        1. TLS version fraca
+        2. HTTP sem redirect HTTPS
+        3. Senhas/tokens em claro nas responses
+        4. Base64 encoding usado como "criptografia" (decodificável)
+        5. Hashes fracos detectáveis (MD5/SHA1) com rainbow table
+        6. Tokens de sessão com baixa entropia
+        7. Connection strings expostas com credenciais
+        """
         issues = []
-        # TLS check via socket
+
+        # ── 1. TLS version fraca ────────────────────────────────────────────
         try:
             host = self.parsed.hostname
             port = self.parsed.port or (443 if self.parsed.scheme == "https" else 80)
@@ -5696,28 +5855,467 @@ class VulnScanner:
                 s.settimeout(5)
                 s.connect((host, port))
                 cipher = s.cipher()
-                if cipher and cipher[1] in ["TLSv1","TLSv1.1","SSLv3","SSLv2"]:
-                    issues.append(f"Protocolo fraco: {cipher[1]}")
+                if cipher:
+                    proto = cipher[1]
+                    if proto in ["TLSv1", "TLSv1.1", "SSLv3", "SSLv2"]:
+                        issues.append(f"Protocolo fraco: {proto}")
+                    # Cipher suites fracas
+                    cipher_name = cipher[0].upper()
+                    weak_ciphers = ["RC4", "DES", "3DES", "NULL", "EXPORT", "MD5"]
+                    for wc in weak_ciphers:
+                        if wc in cipher_name:
+                            issues.append(f"Cipher fraca: {cipher[0]}")
+                            break
         except Exception:
             pass
-        # HTTP sem redirect para HTTPS
+
+        # ── 2. HTTP sem redirect para HTTPS ──────────────────────────────────
         if self.parsed.scheme == "http":
             r = safe_get(self.target, allow_redirects=False)
-            if r and r.status_code not in [301,302,307,308]:
+            if r and r.status_code not in [301, 302, 307, 308]:
                 issues.append("HTTP sem redirect para HTTPS")
-        # Senhas/tokens em claro no corpo da resposta
-        r = safe_get(self.target)
-        if r:
-            if re.search(r'password\s*[:=]\s*["\'][^"\']{4,}["\']', r.text, re.I):
-                issues.append("Possível senha em claro na resposta")
+
+        # ── 3-7. Análise de responses (principal, cookies, headers, JS) ─────
+        pages_to_check = [self.target] + [u for u in self.urls[:5] if u != self.target]
+        all_hashes_found = []
+        all_b64_secrets  = []
+        all_plaintext    = []
+
+        for page_url in pages_to_check[:6]:
+            r = safe_get(page_url, timeout=8)
+            if not r:
+                continue
+
+            body = r.text
+            hdrs = r.headers
+
+            # ── 3. Senhas/tokens/connection strings em claro ─────────────────
+            for pattern, label in self._SENSITIVE_PATTERNS:
+                matches = re.findall(pattern, body)
+                for m in matches[:2]:
+                    val = m if isinstance(m, str) else m[0]
+                    if len(val) > 3 and val not in ["true", "false", "null", "undefined"]:
+                        finding = f"{label}: ...{val[:20]}..."
+                        if finding not in all_plaintext:
+                            all_plaintext.append(finding)
+
+            # ── 4. Base64 "criptografia" — decodificar e verificar ───────────
+            # Cookies com base64 decodificável contendo dados sensíveis
+            for ck_name, ck_val in r.cookies.items():
+                if not ck_val or len(ck_val) < 12:
+                    continue
+                try:
+                    padded = ck_val + "=" * (4 - len(ck_val) % 4)
+                    decoded = base64.b64decode(padded).decode("utf-8", errors="ignore")
+                    # Verificar se contém dados sensíveis decodificáveis
+                    sensitive_kw = ["password", "admin", "root", "secret", "token",
+                                    "user", "role", "email", "@", "api_key"]
+                    for kw in sensitive_kw:
+                        if kw in decoded.lower() and len(decoded) > 5:
+                            finding = f"Cookie '{ck_name}' é base64 decodificável: {decoded[:40]}..."
+                            if finding not in all_b64_secrets:
+                                all_b64_secrets.append(finding)
+                            break
+                except Exception:
+                    pass
+
+            # Headers com base64 sensível
+            for h_name in ["Authorization", "X-Auth-Token", "X-Api-Key", "X-Token"]:
+                h_val = hdrs.get(h_name, "")
+                if h_val and h_val.startswith("Basic "):
+                    try:
+                        decoded = base64.b64decode(h_val[6:]).decode()
+                        if ":" in decoded:
+                            user, pwd = decoded.split(":", 1)
+                            if pwd and pwd not in ["", "*"]:
+                                all_b64_secrets.append(
+                                    f"Basic Auth decodificável: {user}:{pwd[:8]}...")
+                    except Exception:
+                        pass
+
+            # Base64 no body (tokens, configurações)
+            b64_in_body = re.findall(
+                r'(?:token|auth|session|key|config)\s*[:=]\s*["\']([A-Za-z0-9+/]{20,}={0,2})["\']',
+                body, re.I)
+            for b64_val in b64_in_body[:3]:
+                try:
+                    decoded = base64.b64decode(b64_val).decode("utf-8", errors="ignore")
+                    if any(kw in decoded.lower() for kw in
+                           ["password", "secret", "admin", "root", "key", ":"]):
+                        finding = f"Token base64 decodificável no body: {decoded[:40]}..."
+                        if finding not in all_b64_secrets:
+                            all_b64_secrets.append(finding)
+                except Exception:
+                    pass
+
+            # ── 5. Hashes fracos (MD5/SHA1) com rainbow table ────────────────
+            # MD5: 32 hex chars
+            md5_matches = re.findall(
+                r'(?:hash|password|pwd|digest|checksum|token)\s*[:=]\s*["\']?([a-f0-9]{32})["\']?',
+                body, re.I)
+            for h in md5_matches[:5]:
+                h_lower = h.lower()
+                if h_lower in self._KNOWN_HASHES:
+                    all_hashes_found.append(
+                        f"MD5 cracked: {h_lower} = '{self._KNOWN_HASHES[h_lower]}'")
+                else:
+                    all_hashes_found.append(f"MD5 hash exposto: {h_lower[:16]}...")
+
+            # SHA-1: 40 hex chars
+            sha1_matches = re.findall(
+                r'(?:hash|password|pwd|digest|token)\s*[:=]\s*["\']?([a-f0-9]{40})["\']?',
+                body, re.I)
+            for h in sha1_matches[:3]:
+                h_lower = h.lower()
+                if h_lower in self._KNOWN_HASHES:
+                    all_hashes_found.append(
+                        f"SHA-1 cracked: {h_lower[:20]}... = '{self._KNOWN_HASHES[h_lower]}'")
+                else:
+                    all_hashes_found.append(f"SHA-1 hash exposto: {h_lower[:16]}...")
+
+            # ── 6. Tokens de sessão com baixa entropia ───────────────────────
+            for ck_name, ck_val in r.cookies.items():
+                if not ck_val or len(ck_val) < 8:
+                    continue
+                # Verificar se é numérico puro (previsível)
+                if ck_val.isdigit() and len(ck_val) < 12:
+                    issues.append(f"Cookie '{ck_name}' numérico previsível: {ck_val}")
+                # Verificar baixa entropia (poucos caracteres únicos)
+                if len(ck_val) >= 16:
+                    unique_chars = len(set(ck_val.lower()))
+                    if unique_chars < 6:
+                        issues.append(f"Cookie '{ck_name}' com baixa entropia ({unique_chars} chars únicos)")
+                # Verificar se parece timestamp (previsível)
+                if re.match(r'^\d{10,13}$', ck_val):
+                    issues.append(f"Cookie '{ck_name}' parece timestamp: {ck_val}")
+
+            # ── 7. Connection strings em headers ─────────────────────────────
+            for h_name, h_val in hdrs.items():
+                for conn_pat in [r'mysql://', r'postgres://', r'mongodb://', r'redis://']:
+                    if re.search(conn_pat, h_val, re.I):
+                        issues.append(f"Connection string em header {h_name}")
+
+            # ── 8. ROT13 detection ───────────────────────────────────────────
+            import codecs
+            _rot13_targets = {
+                "cnffjbeq": "password", "frperg": "secret", "nqzva": "admin",
+                "gbxra": "token", "ncv_xrl": "api_key", "qngnonfr": "database",
+                "cevingr": "private", "perqragvny": "credential",
+            }
+            for rot_encoded, original in _rot13_targets.items():
+                if rot_encoded in body.lower():
+                    issues.append(f"ROT13 detectado: '{rot_encoded}' = '{original}'")
+            # ROT13 em cookies
+            for ck_name, ck_val in r.cookies.items():
+                if ck_val and len(ck_val) >= 6:
+                    try:
+                        decoded_rot = codecs.decode(ck_val, 'rot_13')
+                        if any(kw in decoded_rot.lower() for kw in ["admin", "password", "secret", "root", "user"]):
+                            issues.append(f"Cookie '{ck_name}' ROT13: decode='{decoded_rot[:30]}'")
+                    except Exception:
+                        pass
+
+            # ── 9. Hex encoding detection ────────────────────────────────────
+            hex_matches = re.findall(
+                r'(?:token|key|secret|pass|auth|session)\s*[:=]\s*["\']?((?:[0-9a-f]{2}){8,})["\']?',
+                body, re.I)
+            for hex_str in hex_matches[:3]:
+                try:
+                    decoded_hex = bytes.fromhex(hex_str).decode("utf-8", errors="ignore")
+                    if decoded_hex.isprintable() and len(decoded_hex) >= 4:
+                        if any(kw in decoded_hex.lower() for kw in
+                               ["admin", "password", "secret", "root", "key", "token", ":"]):
+                            issues.append(f"Hex encoding sensível: {hex_str[:20]}... = '{decoded_hex[:30]}'")
+                except Exception:
+                    pass
+
+            # ── 10. Sequential cookie detection ─────────────────────────────
+            if page_url == self.target:
+                r2 = safe_get(self.target, timeout=8)
+                if r2:
+                    for ck_name in r.cookies:
+                        v1 = r.cookies.get(ck_name, "")
+                        v2 = r2.cookies.get(ck_name, "")
+                        if v1 and v2 and v1 != v2:
+                            # Check if values are sequential (differ by small increment)
+                            try:
+                                n1, n2 = int(v1), int(v2)
+                                if abs(n2 - n1) <= 5:
+                                    issues.append(f"Cookie '{ck_name}' sequencial: {v1} → {v2} (delta={n2-n1})")
+                            except ValueError:
+                                # Check if differ by few chars (weak randomization)
+                                diff_count = sum(1 for a, b in zip(v1, v2) if a != b)
+                                if diff_count <= 2 and len(v1) == len(v2) and len(v1) >= 10:
+                                    issues.append(f"Cookie '{ck_name}' baixa variação: {diff_count} chars diferentes entre requests")
+
+        # Agregar tudo
+        issues.extend(all_hashes_found[:3])
+        issues.extend(all_b64_secrets[:3])
+        issues.extend(all_plaintext[:3])
+
         if issues:
-            self._add(17,"Cryptographic Failures","OWASP","ALTO","VULNERAVEL",
-                      evidence="; ".join(issues[:2]),
-                      recommendation="Forçar HTTPS; usar TLS 1.2+; bcrypt/argon2 para senhas.",
-                      technique="TLS fraco, MD5/SHA1 em senhas, dados sensíveis em texto claro")
+            # Determinar severidade
+            sev = "CRITICO" if any(x in str(issues) for x in
+                                    ["cracked", "decodificável", "senha", "connection string",
+                                     "Basic Auth", "DB password"]) else "ALTO"
+            self._add(17, "Cryptographic Failures (Audit Completo)", "OWASP", sev, "VULNERAVEL",
+                      evidence=" | ".join(issues[:4]),
+                      recommendation=(
+                          "Forçar HTTPS com TLS 1.2+. "
+                          "Usar bcrypt/argon2 para senhas (nunca MD5/SHA1). "
+                          "Nunca usar base64 como criptografia. "
+                          "Tokens de sessão com 128+ bits de entropia (crypto.randomBytes). "
+                          "Remover connection strings de responses e headers."
+                      ),
+                      technique="TLS audit + rainbow table MD5/SHA1 + base64 decode + entropia de tokens + connection strings")
         else:
-            self._add(17,"Cryptographic Failures","OWASP","ALTO","SEGURO",
-                      technique="TLS fraco, MD5/SHA1 em senhas, dados sensíveis em texto claro")
+            self._add(17, "Cryptographic Failures (Audit Completo)", "OWASP", "ALTO", "SEGURO",
+                      technique="TLS audit + rainbow table + base64 decode + entropia — tudo limpo")
+
+    # ── Retire.js-style: JS Library Vulnerability Scanner ────────────────────
+    _JS_VULN_DB = {
+        "jquery": [
+            {"below": "3.5.0", "cves": ["CVE-2020-11022", "CVE-2020-11023"], "severity": "MEDIO",
+             "desc": "XSS em jQuery.htmlPrefilter()"},
+            {"below": "3.0.0", "cves": ["CVE-2015-9251", "CVE-2019-11358"], "severity": "ALTO",
+             "desc": "XSS e Prototype Pollution"},
+            {"below": "1.12.0", "cves": ["CVE-2015-9251"], "severity": "ALTO",
+             "desc": "XSS via cross-domain ajax"},
+        ],
+        "angular": [
+            {"below": "1.8.0", "cves": ["CVE-2022-25869"], "severity": "ALTO",
+             "desc": "XSS via $sanitize bypass"},
+            {"below": "1.6.0", "cves": ["CVE-2020-7676"], "severity": "ALTO",
+             "desc": "XSS em ng-bind-html"},
+        ],
+        "angularjs": [
+            {"below": "1.8.0", "cves": ["CVE-2022-25869"], "severity": "ALTO",
+             "desc": "XSS via $sanitize bypass"},
+        ],
+        "vue": [
+            {"below": "2.6.14", "cves": ["CVE-2021-28170"], "severity": "MEDIO",
+             "desc": "Prototype pollution via v-bind"},
+        ],
+        "react-dom": [
+            {"below": "16.13.0", "cves": ["CVE-2020-7919"], "severity": "MEDIO",
+             "desc": "XSS via dangerouslySetInnerHTML"},
+        ],
+        "bootstrap": [
+            {"below": "3.4.1", "cves": ["CVE-2019-8331"], "severity": "MEDIO",
+             "desc": "XSS em tooltip/popover"},
+            {"below": "4.3.1", "cves": ["CVE-2019-8331"], "severity": "MEDIO",
+             "desc": "XSS em tooltip/popover data-template"},
+        ],
+        "lodash": [
+            {"below": "4.17.21", "cves": ["CVE-2021-23337", "CVE-2020-28500"], "severity": "ALTO",
+             "desc": "Command Injection via template() + ReDoS"},
+            {"below": "4.17.12", "cves": ["CVE-2019-10744"], "severity": "CRITICO",
+             "desc": "Prototype Pollution via defaultsDeep"},
+        ],
+        "underscore": [
+            {"below": "1.13.6", "cves": ["CVE-2021-25801"], "severity": "MEDIO",
+             "desc": "ReDoS em template()"},
+        ],
+        "moment": [
+            {"below": "2.29.4", "cves": ["CVE-2022-31129"], "severity": "ALTO",
+             "desc": "ReDoS em parsing de datas"},
+            {"below": "2.19.3", "cves": ["CVE-2017-18214"], "severity": "ALTO",
+             "desc": "ReDoS severo"},
+        ],
+        "handlebars": [
+            {"below": "4.7.7", "cves": ["CVE-2021-23369", "CVE-2021-23383"], "severity": "CRITICO",
+             "desc": "RCE via template compilation"},
+        ],
+        "backbone": [
+            {"below": "1.4.0", "cves": ["CVE-2016-9352"], "severity": "MEDIO",
+             "desc": "XSS via model attributes"},
+        ],
+        "ember": [
+            {"below": "3.28.12", "cves": ["CVE-2022-44573"], "severity": "ALTO",
+             "desc": "Prototype Pollution"},
+        ],
+        "d3": [
+            {"below": "6.0.0", "cves": ["CVE-2020-8897"], "severity": "MEDIO",
+             "desc": "XSS via d3.select"},
+        ],
+        "axios": [
+            {"below": "1.6.0", "cves": ["CVE-2023-45857"], "severity": "ALTO",
+             "desc": "CSRF token leak cross-domain"},
+            {"below": "0.21.1", "cves": ["CVE-2020-28168"], "severity": "ALTO",
+             "desc": "SSRF via redirect follow"},
+        ],
+        "socket.io": [
+            {"below": "4.6.2", "cves": ["CVE-2023-32695"], "severity": "ALTO",
+             "desc": "Memory exhaustion DoS"},
+        ],
+        "express": [
+            {"below": "4.19.2", "cves": ["CVE-2024-29041"], "severity": "MEDIO",
+             "desc": "Open redirect via res.redirect"},
+        ],
+        "chart.js": [
+            {"below": "2.9.4", "cves": ["CVE-2020-7746"], "severity": "MEDIO",
+             "desc": "Prototype Pollution via merge"},
+        ],
+        "sweetalert2": [
+            {"below": "11.4.8", "cves": ["CVE-2022-24006"], "severity": "MEDIO",
+             "desc": "XSS via html option"},
+        ],
+        "dompurify": [
+            {"below": "2.4.1", "cves": ["CVE-2022-42889"], "severity": "ALTO",
+             "desc": "Mutation XSS bypass"},
+            {"below": "2.0.17", "cves": ["CVE-2020-26870"], "severity": "ALTO",
+             "desc": "Mutation XSS bypass"},
+        ],
+        "highlight.js": [
+            {"below": "10.4.1", "cves": ["CVE-2020-26237"], "severity": "MEDIO",
+             "desc": "ReDoS via language auto-detection"},
+        ],
+        "marked": [
+            {"below": "4.0.10", "cves": ["CVE-2022-21680", "CVE-2022-21681"], "severity": "ALTO",
+             "desc": "ReDoS em heading/inline parsing"},
+        ],
+        "next": [
+            {"below": "13.4.20", "cves": ["CVE-2023-46298"], "severity": "ALTO",
+             "desc": "Server-side request path traversal"},
+        ],
+        "nuxt": [
+            {"below": "2.16.1", "cves": ["CVE-2023-0405"], "severity": "ALTO",
+             "desc": "Path traversal no dev server"},
+        ],
+        "ckeditor": [
+            {"below": "4.22.0", "cves": ["CVE-2024-24816"], "severity": "ALTO",
+             "desc": "XSS via HTML content"},
+        ],
+        "tinymce": [
+            {"below": "6.7.1", "cves": ["CVE-2023-45818"], "severity": "MEDIO",
+             "desc": "XSS via mXSS attack"},
+        ],
+    }
+
+    @staticmethod
+    def _version_lt(v1, v2):
+        """Compara versoes semver: retorna True se v1 < v2."""
+        try:
+            parts1 = [int(x) for x in v1.split(".")[:3]]
+            parts2 = [int(x) for x in v2.split(".")[:3]]
+            while len(parts1) < 3: parts1.append(0)
+            while len(parts2) < 3: parts2.append(0)
+            return parts1 < parts2
+        except (ValueError, AttributeError):
+            return False
+
+    def check_js_vulnerable_libs(self):
+        """Retire.js-style: detecta bibliotecas JS vulneráveis por versão."""
+        findings = []
+
+        # ── Regex para extrair lib + versão ──────────────────────────────────
+        _LIB_NAMES = "|".join(self._JS_VULN_DB.keys())
+        _VER_PATTERNS = [
+            # Filename: jquery-3.4.1.min.js, lodash.4.17.15.js
+            re.compile(rf'(?:^|/)({_LIB_NAMES})[\.\-]v?(\d+\.\d+(?:\.\d+)?)', re.I),
+            # CDN: cdn.jsdelivr.net/npm/lodash@4.17.15
+            re.compile(rf'(?:npm|pkg)/({_LIB_NAMES})@(\d+\.\d+(?:\.\d+)?)', re.I),
+            # Comment: /*! jQuery v3.4.1 | ...
+            re.compile(rf'/\*[!*]\s*({_LIB_NAMES})\s+v?(\d+\.\d+(?:\.\d+)?)', re.I),
+            # Window assignment: jQuery.fn.jquery = "3.4.1"
+            re.compile(rf'({_LIB_NAMES})(?:\.fn)?\.(?:jquery|version)\s*=\s*["\'](\d+\.\d+(?:\.\d+)?)', re.I),
+        ]
+
+        # ── Coletar scripts de múltiplas páginas ─────────────────────────────
+        pages_to_scan = [self.target] + [u for u in self.urls[:5] if u != self.target]
+        all_script_urls = set()
+        all_inline_js = []
+
+        for page_url in pages_to_scan[:6]:
+            r = safe_get(page_url, timeout=10)
+            if not r:
+                continue
+            # Script src URLs
+            for src in re.findall(r'<script[^>]+src=["\']([^"\']+)["\']', r.text, re.I):
+                if src.startswith("//"):
+                    src = "https:" + src
+                elif src.startswith("/"):
+                    src = self.target.rstrip("/") + src
+                all_script_urls.add(src)
+            # Inline scripts (first 5KB of each)
+            for block in re.findall(r'<script[^>]*>([\s\S]{10,5000}?)</script>', r.text, re.I):
+                all_inline_js.append(block)
+
+        # ── Detectar versões em filenames e CDN URLs ─────────────────────────
+        detected = {}  # lib_name -> {"version": "x.y.z", "source": "url"}
+        for script_url in all_script_urls:
+            for pat in _VER_PATTERNS[:2]:  # filename + CDN patterns
+                m = pat.search(script_url)
+                if m:
+                    lib_name = m.group(1).lower()
+                    version = m.group(2)
+                    if lib_name in self._JS_VULN_DB and lib_name not in detected:
+                        detected[lib_name] = {"version": version, "source": script_url[:80]}
+
+        # ── Detectar versões em inline JS e script content ───────────────────
+        # Fetch top 5 JS files for version comments
+        for js_url in list(all_script_urls)[:5]:
+            rjs = safe_get(js_url, timeout=6)
+            if not rjs or len(rjs.text) < 20:
+                continue
+            # Check first 500 chars for version comment
+            header = rjs.text[:500]
+            for pat in _VER_PATTERNS[2:]:  # comment + window patterns
+                m = pat.search(header)
+                if m:
+                    lib_name = m.group(1).lower()
+                    version = m.group(2)
+                    if lib_name in self._JS_VULN_DB and lib_name not in detected:
+                        detected[lib_name] = {"version": version, "source": js_url[:80]}
+
+        # Check inline scripts
+        for block in all_inline_js:
+            for pat in _VER_PATTERNS:
+                m = pat.search(block)
+                if m:
+                    lib_name = m.group(1).lower()
+                    version = m.group(2)
+                    if lib_name in self._JS_VULN_DB and lib_name not in detected:
+                        detected[lib_name] = {"version": version, "source": "inline <script>"}
+
+        # ── Comparar com DB de vulnerabilidades ──────────────────────────────
+        for lib_name, info in detected.items():
+            version = info["version"]
+            source = info["source"]
+            for vuln_entry in self._JS_VULN_DB[lib_name]:
+                if self._version_lt(version, vuln_entry["below"]):
+                    cve_str = ", ".join(vuln_entry["cves"][:3])
+                    findings.append({
+                        "lib": lib_name,
+                        "version": version,
+                        "cves": cve_str,
+                        "severity": vuln_entry["severity"],
+                        "desc": vuln_entry["desc"],
+                        "source": source,
+                    })
+                    break  # Pega a vuln mais grave (primeiro match)
+
+        if findings:
+            # Severidade = a mais alta encontrada
+            sev_order = {"CRITICO": 4, "ALTO": 3, "MEDIO": 2, "BAIXO": 1}
+            max_sev = max(findings, key=lambda f: sev_order.get(f["severity"], 0))["severity"]
+
+            evidence_parts = []
+            for f in findings[:5]:
+                evidence_parts.append(f"{f['lib']} {f['version']} ({f['cves']}) — {f['desc']}")
+
+            self._add(113, "JS Libraries Vulneráveis (Retire.js-style)", "OWASP", max_sev, "VULNERAVEL",
+                      evidence=" | ".join(evidence_parts[:3]),
+                      recommendation=(
+                          "Atualizar bibliotecas JS para versões mais recentes. "
+                          f"Libs afetadas: {', '.join(f['lib'] + ' ' + f['version'] for f in findings[:5])}. "
+                          "Usar npm audit ou yarn audit para monitorar dependências."
+                      ),
+                      technique=f"Retire.js-style: {len(detected)} libs detectadas, {len(findings)} vulneráveis")
+        else:
+            detected_str = ", ".join(f"{k} {v['version']}" for k, v in detected.items()) if detected else "nenhuma detectada"
+            self._add(113, "JS Libraries Vulneráveis (Retire.js-style)", "OWASP", "ALTO", "SEGURO",
+                      technique=f"Retire.js-style: {len(detected)} libs verificadas ({detected_str}) — todas atualizadas")
 
     def check_insecure_deserialization(self):
         # Detectar cookies/headers que parecem serialized objects
@@ -9915,7 +10513,8 @@ class VulnScanner:
                       recommendation="Implementar Rate Limiting, reCAPTCHA e bloqueio temporário.",
                       technique="Bruteforce na página de login")
 
-    def run_all(self, subdomains=None):
+    def run_all(self, subdomains=None, skip_ids=None, resume_group=0):
+        skip_ids = skip_ids or set()
         # ── Grupos de checks independentes — rodam em paralelo (8 workers/grupo) ──
         GROUPS = [
             ("OWASP — Injection", [
@@ -9930,6 +10529,7 @@ class VulnScanner:
                 self.check_csrf, self.check_idor,
                 self.check_broken_auth, self.check_broken_access,
                 self.check_security_misconfig, self.check_outdated_components,
+                self.check_js_vulnerable_libs,
                 self.check_crypto_failures, self.check_insecure_deserialization,
                 self.check_logging_monitoring,
             ]),
@@ -10000,9 +10600,12 @@ class VulnScanner:
         _ctr_lck = threading.Lock()
 
         _scan_start = time.time()
+        _workers_display = {0.3: 8, 0.6: 12, 1.0: 16}.get(_PAYLOAD_INTENSITY, 12)
         print(f"\n{Fore.CYAN}{Style.BRIGHT}"
-              f"  ══════ FASE 2 — {total} CHECKS EM PARALELO (8 workers/grupo) ══════"
+              f"  ══════ FASE 2 — {total} CHECKS EM PARALELO ({_workers_display} workers/grupo) ══════"
               f"{Style.RESET_ALL}\n", flush=True)
+        _intensity_label = {0.3: "MEDIUM", 0.6: "HARD", 1.0: "INSANE"}.get(_PAYLOAD_INTENSITY, "HARD")
+        print(f"  {Fore.CYAN}[THREADS] {_workers_display} workers paralelos ({_intensity_label}){Style.RESET_ALL}", flush=True)
 
         _active_checks = {}  # thread_id → label (checks em andamento)
         _active_lock = threading.Lock()
@@ -10017,9 +10620,16 @@ class VulnScanner:
                 print(f"\r  {Fore.MAGENTA}⟳ Testando: {names}{extra}{' '*20}{Style.RESET_ALL}",
                       end="", flush=True)
 
+        _SPIN = ['⠋','⠙','⠹','⠸','⠼','⠴','⠦','⠧','⠇','⠏']
+        _spin_idx = [0]
+
         def _exec(check_fn, global_idx):
             """Executa um check com timeout de 45s e atualiza progresso."""
             if _cancel_event.is_set():
+                return
+            if global_idx in skip_ids:
+                with _ctr_lck:
+                    _counter[0] += 1
                 return
             name  = getattr(check_fn, "__name__", f"check_{global_idx}")
             label = name.replace("check_", "").replace("_", " ").upper()
@@ -10056,11 +10666,15 @@ class VulnScanner:
                     _status_icon = f"{Fore.RED}✗ VULN{Style.RESET_ALL}"
                 else:
                     _status_icon = f"{Fore.GREEN}✓{Style.RESET_ALL}"
-            print(f"\r{' '*100}\r  [{done:03d}/{total}] {_status_icon} {label}"
+            _pct = int(done / total * 100) if total else 0
+            _spinner = _SPIN[_spin_idx[0] % len(_SPIN)]
+            _spin_idx[0] += 1
+            print(f"\r{' '*100}\r  {_spinner} [{done:03d}/{total}] {_pct}% {_status_icon} {label}"
                   f"  {Fore.CYAN}ETA: {_eta} | {vulns} vulns{Style.RESET_ALL}", flush=True)
             _show_active()
             _live_update(progress=done, total=total)
 
+        self._subdomains = subdomains or []
         global_idx = 0
         for group_name, group_fns in GROUPS:
             if _cancel_event.is_set():
@@ -10069,7 +10683,8 @@ class VulnScanner:
             print(f"\n  {Fore.CYAN}{Style.BRIGHT}▶ {group_name} "
                   f"— {len(group_fns)} checks [{_g_done}/{total} total]{Style.RESET_ALL}", flush=True)
             _live_update(phase=f"FASE 2 — {group_name}", progress=_g_done, total=total)
-            with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+            _workers = {0.3: 8, 0.6: 12, 1.0: 16}.get(_PAYLOAD_INTENSITY, 12)
+            with concurrent.futures.ThreadPoolExecutor(max_workers=_workers) as pool:
                 futs = []
                 for fn in group_fns:
                     global_idx += 1
@@ -10081,6 +10696,27 @@ class VulnScanner:
                         fut.result()
                     except Exception:
                         pass
+            # ── Auto-save checkpoint após cada grupo ─────────────────────────
+            try:
+                _completed = [r.vuln_id for r in self.results]
+                _ckpt_path = os.path.join(self.output_dir, ".checkpoint.cyb")
+                _save_checkpoint(
+                    _ckpt_path,
+                    target=self.target,
+                    output_dir=self.output_dir,
+                    scan_start=datetime.now(),
+                    cli_args={"stealth": _STEALTH_MODE, "ai_payloads": _AI_PAYLOADS_MODE,
+                              "login": getattr(self, 'login_url', ''), "intensity": _PAYLOAD_INTENSITY},
+                    recon_completed=True,
+                    subdomains=getattr(self, '_subdomains', []),
+                    all_urls=self.urls[:500],
+                    vuln_completed_ids=_completed,
+                    vuln_results=self.results,
+                    current_group=GROUPS.index((group_name, group_fns)) + 1,
+                    auth_cookies=_auth_cookies,
+                )
+            except Exception:
+                pass
 
         vuln_total = sum(1 for r in self.results if r.status == "VULNERAVEL")
         print(f"\n  {Fore.CYAN}{Style.BRIGHT}══ Fase 2 concluída — "
@@ -10684,11 +11320,12 @@ class WPAudit:
 class CyberBrowser:
     """Playwright-based browser for client-side vulnerability testing."""
 
-    def __init__(self, scanner, target_url, urls, output_dir):
+    def __init__(self, scanner, target_url, urls, output_dir, headless=True):
         self.scanner    = scanner
         self.target     = target_url.rstrip("/")
         self.urls       = urls
         self.output_dir = output_dir
+        self.headless   = headless
         self.ss_dir     = os.path.join(output_dir, "screenshots")
         os.makedirs(self.ss_dir, exist_ok=True)
         self._ss_counter = 0
@@ -10700,10 +11337,16 @@ class CyberBrowser:
     # ── Browser Lifecycle ─────────────────────────────────────────────────
     def _start_browser(self):
         self._pw = sync_playwright().start()
+        _mode = "headless" if self.headless else "VISIVEL (show mode)"
+        log(f"  {Fore.CYAN}[Browser] Chromium {_mode}{Style.RESET_ALL}")
+        _launch_args = ["--disable-blink-features=AutomationControlled",
+                        "--no-sandbox", "--disable-dev-shm-usage"]
+        if not self.headless:
+            _launch_args.append("--start-maximized")
         self._browser = self._pw.chromium.launch(
-            headless=True,
-            args=["--disable-blink-features=AutomationControlled",
-                  "--no-sandbox", "--disable-dev-shm-usage"]
+            headless=self.headless,
+            args=_launch_args,
+            slow_mo=150 if not self.headless else 0,
         )
         try:
             ua = FakeUserAgent().random if HAS_FAKE_UA else None
@@ -11001,21 +11644,29 @@ class CyberBrowser:
 
             leaks = []
             all_storage = {}
+            # Nomes inofensivos — NÃO são secrets
+            _SAFE_KEY_NAMES = {
+                "analytics", "cookie_consent", "theme", "lang", "locale", "dark_mode",
+                "sidebar", "i18n", "gdpr", "consent", "cache", "utm", "debug", "version",
+                "feature_flag", "experiment", "ab_test", "onboarding", "tour", "visited",
+                "pwa", "notification", "scroll", "tab", "filter", "sort", "page_size",
+                "color_scheme", "font_size", "layout", "collapsed", "expanded",
+            }
             for store_name in ["localStorage", "sessionStorage"]:
                 store = storage_data.get(store_name, {})
                 if not store:
                     continue
                 all_storage[store_name] = store
                 for key, value in store.items():
-                    full_str = f"{key}={value}"
+                    val_str = str(value) if value else ""
+                    full_str = f"{key}={val_str}"
+                    # Skip se o valor é muito curto (não é um secret real)
+                    if len(val_str) < 8:
+                        continue
+                    # Só flaggar se o VALOR bate com um regex de secret real
                     for pattern, label in SECRET_PATTERNS:
-                        if re.search(pattern, full_str):
-                            leaks.append(f"{store_name}.{key} -> {label} ({value[:30]}...)")
-                            break
-                    # Also flag suspicious key names
-                    for suspicious in ["token","secret","key","password","jwt","auth","session","api"]:
-                        if suspicious in key.lower() and key not in [l.split(".")[1].split(" ")[0] for l in leaks]:
-                            leaks.append(f"{store_name}.{key} (nome suspeito)")
+                        if re.search(pattern, val_str):
+                            leaks.append(f"{store_name}.{key} -> {label} ({val_str[:30]}...)")
                             break
 
             if all_storage:
@@ -11090,13 +11741,29 @@ class CyberBrowser:
                 except Exception:
                     continue
 
-            # Also check common admin routes
-            common_admin = ["/admin", "/dashboard", "/admin/dashboard", "/settings",
-                           "/manage", "/panel", "/internal", "/config", "/users/admin"]
-            for route in common_admin:
-                admin_routes.add(route)
+            # Só testar rotas extraídas dos JS bundles (NÃO adicionar common_admin genéricos)
+            # Rotas genéricas como /admin, /dashboard já são testadas pelo check_exposed_admin
+            # Aqui o foco é em rotas REAIS encontradas no código-fonte do SPA
 
-            # Test each admin route
+            if not admin_routes:
+                self.scanner._add(205, "SPA Hidden Routes (Browser)", "Browser", "MEDIO", "SEGURO",
+                    technique=f"Playwright: {framework} | nenhuma rota admin encontrada nos JS bundles")
+                return
+
+            # Primeiro: capturar baseline (página 404/not-found) para comparar
+            _baseline_page = self._new_page()
+            try:
+                _baseline_page.goto(self.target + "/cyberdyne_nonexistent_route_xyz", timeout=6000, wait_until="domcontentloaded")
+                _baseline_page.wait_for_timeout(1000)
+                _baseline_text = _baseline_page.evaluate("() => document.body ? document.body.innerText.substring(0,300) : ''")
+                _baseline_len = len(_baseline_text)
+            except Exception:
+                _baseline_text = ""
+                _baseline_len = 0
+            finally:
+                _baseline_page.close()
+
+            # Test each admin route extraída do JS
             accessible = []
             for route in list(admin_routes)[:10]:
                 if _cancel_event.is_set():
@@ -11106,16 +11773,18 @@ class CyberBrowser:
                     page.wait_for_timeout(1500)
                     final_url = page.url
                     title = page.title()
-                    content_len = len(page.content())
-                    # Check if we got redirected to login
+                    page_text = page.evaluate("() => document.body ? document.body.innerText : ''")
+                    content_len = len(page_text)
+                    # Filtros anti-falso-positivo:
                     is_login_redirect = any(kw in final_url.lower() for kw in ["login","signin","auth","unauthorized"])
-                    has_content = content_len > 500
-                    has_admin_content = page.evaluate("""() => {
-                        const text = document.body ? document.body.innerText : '';
-                        return text.length > 100 && !/login|sign in|unauthorized|403|forbidden/i.test(text.substring(0,200));
-                    }""")
-                    if has_content and not is_login_redirect and has_admin_content:
-                        accessible.append(f"{route} ({framework}, {content_len}B, title='{title[:30]}')")
+                    is_same_as_baseline = abs(content_len - _baseline_len) < 50  # mesma página genérica
+                    is_error_page = bool(re.search(r'(?i)(not found|404|forbidden|403|error|page.+exist)', page_text[:300]))
+                    has_real_admin = bool(re.search(
+                        r'(?i)(dashboard|users\s*list|manage|analytics|settings|edit\s+profile|admin\s+panel)',
+                        page_text[:500]))
+                    if (not is_login_redirect and not is_same_as_baseline
+                            and not is_error_page and has_real_admin and content_len > 500):
+                        accessible.append(f"{route} ({framework}, title='{title[:30]}')")
                 except Exception:
                     continue
 
@@ -11140,13 +11809,41 @@ class CyberBrowser:
     def check_clickjacking_real(self):
         page = self._new_page()
         try:
+            # Primeiro verificar headers na response (mais confiável que iframe test)
+            resp = safe_get(self.target, timeout=8)
+            if resp:
+                _hdrs = {k.lower(): v.lower() for k, v in resp.headers.items()}
+                _xfo = _hdrs.get("x-frame-options", "")
+                _csp = _hdrs.get("content-security-policy", "")
+                # Se headers de proteção existem, verificar se são válidos
+                _has_xfo = _xfo in ["deny", "sameorigin"]
+                _has_csp_frame = "frame-ancestors" in _csp
+                if _has_xfo or _has_csp_frame:
+                    self.scanner._add(206, "Clickjacking (Real iframe)", "Browser", "MEDIO", "SEGURO",
+                        technique=f"Playwright: headers protegem — X-Frame-Options: {_xfo or 'N/A'} | CSP frame-ancestors: {'sim' if _has_csp_frame else 'N/A'}")
+                    return
+
+            # Headers ausentes — testar iframe real para confirmar
             iframe_html = f"""<!DOCTYPE html><html><body style="margin:0">
             <iframe id="target" src="{self.target}" width="100%" height="800"
                     style="opacity:0.5;border:none"></iframe>
             <script>
                 const iframe = document.getElementById('target');
                 window._iframeStatus = 'LOADING';
-                iframe.onload = function() {{ window._iframeStatus = 'LOADED'; }};
+                iframe.onload = function() {{
+                    // Verificar se o iframe realmente tem conteúdo (frame-busting JS pode ter limpado)
+                    try {{
+                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                        if (iframeDoc && iframeDoc.body && iframeDoc.body.innerHTML.length > 100) {{
+                            window._iframeStatus = 'LOADED';
+                        }} else {{
+                            window._iframeStatus = 'EMPTY';
+                        }}
+                    }} catch(e) {{
+                        // Cross-origin — iframe carregou mas não temos acesso (= carregou com sucesso)
+                        window._iframeStatus = 'LOADED_CROSSORIGIN';
+                    }}
+                }};
                 iframe.onerror = function() {{ window._iframeStatus = 'BLOCKED'; }};
                 setTimeout(function() {{
                     if (window._iframeStatus === 'LOADING') window._iframeStatus = 'TIMEOUT';
@@ -11156,13 +11853,13 @@ class CyberBrowser:
             page.wait_for_timeout(9000)
             status = page.evaluate("() => window._iframeStatus")
 
-            if status == "LOADED":
+            if status in ("LOADED", "LOADED_CROSSORIGIN"):
                 ss = self._screenshot(page, "clickjacking")
                 r = self.scanner._add(206, "Clickjacking (Real iframe)", "Browser", "MEDIO", "VULNERAVEL",
                     url=self.target,
-                    evidence=f"Site carregou dentro de iframe (status={status}) — X-Frame-Options/CSP nao bloquearam",
+                    evidence=f"Site carregou dentro de iframe (status={status}) — sem X-Frame-Options nem CSP frame-ancestors",
                     recommendation="Adicionar header X-Frame-Options: DENY e CSP frame-ancestors 'none'.",
-                    technique="Playwright: renderizacao real em iframe + screenshot como prova")
+                    technique="Playwright: header check + renderizacao real em iframe + screenshot como prova")
                 r.screenshot_path = ss
             else:
                 self.scanner._add(206, "Clickjacking (Real iframe)", "Browser", "MEDIO", "SEGURO",
@@ -13190,6 +13887,7 @@ _live_data = {
     "vulns": [],
     "subdomains": [],
     "results_summary": {"critico": 0, "alto": 0, "medio": 0, "baixo": 0, "seguro": 0},
+    "timeline": [],
 }
 
 _DASHBOARD_HTML = '''<!DOCTYPE html>
@@ -13197,28 +13895,35 @@ _DASHBOARD_HTML = '''<!DOCTYPE html>
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CyberDyne Live</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#0f172a;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
 .header{background:#1e293b;padding:20px 30px;border-bottom:2px solid #0d9488}
 .header h1{font-size:1.5rem;color:#0d9488;letter-spacing:2px}
 .header span{color:#64748b;font-size:.85rem}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;padding:20px 30px}
-.card{background:#1e293b;border-radius:8px;padding:16px;border-left:3px solid #0d9488}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;padding:18px 30px}
+.card{background:#1e293b;border-radius:8px;padding:14px 16px;border-left:3px solid #0d9488}
 .card.red{border-left-color:#ef4444}.card.orange{border-left-color:#f59e0b}
 .card.blue{border-left-color:#3b82f6}.card.green{border-left-color:#22c55e}
-.card h3{font-size:.75rem;color:#64748b;text-transform:uppercase;margin-bottom:4px}
-.card .val{font-size:1.8rem;font-weight:700}
+.card h3{font-size:.7rem;color:#64748b;text-transform:uppercase;margin-bottom:2px}
+.card .val{font-size:1.6rem;font-weight:700}
 .card.red .val{color:#ef4444}.card.orange .val{color:#f59e0b}
 .card.blue .val{color:#3b82f6}.card.green .val{color:#22c55e}
 .progress-bar{margin:0 30px;height:6px;background:#334155;border-radius:3px;overflow:hidden}
 .progress-fill{height:100%;background:linear-gradient(90deg,#0d9488,#22d3ee);transition:width .5s}
 .phase{padding:8px 30px;color:#94a3b8;font-size:.85rem}
-.vulns{padding:10px 30px;max-height:50vh;overflow-y:auto}
-.vuln-item{background:#1e293b;margin:6px 0;padding:10px 14px;border-radius:6px;font-size:.82rem;
-border-left:3px solid #ef4444;display:flex;justify-content:space-between}
-.vuln-item .sev{font-weight:700;min-width:70px;text-align:right}
+.chart-container{padding:12px 30px;height:220px}
+.chart-container canvas{background:#1e293b;border-radius:8px;padding:10px}
+.bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:0 30px 20px}
+.vulns{max-height:35vh;overflow-y:auto}
+.vulns-title{color:#64748b;font-size:.75rem;text-transform:uppercase;padding:10px 0 6px;letter-spacing:1px}
+.vuln-item{background:#1e293b;margin:4px 0;padding:8px 12px;border-radius:6px;font-size:.8rem;
+border-left:3px solid #ef4444;display:flex;justify-content:space-between;align-items:center}
+.vuln-item .sev{font-weight:700;min-width:65px;text-align:right;font-size:.75rem}
 .sev.CRITICO{color:#ef4444}.sev.ALTO{color:#f59e0b}.sev.MEDIO{color:#3b82f6}.sev.BAIXO{color:#22c55e}
+.subs{max-height:35vh;overflow-y:auto}
+.sub-item{color:#94a3b8;font-size:.78rem;padding:3px 0;border-bottom:1px solid #1e293b}
 </style>
 </head>
 <body>
@@ -13232,8 +13937,44 @@ border-left:3px solid #ef4444;display:flex;justify-content:space-between}
 <div class="card green"><h3>Baixo</h3><div class="val" id="b">0</div></div>
 <div class="card green"><h3>Seguro</h3><div class="val" id="s">0</div></div>
 </div>
+<div class="chart-container"><canvas id="timeline"></canvas></div>
+<div class="bottom-grid">
+<div>
+<div class="vulns-title">Vulnerabilidades encontradas</div>
 <div class="vulns" id="vulns"></div>
+</div>
+<div>
+<div class="vulns-title">Subdominios (<span id="sub-count">0</span>)</div>
+<div class="subs" id="subs"></div>
+</div>
+</div>
 <script>
+const ctx=document.getElementById('timeline').getContext('2d');
+const chart=new Chart(ctx,{
+type:'line',
+data:{
+labels:[],
+datasets:[
+{label:'Checks',data:[],borderColor:'#22d3ee',backgroundColor:'rgba(34,211,238,0.1)',
+fill:true,tension:0.3,pointRadius:0,borderWidth:2},
+{label:'Vulns',data:[],borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,0.1)',
+fill:true,tension:0.3,pointRadius:0,borderWidth:2}
+]
+},
+options:{
+responsive:true,maintainAspectRatio:false,
+animation:{duration:400},
+scales:{
+x:{ticks:{color:'#64748b',maxTicksLimit:12,font:{size:10}},grid:{color:'#1e293b'}},
+y:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'#1e293b'},beginAtZero:true}
+},
+plugins:{
+legend:{labels:{color:'#94a3b8',font:{size:11},usePointStyle:true,pointStyle:'line'}},
+tooltip:{mode:'index',intersect:false}
+}
+}
+});
+let prevTimeline=0;
 async function poll(){
 try{const r=await fetch('/api/status');const d=await r.json();
 document.getElementById('target').textContent=d.target;
@@ -13244,9 +13985,34 @@ document.getElementById('a').textContent=d.results_summary.alto;
 document.getElementById('m').textContent=d.results_summary.medio;
 document.getElementById('b').textContent=d.results_summary.baixo;
 document.getElementById('s').textContent=d.results_summary.seguro;
-let h='';d.vulns.slice(-30).reverse().forEach(v=>{
-h+='<div class="vuln-item"><span>['+v.id+'] '+v.name+'</span><span class="sev '+v.sev+'">'+v.sev+'</span></div>';
+// Chart update
+if(d.timeline&&d.timeline.length>prevTimeline){
+const newPts=d.timeline.slice(prevTimeline);
+newPts.forEach(p=>{
+chart.data.labels.push(p.t);
+chart.data.datasets[0].data.push(p.checks);
+chart.data.datasets[1].data.push(p.vulns);
+});
+if(chart.data.labels.length>60){
+const excess=chart.data.labels.length-60;
+chart.data.labels.splice(0,excess);
+chart.data.datasets[0].data.splice(0,excess);
+chart.data.datasets[1].data.splice(0,excess);
+}
+chart.update('none');
+prevTimeline=d.timeline.length;
+}
+// Vulns list
+let h='';d.vulns.slice(-25).reverse().forEach(v=>{
+const bc=v.sev==='CRITICO'?'#ef4444':v.sev==='ALTO'?'#f59e0b':v.sev==='MEDIO'?'#3b82f6':'#22c55e';
+h+='<div class="vuln-item" style="border-left-color:'+bc+'"><span>['+v.id+'] '+v.name+'</span><span class="sev '+v.sev+'">'+v.sev+'</span></div>';
 });document.getElementById('vulns').innerHTML=h;
+// Subdomains
+if(d.subdomains&&d.subdomains.length){
+document.getElementById('sub-count').textContent=d.subdomains.length;
+let sh='';d.subdomains.slice(0,50).forEach(s=>{sh+='<div class="sub-item">'+s+'</div>';});
+document.getElementById('subs').innerHTML=sh;
+}
 }catch(e){}
 setTimeout(poll,2000);
 }
@@ -13298,6 +14064,14 @@ def _live_update(phase="", progress=-1, total=-1, vuln=None):
         sev_key = vuln.get("sev", "").lower()
         if sev_key in _live_data["results_summary"]:
             _live_data["results_summary"][sev_key] += 1
+    # Timeline para Chart.js
+    if progress >= 0:
+        _total_vulns = sum(v for k, v in _live_data["results_summary"].items() if k != "seguro")
+        _live_data["timeline"].append({
+            "t": datetime.now().strftime("%H:%M:%S"),
+            "checks": _live_data["progress"],
+            "vulns": _total_vulns,
+        })
 
 
 def print_banner():
@@ -13343,6 +14117,7 @@ def print_final_summary(results, elapsed):
     print(f"{Fore.CYAN}{'═'*65}{Style.RESET_ALL}\n")
 
 def main():
+    global _STEALTH_MODE, _AI_PAYLOADS_MODE, _auth_cookies, _PAYLOAD_INTENSITY
     _setup_cancel_handler()
 
     # ── CLI Parser ─────────────────────────────────────────────────────────────
@@ -13370,11 +14145,134 @@ Exemplos de uso:
     parser.add_argument("--live", action="store_true", default=False, help="Dashboard visual em localhost:5000")
     parser.add_argument("--wp", action="store_true", default=False,
                         help="WordPress Security Audit (WPScan-style: plugins, themes, users, CVEs)")
-    parser.add_argument("--browser-mimic", action="store_true", default=False,
-                        help="Fase bonus: Playwright browser para DOM XSS real, clickjacking iframe, storage leaks, SPA routes")
+    parser.add_argument("--browser-mimic-s", action="store_true", default=False,
+                        help="Browser Mimic SHOW: abre Chromium visivel (mouse, digitacao, tudo ao vivo)")
+    parser.add_argument("--browser-mimic-ns", action="store_true", default=False,
+                        help="Browser Mimic NO-SHOW: roda em background (headless, mais rapido)")
     parser.add_argument("-o", "--output", type=str, default="", help="Nome da pasta de output (ex: -o meu_projeto)")
+    parser.add_argument("--resume", type=str, default="", help="Retomar scan de checkpoint (.cyb)")
+    parser.add_argument("--go", action="store_true", default=False,
+                        help="Usar Go para reconhecimento (10-50x mais rapido). Requer: go build -o cyberdyne-recon recon_go/")
+
+    # ── Payload Intensity ─────────────────────────────────────────────────────
+    _intensity = parser.add_mutually_exclusive_group()
+    _intensity.add_argument("--medium", action="store_true", default=False,
+                            help="30%% dos payloads — scan rapido (~5 min)")
+    _intensity.add_argument("--hard", action="store_true", default=False,
+                            help="60%% dos payloads — balanceado (padrao)")
+    _intensity.add_argument("--insane", action="store_true", default=False,
+                            help="100%% dos payloads — completo, sem piedade")
 
     args = parser.parse_args()
+
+    # ── RESUME MODE — retomar de checkpoint ──────────────────────────────────
+    if args.resume:
+        _ckpt_path = args.resume.strip()
+        if not os.path.exists(_ckpt_path):
+            print(f"{Fore.RED}[!] Checkpoint não encontrado: {_ckpt_path}{Style.RESET_ALL}")
+            sys.exit(1)
+        print_banner()
+        _ckpt = _load_checkpoint(_ckpt_path)
+        if not _ckpt:
+            sys.exit(1)
+        print(f"\n{Fore.GREEN + Style.BRIGHT}{'═'*60}")
+        print(f"  RETOMANDO SCAN DE CHECKPOINT")
+        print(f"{'═'*60}{Style.RESET_ALL}")
+        print(f"  Alvo        : {_ckpt['target']}")
+        print(f"  Início orig.: {_ckpt['scan_start']}")
+        print(f"  Checkpoint  : {_ckpt['checkpoint_time']}")
+        print(f"  Recon       : {'✓ completo' if _ckpt['recon_completed'] else '✗ incompleto'}")
+        _completed_ids = _ckpt.get("vuln_completed_ids", [])
+        _prev_results  = _ckpt.get("vuln_results_objects", [])
+        print(f"  Vulns feitas: {len(_completed_ids)} checks | {sum(1 for r in _prev_results if r.status=='VULNERAVEL')} vulns")
+        print(f"  Grupo atual : {_ckpt.get('current_group', 0)}")
+        print(f"  Output dir  : {_ckpt['output_dir']}")
+        print(f"{Fore.GREEN}  Continuando em 3s...{Style.RESET_ALL}\n")
+        time.sleep(3)
+
+        # Restaurar estado
+        target       = _ckpt["target"]
+        output_dir   = _ckpt["output_dir"]
+        scan_start   = datetime.fromisoformat(_ckpt["scan_start"])
+        subdomains   = _ckpt.get("subdomains", [])
+        live_urls    = _ckpt.get("live_urls", [])
+        all_urls     = _ckpt.get("all_urls", [target])
+        recon_summary = _ckpt.get("recon_summary", {})
+        login_url    = _ckpt.get("cli_args", {}).get("login", "")
+        cli_args     = _ckpt.get("cli_args", {})
+
+        # Restaurar cookies de autenticação
+        if _ckpt.get("auth_cookies"):
+            _auth_cookies = _ckpt["auth_cookies"]
+
+        # Restaurar modos especiais
+        _STEALTH_MODE     = cli_args.get("stealth", False)
+        _AI_PAYLOADS_MODE = cli_args.get("ai_payloads", False)
+        _PAYLOAD_INTENSITY = cli_args.get("intensity", 0.6)
+
+        os.makedirs(output_dir, exist_ok=True)
+
+        # ── Retomar vuln scan ────────────────────────────────────────────────
+        scanner = VulnScanner(target, all_urls, output_dir, login_url=login_url)
+        scanner.results = list(_prev_results)
+        results = scanner.run_all(subdomains=subdomains,
+                                   skip_ids=set(_completed_ids),
+                                   resume_group=_ckpt.get("current_group", 0))
+
+        scan_end = datetime.now()
+        elapsed  = str(scan_end - scan_start).split(".")[0]
+        print_final_summary(results, elapsed)
+
+        # Limpar checkpoint (scan completo)
+        try:
+            os.remove(_ckpt_path)
+            log(f"  {Fore.GREEN}[✓] Checkpoint removido (scan completo){Style.RESET_ALL}")
+        except Exception:
+            pass
+
+        # Gerar relatórios
+        if HAS_REPORTLAB and results:
+            try:
+                whois_data  = recon_summary.get("whois", {})
+                tech_fp     = recon_summary.get("tech_fingerprint", {})
+                ai_exec_summary = ""
+                if GEMINI_API_KEY:
+                    vuln_brief = "\n".join(
+                        f"[{r.severity}] {r.name} — {r.url[:60]}" for r in results if r.status == "VULNERAVEL"
+                    ) or "Nenhuma."
+                    ai_exec_summary = _call_gemini(
+                        f"Sumário executivo de pentest do '{target}' em 3 parágrafos. "
+                        f"VULNS:\n{vuln_brief}") or ""
+                pdf_gen = ReportGenerator(target, results, output_dir,
+                                          scan_start, scan_end, subdomains, live_urls,
+                                          whois_data=whois_data, tech_fingerprint=tech_fp,
+                                          ai_summary=ai_exec_summary)
+                log(f"{Fore.GREEN}[✓] PDF: {pdf_gen.generate()}{Style.RESET_ALL}")
+            except Exception as e:
+                log(f"{Fore.RED}[!] PDF: {e}{Style.RESET_ALL}")
+        if results:
+            try:
+                ai_pr = ""
+                if GEMINI_API_KEY:
+                    ai_pr = _call_gemini(
+                        f"Prompt DIRETO para IA corrigir vulns do '{target}'. "
+                        f"Só lista de vulns + fix técnico. 400 palavras.\n{vuln_brief}") or ""
+                pr_gen = PromptRecallGenerator(target, results, output_dir,
+                                               scan_start, scan_end, subdomains, live_urls,
+                                               ai_recall=ai_pr)
+                log(f"{Fore.GREEN}[✓] prompt_recall.md: {pr_gen.generate()}{Style.RESET_ALL}")
+            except Exception as e:
+                log(f"{Fore.RED}[!] prompt_recall: {e}{Style.RESET_ALL}")
+            json_path = os.path.join(output_dir, "raw_results.json")
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump([{"id": r.vuln_id, "name": r.name, "category": r.category,
+                            "severity": r.severity, "status": r.status, "url": r.url,
+                            "evidence": r.evidence, "recommendation": r.recommendation,
+                            "technique": r.technique, "timestamp": r.timestamp,
+                           } for r in results], f, indent=2, ensure_ascii=False)
+            log(f"{Fore.GREEN}[✓] JSON: {json_path}{Style.RESET_ALL}")
+        log(f"\n{Fore.CYAN + Style.BRIGHT}Scan retomado e finalizado! Arquivos em: {output_dir}{Style.RESET_ALL}\n")
+        return
 
     print_banner()
     print(f"{Fore.CYAN}{'─'*60}")
@@ -13441,9 +14339,18 @@ Exemplos de uso:
         project_name = f"cyberdyne_{urlparse(target).netloc.replace('.','_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
     # ── Ativar modos especiais ─────────────────────────────────────────────────
-    global _STEALTH_MODE, _AI_PAYLOADS_MODE
     _STEALTH_MODE = args.stealth if args.url else False
     _AI_PAYLOADS_MODE = args.ai_payloads if args.url else False
+
+    # ── Payload Intensity ────────────────────────────────────────────────────
+    if args.medium:
+        _PAYLOAD_INTENSITY = 0.3
+    elif args.insane:
+        _PAYLOAD_INTENSITY = 1.0
+    else:
+        _PAYLOAD_INTENSITY = 0.6  # --hard ou default
+    _intensity_labels = {0.3: "MEDIUM (30%)", 0.6: "HARD (60%)", 1.0: "INSANE (100%)"}
+    log(f"  {Fore.YELLOW}[INTENSITY] {_intensity_labels[_PAYLOAD_INTENSITY]}{Style.RESET_ALL}")
 
     # ── Live Dashboard ─────────────────────────────────────────────────────────
     if hasattr(args, 'live') and args.live:
@@ -13466,18 +14373,104 @@ Exemplos de uso:
     if do_recon:
         if hasattr(args, 'live') and args.live:
             _live_update(phase="FASE 1 — Reconhecimento")
+
+        # ── Python Recon (SEMPRE roda — 13 etapas completas) ────────────────
+        _skip_fuzz = hasattr(args, 'go') and args.go
         recon         = ReconEngine(target, output_dir, login_url=login_url, project_name=project_name)
-        recon_summary = recon.run_full_recon()
+        recon_summary = recon.run_full_recon(skip_fuzz=_skip_fuzz)
         subdomains    = recon_summary.get("subdomains", [])
         live_urls     = [t["url"] for t in recon_summary.get("live_targets", [])]
         fuzzing_urls  = recon_summary.get("fuzzing_urls", [])
         takeover_vulns = recon_summary.get("takeover_results", [])
         all_urls      = list(set(recon_summary.get("all_urls", [target]) + fuzzing_urls))
 
+        # ── Go Turbo Fuzzer (--go) — fuzzing com 200 goroutines ──────────
+        if hasattr(args, 'go') and args.go:
+            _go_bin = None
+            for _candidate in [
+                os.path.join(os.path.dirname(os.path.abspath(__file__)), "cyberdyne-recon.exe"),
+                os.path.join(os.path.dirname(os.path.abspath(__file__)), "cyberdyne-recon"),
+                os.path.join(os.path.dirname(os.path.abspath(__file__)), "recon_go", "cyberdyne-recon.exe"),
+                os.path.join(os.path.dirname(os.path.abspath(__file__)), "recon_go", "cyberdyne-recon"),
+            ]:
+                if os.path.isfile(_candidate):
+                    _go_bin = _candidate
+                    break
+
+            if _go_bin:
+                # Preparar argumentos: target + payloads_dir + live URLs
+                _go_args = [_go_bin, target, PAYLOADS_DIR] + live_urls[:20]
+                try:
+                    _go_proc = subprocess.Popen(
+                        _go_args,
+                        stdout=subprocess.PIPE, stderr=None,
+                        encoding="utf-8", errors="replace"
+                    )
+                    import threading as _thr
+                    _go_stdout_chunks = []
+                    def _read_go_stdout():
+                        _go_stdout_chunks.append(_go_proc.stdout.read())
+                    _stdout_thread = _thr.Thread(target=_read_go_stdout, daemon=True)
+                    _stdout_thread.start()
+                    _go_proc.wait(timeout=600)
+                    _stdout_thread.join(timeout=5)
+                    _go_stdout = "".join(_go_stdout_chunks)
+
+                    if _go_proc.returncode == 0 and _go_stdout and _go_stdout.strip():
+                        _go_data = json.loads(_go_stdout)
+                        _go_found = _go_data.get("found") or []
+
+                        # Salvar resultados do Go fuzzer
+                        _go_fuzz_json = os.path.join(output_dir, "recon_go_fuzz.json")
+                        with open(_go_fuzz_json, "w", encoding="utf-8") as _gf:
+                            json.dump(_go_data, _gf, indent=2, ensure_ascii=False)
+
+                        # Adicionar URLs descobertas ao pool
+                        for _gfi in _go_found:
+                            if isinstance(_gfi, dict) and _gfi.get("url"):
+                                _furl = _gfi["url"]
+                                if _furl not in all_urls:
+                                    all_urls.append(_furl)
+
+                        # Merge com fuzz_paths existente do Python
+                        _existing_fuzz = recon_summary.get("fuzz_paths", {})
+                        for _gfi in _go_found:
+                            if isinstance(_gfi, dict):
+                                _existing_fuzz[_gfi.get("url", "")] = _gfi.get("status", 0)
+                        recon_summary["fuzz_paths"] = _existing_fuzz
+                        recon_summary["go_fuzzer"] = {
+                            "duration_sec": _go_data.get("duration_sec", 0),
+                            "total_requests": _go_data.get("total_requests", 0),
+                            "req_per_sec": _go_data.get("req_per_sec", 0),
+                            "found": len(_go_found),
+                        }
+
+                        _go_dur = _go_data.get("duration_sec", 0)
+                        _go_rps = _go_data.get("req_per_sec", 0)
+                        log(f"\n  {Fore.GREEN + Style.BRIGHT}[GO FUZZER] {len(_go_found)} paths em {_go_dur:.1f}s ({_go_rps:.0f} req/s){Style.RESET_ALL}")
+                    else:
+                        log(f"  {Fore.YELLOW}[GO] Fuzzer falhou (exit={_go_proc.returncode}){Style.RESET_ALL}")
+                except subprocess.TimeoutExpired:
+                    _go_proc.kill()
+                    log(f"  {Fore.YELLOW}[GO] Fuzzer timeout 600s{Style.RESET_ALL}")
+                except Exception as _ge:
+                    log(f"  {Fore.YELLOW}[GO] Fuzzer erro: {_ge}{Style.RESET_ALL}")
+            else:
+                log(f"  {Fore.YELLOW}[GO] Binário não encontrado. Compile: cd recon_go && go build -o cyberdyne-recon .{Style.RESET_ALL}")
+
         if hasattr(args, 'live') and args.live:
             _live_data["subdomains"] = subdomains
 
         log(f"\n{Fore.GREEN}[✓] Recon completo — resumo em: {os.path.join(output_dir, 'recon_summary.json')}{Style.RESET_ALL}")
+        # Auto-save checkpoint pós-recon
+        _save_checkpoint(
+            os.path.join(output_dir, ".checkpoint.cyb"),
+            target=target, output_dir=output_dir, scan_start=scan_start,
+            cli_args={"stealth": _STEALTH_MODE, "ai_payloads": _AI_PAYLOADS_MODE,
+                      "login": login_url, "all": True},
+            recon_completed=True, recon_summary=recon_summary,
+            subdomains=subdomains, live_urls=live_urls, all_urls=all_urls,
+        )
         if takeover_vulns:
             log(f"{Fore.RED + Style.BRIGHT}[!] {len(takeover_vulns)} subdomínio(s) vulnerável(eis) a takeover{Style.RESET_ALL}")
 
@@ -13506,9 +14499,19 @@ Exemplos de uso:
         results = scanner.run_all(subdomains=subdomains)
 
     # ── FASE 2.5: BROWSER MIMIC (Playwright) ─────────────────────────────
-    if hasattr(args, 'browser_mimic') and args.browser_mimic and do_vuln and not _cancel_event.is_set():
+    _do_browser = False
+    _browser_headless = True
+    if hasattr(args, 'browser_mimic_s') and args.browser_mimic_s:
+        _do_browser = True
+        _browser_headless = False  # show mode — janela visível
+    elif hasattr(args, 'browser_mimic_ns') and args.browser_mimic_ns:
+        _do_browser = True
+        _browser_headless = True   # no-show — headless
+
+    if _do_browser and do_vuln and not _cancel_event.is_set():
         if HAS_PLAYWRIGHT:
-            cyber_browser = CyberBrowser(scanner, target, all_urls, output_dir)
+            cyber_browser = CyberBrowser(scanner, target, all_urls, output_dir,
+                                          headless=_browser_headless)
             cyber_browser.run_all()
         else:
             log(f"  {Fore.YELLOW}[~] --browser-mimic requer: pip install playwright playwright-stealth fake-useragent{Style.RESET_ALL}")
@@ -13645,6 +14648,14 @@ Exemplos de uso:
 
     if hasattr(args, 'live') and args.live:
         _live_update(phase="SCAN FINALIZADO", progress=_live_data["total"], total=_live_data["total"])
+
+    # Limpar checkpoint — scan completo com sucesso
+    _ckpt_final = os.path.join(output_dir, ".checkpoint.cyb")
+    if os.path.exists(_ckpt_final):
+        try:
+            os.remove(_ckpt_final)
+        except Exception:
+            pass
 
     log(f"\n{Fore.CYAN + Style.BRIGHT}Scan finalizado! Todos os arquivos em: {output_dir}{Style.RESET_ALL}\n")
 

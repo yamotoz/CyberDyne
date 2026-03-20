@@ -31,7 +31,6 @@ branchheads.cache
 last-message.txt
 .git/
 .git/COMMIT_EDITMSG
-.git/COMMIT_EDITMSG
 .git/config
 .git/description
 .git/HEAD
@@ -41,7 +40,6 @@ last-message.txt
 .git/refs/heads/master
 git
 git/
-git/COMMIT_EDITMSG
 git/COMMIT_EDITMSG
 git/config
 git/description

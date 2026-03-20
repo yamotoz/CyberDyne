@@ -65,7 +65,6 @@
 <!--#echo var="remote_host" -->
 <!--#echo var="query_string_unescaped" -->
 <!--#echo var="query_string" -->
-<!--#echo var="path_translated" -->
 <!--#echo var="path_info" -->
 <!--#echo var="path" -->
 <!--#echo var="page_count" -->
