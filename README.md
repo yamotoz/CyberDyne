@@ -35,7 +35,7 @@ python CyberDyneWeb.py --url https://alvo.com --all -o meu_projeto
 
 ## Reconhecimento — Fase 1
 
-<img src="Img_vid/recon.png" alt="Reconhecimento" width="700"/>
+<img src="Img_vid/recon.png" alt="Reconhecimento" width="500"/>
 
 </div>
 
@@ -63,7 +63,7 @@ python CyberDyneWeb.py --url https://alvo.com --all -o meu_projeto
 
 ## Vulnerabilidades — Fase 2
 
-<img src="Img_vid/vulns.png" alt="Vulnerabilidades" width="700"/>
+<img src="Img_vid/vulns.png" alt="Vulnerabilidades" width="500"/>
 
 </div>
 
@@ -193,7 +193,7 @@ Chromium real com anti-fingerprinting, mouse Bezier e digitacao humana. Testa vu
 
 ## Relatorios — Fase 3 (Final)
 
-<img src="Img_vid/relatorios.png" alt="Relatorios" width="700"/>
+<img src="Img_vid/relatorios.png" alt="Relatorios" width="500"/>
 
 </div>
 
@@ -211,7 +211,7 @@ Chromium real com anti-fingerprinting, mouse Bezier e digitacao humana. Testa vu
 
 ## API Keys (Opcionais)
 
-<img src="Img_vid/keys.png" alt="API Keys" width="700"/>
+<img src="Img_vid/keys.png" alt="API Keys" width="500"/>
 
 </div>
 
@@ -236,7 +236,7 @@ Copie `.env.example` para `.env`. Sem chaves, o script roda normalmente — apen
 
 ## Instalacao e Execucao
 
-<img src="Img_vid/instalacao.png" alt="Instalacao" width="700"/>
+<img src="Img_vid/instalacao.png" alt="Instalacao" width="400"/>
 
 </div>
 
@@ -319,7 +319,7 @@ python CyberDyneWeb.py --resume meu_projeto/.checkpoint.cyb
 
 ## Docker
 
-<img src="Img_vid/dockeroff.webp" alt="Docker" width="700"/>
+<img src="Img_vid/dockeroff.webp" alt="Docker" width="400"/>
 
 </div>
 
@@ -348,7 +348,7 @@ docker compose run -p 5000:5000 cyberdyne --url https://alvo.com --all --live -o
 
 > **USE EXCLUSIVAMENTE EM SISTEMAS COM AUTORIZACAO EXPLICITA.**
 >
-> Uso nao autorizado e crime (Lei 12.737/2012 — Brasil / CFAA — USA).
+> Uso não autorizado e crime (Lei 12.737/2012 — Brasil / CFAA — USA).
 > Indicado para: pentest autorizado, bug bounty, laboratorio, desenvolvimento seguro.
 
 ---
@@ -357,7 +357,7 @@ docker compose run -p 5000:5000 cyberdyne --url https://alvo.com --all --live -o
 
 **CyberDyne** — Construido para proteger o que importa.
 
-*"Seguranca nao e um produto. E um processo."* — Bruce Schneier
+*"Seguranca nao é um produto. É um processo."* — Bruce Schneier
 
 *v5.0 — 21/03/2026*
 

@@ -1,0 +1,2016 @@
+{
+  "checkpoint_version": "1.0",
+  "target": "https://www.vekatech.com",
+  "output_dir": "C:\\Users\\diluc\\Desktop\\CyberDyne\\teste01",
+  "scan_start": "2026-03-20T19:18:17.949808",
+  "checkpoint_time": "2026-03-20T19:33:16.601582",
+  "cli_args": {
+    "stealth": false,
+    "ai_payloads": true,
+    "login": "",
+    "all": true
+  },
+  "recon_completed": true,
+  "recon_summary": {
+    "target": "https://www.vekatech.com",
+    "root_domain": "vekatech.com",
+    "subdomains": [
+      ".vekatech.com",
+      "devboards.vekatech.com",
+      "developmentboards.vekatech.com",
+      "evalboards.vekatech.com",
+      "evaluationboards.vekatech.com",
+      "hostmaster.vekatech.com",
+      "kits.vekatech.com",
+      "mx.vekatech.com",
+      "mxs.vekatech.com",
+      "ns1.vekatech.com",
+      "ns2.vekatech.com",
+      "spam.vekatech.com",
+      "starterkits.vekatech.com",
+      "support.vekatech.com",
+      "vekatech.com",
+      "vk-rz.vekatech.com",
+      "ww.vekatech.com",
+      "www.vekatech.com"
+    ],
+    "live_targets": [
+      {
+        "url": "https://www.vekatech.com/aboutus.php",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "https://www.vekatech.com",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://mxs.vekatech.com",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://spam.vekatech.com",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "https://www.vekatech.com/${t}",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "https://spam.vekatech.com",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "https://vekatech.com/product_nxp.php?item=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "https://ww.vekatech.com",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "https://ns2.vekatech.com",
+        "status": 200,
+        "tech": [
+          "nginx"
+        ],
+        "title": "",
+        "server": "nginx",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://www.vekatech.com/VK-RL78_G1x_user_manual_rev1.0_noTOC.pdf",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://www.vekatech.com/joinus.php?sid=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://www.vekatech.com/aboutus.php?sid=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://www.vekatech.com/products.php?id=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://vekatech.com/technology.php?sid=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://vekatech.com/changelang.php?file=FUZZ&lang=FUZZ&sid=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://www.vekatech.com/newsdetails.php?id=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://www.vekatech.com/newsdetails.php?id=FUZZ&sid=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://vekatech.com/news.php?sid=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "https://www.vekatech.com/${this.url}",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "https://vekatech.com",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://vekatech.com",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://vekatech.com/support.php?sid=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "https://hostmaster.vekatech.com",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "https://evalboards.vekatech.com",
+        "status": 200,
+        "tech": [
+          "Apache/2.4.10 (Debian)"
+        ],
+        "title": "",
+        "server": "Apache/2.4.10 (Debian)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "https://vk-rz.vekatech.com",
+        "status": 200,
+        "tech": [
+          "Apache/2.4.10 (Debian)"
+        ],
+        "title": "",
+        "server": "Apache/2.4.10 (Debian)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "https://developmentboards.vekatech.com",
+        "status": 200,
+        "tech": [
+          "Apache/2.4.10 (Debian)"
+        ],
+        "title": "",
+        "server": "Apache/2.4.10 (Debian)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://www.vekatech.com/lpg/fobos/version.xml",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "https://www.vekatech.com/",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://mx.vekatech.com",
+        "status": 200,
+        "tech": [
+          "PHP/4.4.8",
+          "nginx"
+        ],
+        "title": "",
+        "server": "nginx",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "https://devboards.vekatech.com",
+        "status": 200,
+        "tech": [
+          "Apache/2.4.10 (Debian)"
+        ],
+        "title": "",
+        "server": "Apache/2.4.10 (Debian)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://www.vekatech.com/technology.php?sid=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "https://support.vekatech.com",
+        "status": 200,
+        "tech": [
+          "Apache/2.4.10 (Debian)"
+        ],
+        "title": "",
+        "server": "Apache/2.4.10 (Debian)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://devboards.vekatech.com",
+        "status": 200,
+        "tech": [
+          "Apache/2.4.10 (Debian)"
+        ],
+        "title": "",
+        "server": "Apache/2.4.10 (Debian)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "https://vekatech.com/newsdetails.php?id=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://vekatech.com/newsdetails.php?id=FUZZ&sid=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "https://vekatech.com/product_details.php?item=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "https://mx.vekatech.com",
+        "status": 200,
+        "tech": [
+          "nginx"
+        ],
+        "title": "",
+        "server": "nginx",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://vekatech.com/products2.php?id=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://www.vekatech.com/products.php?sid=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://vekatech.com/products.php?sid=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://www.vekatech.com/contactus.php?lang=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://www.vekatech.com/products.php?lang=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://vekatech.com/joinus.php?sid=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://www.vekatech.com/technology.php?id=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://hostmaster.vekatech.com",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "https://kits.vekatech.com",
+        "status": 200,
+        "tech": [
+          "Apache/2.4.10 (Debian)"
+        ],
+        "title": "",
+        "server": "Apache/2.4.10 (Debian)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://evalboards.vekatech.com",
+        "status": 200,
+        "tech": [
+          "Apache/2.4.10 (Debian)"
+        ],
+        "title": "",
+        "server": "Apache/2.4.10 (Debian)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://kits.vekatech.com",
+        "status": 200,
+        "tech": [
+          "Apache/2.4.10 (Debian)"
+        ],
+        "title": "",
+        "server": "Apache/2.4.10 (Debian)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://www.vekatech.com/technology2.php?id=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://www.vekatech.com/news.php?lang=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://www.vekatech.com",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://vekatech.com/newsdetails.php?id=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://www.vekatech.com/contactus.php?sid=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "https://www.vekatech.com/chunk-L4AMPV2J.js",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "https://www.vekatech.com/main-3WAVTGHE.js",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://vekatech.com/aboutus.php?sid=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://www.vekatech.com/aboutus.php?lang=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://www.vekatech.com/technology.php?lang=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://ww.vekatech.com",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "https://starterkits.vekatech.com",
+        "status": 200,
+        "tech": [
+          "Apache/2.4.10 (Debian)"
+        ],
+        "title": "",
+        "server": "Apache/2.4.10 (Debian)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://ns2.vekatech.com",
+        "status": 200,
+        "tech": [
+          "PHP/4.4.8",
+          "nginx"
+        ],
+        "title": "",
+        "server": "nginx",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "https://mxs.vekatech.com",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "https://evaluationboards.vekatech.com",
+        "status": 200,
+        "tech": [
+          "Apache/2.4.10 (Debian)"
+        ],
+        "title": "",
+        "server": "Apache/2.4.10 (Debian)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://www.vekatech.com/index.php?sid=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://www.vekatech.com/joinus.php?lang=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://www.vekatech.com/news.php?sid=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://starterkits.vekatech.com",
+        "status": 200,
+        "tech": [
+          "Apache/2.4.10 (Debian)"
+        ],
+        "title": "",
+        "server": "Apache/2.4.10 (Debian)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://www.vekatech.com/support.php?sid=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://developmentboards.vekatech.com",
+        "status": 200,
+        "tech": [
+          "Apache/2.4.10 (Debian)"
+        ],
+        "title": "",
+        "server": "Apache/2.4.10 (Debian)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://evaluationboards.vekatech.com",
+        "status": 200,
+        "tech": [
+          "Apache/2.4.10 (Debian)"
+        ],
+        "title": "",
+        "server": "Apache/2.4.10 (Debian)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://www.vekatech.com/changelang.php?file=FUZZ&lang=FUZZ&sid=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://www.vekatech.com/newsdetails.php?lang=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://vekatech.com/contactus.php?sid=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://www.vekatech.com/index.php?lang=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://vekatech.com/changelang.php?file=FUZZ&lang=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://vekatech.com/phpbb3/viewforum.php?f=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://support.vekatech.com",
+        "status": 200,
+        "tech": [
+          "Apache/2.4.10 (Debian)"
+        ],
+        "title": "",
+        "server": "Apache/2.4.10 (Debian)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://www.vekatech.com/support.php?lang=FUZZ",
+        "status": 200,
+        "tech": [
+          "nginx/1.24.0 (Ubuntu)"
+        ],
+        "title": "",
+        "server": "nginx/1.24.0 (Ubuntu)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      },
+      {
+        "url": "http://vk-rz.vekatech.com",
+        "status": 200,
+        "tech": [
+          "Apache/2.4.10 (Debian)"
+        ],
+        "title": "",
+        "server": "Apache/2.4.10 (Debian)",
+        "priority": "HIGH",
+        "screenshot": "",
+        "cloudflare": false
+      }
+    ],
+    "low_priority": [
+      "http://.vekatech.com",
+      "https://.vekatech.com",
+      "https://ns1.vekatech.com",
+      "http://ns1.vekatech.com"
+    ],
+    "takeover_results": [],
+    "fuzzing_urls": [
+      "http://vk-rz.vekatech.com",
+      "http://www.vekatech.com/VK-RL78_G1x_user_manual_rev1.0_noTOC.pdf",
+      "http://mxs.vekatech.com",
+      "http://vekatech.com/technology.php?sid=FUZZ",
+      "https://support.vekatech.com",
+      "https://www.vekatech.com/${t}",
+      "https://vekatech.com/product_nxp.php?item=FUZZ",
+      "https://evalboards.vekatech.com",
+      "http://vekatech.com/changelang.php?file=FUZZ&lang=FUZZ&sid=FUZZ",
+      "https://spam.vekatech.com",
+      "https://developmentboards.vekatech.com",
+      "http://vekatech.com/support.php?sid=FUZZ",
+      "http://support.vekatech.com",
+      "https://ns2.vekatech.com",
+      "http://www.vekatech.com/joinus.php?sid=FUZZ",
+      "https://www.vekatech.com/aboutus.php",
+      "http://vekatech.com",
+      "https://hostmaster.vekatech.com",
+      "https://www.vekatech.com",
+      "http://www.vekatech.com/newsdetails.php?id=FUZZ",
+      "http://devboards.vekatech.com",
+      "http://www.vekatech.com/aboutus.php?sid=FUZZ",
+      "http://www.vekatech.com/products.php?id=FUZZ",
+      "http://spam.vekatech.com",
+      "http://www.vekatech.com/newsdetails.php?id=FUZZ&sid=FUZZ",
+      "https://ww.vekatech.com",
+      "http://vekatech.com/news.php?sid=FUZZ",
+      "http://evalboards.vekatech.com",
+      "http://starterkits.vekatech.com",
+      "https://vk-rz.vekatech.com",
+      "https://devboards.vekatech.com",
+      "https://vekatech.com",
+      "http://developmentboards.vekatech.com",
+      "http://www.vekatech.com/lpg/fobos/version.xml",
+      "https://www.vekatech.com/${this.url}",
+      "http://www.vekatech.com/technology.php?sid=FUZZ",
+      "https://kits.vekatech.com",
+      "http://vekatech.com/newsdetails.php?id=FUZZ&sid=FUZZ",
+      "https://www.vekatech.com/",
+      "https://mx.vekatech.com",
+      "http://kits.vekatech.com",
+      "http://www.vekatech.com/products.php?sid=FUZZ",
+      "https://evaluationboards.vekatech.com",
+      "http://vekatech.com/products2.php?id=FUZZ",
+      "http://vekatech.com/products.php?sid=FUZZ",
+      "https://starterkits.vekatech.com",
+      "http://www.vekatech.com/contactus.php?lang=FUZZ",
+      "http://www.vekatech.com/products.php?lang=FUZZ",
+      "http://vekatech.com/joinus.php?sid=FUZZ",
+      "https://vekatech.com/newsdetails.php?id=FUZZ",
+      "http://www.vekatech.com/technology.php?id=FUZZ",
+      "http://mx.vekatech.com",
+      "http://www.vekatech.com/technology2.php?id=FUZZ",
+      "https://vekatech.com/product_details.php?item=FUZZ",
+      "http://www.vekatech.com/news.php?lang=FUZZ",
+      "http://www.vekatech.com",
+      "http://vekatech.com/newsdetails.php?id=FUZZ",
+      "http://www.vekatech.com/contactus.php?sid=FUZZ",
+      "http://evaluationboards.vekatech.com",
+      "http://www.vekatech.com/aboutus.php?lang=FUZZ",
+      "http://vekatech.com/aboutus.php?sid=FUZZ",
+      "http://www.vekatech.com/technology.php?lang=FUZZ",
+      "http://hostmaster.vekatech.com",
+      "http://www.vekatech.com/index.php?sid=FUZZ",
+      "https://www.vekatech.com/chunk-L4AMPV2J.js",
+      "http://www.vekatech.com/joinus.php?lang=FUZZ",
+      "https://www.vekatech.com/main-3WAVTGHE.js",
+      "http://www.vekatech.com/news.php?sid=FUZZ",
+      "http://www.vekatech.com/support.php?sid=FUZZ",
+      "http://www.vekatech.com/newsdetails.php?lang=FUZZ",
+      "http://www.vekatech.com/changelang.php?file=FUZZ&lang=FUZZ&sid=FUZZ",
+      "https://mxs.vekatech.com",
+      "http://vekatech.com/contactus.php?sid=FUZZ",
+      "http://vekatech.com/phpbb3/viewforum.php?f=FUZZ",
+      "http://www.vekatech.com/index.php?lang=FUZZ",
+      "http://vekatech.com/changelang.php?file=FUZZ&lang=FUZZ",
+      "http://ww.vekatech.com",
+      "http://ns2.vekatech.com",
+      "http://www.vekatech.com/support.php?lang=FUZZ"
+    ],
+    "all_urls": [
+      "http://www.vekatech.com/aboutus.php?lang=FUZZ",
+      "http://vekatech.com/aboutus.php?sid=FUZZ",
+      "http://www.vekatech.com/aboutus.php?sid=FUZZ",
+      "http://www.vekatech.com/technology.php?lang=FUZZ",
+      "http://www.vekatech.com/VK-RL78_G1x_user_manual_rev1.0_noTOC.pdf",
+      "http://www.vekatech.com/products.php?sid=FUZZ",
+      "http://www.vekatech.com/products.php?id=FUZZ",
+      "http://vekatech.com/products2.php?id=FUZZ",
+      "http://www.vekatech.com/index.php?sid=FUZZ",
+      "https://www.vekatech.com/services/",
+      "https://www.vekatech.com/chunk-L4AMPV2J.js",
+      "http://www.vekatech.com/newsdetails.php?id=FUZZ&sid=FUZZ",
+      "https://www.vekatech.com/careers",
+      "https://www.vekatech.com/./chunk-NJZFAUE6.js",
+      "https://www.vekatech.com/./chunk-L4AMPV2J.js",
+      "https://www.vekatech.com/products",
+      "http://vekatech.com/news.php?sid=FUZZ",
+      "http://vekatech.com/technology.php?sid=FUZZ",
+      "http://www.vekatech.com/joinus.php?lang=FUZZ",
+      "https://www.vekatech.com/${t}",
+      "https://vekatech.com/product_nxp.php?item=FUZZ",
+      "http://vekatech.com/products.php?sid=FUZZ",
+      "https://www.vekatech.com/services",
+      "https://www.vekatech.com/main-3WAVTGHE.js",
+      "http://www.vekatech.com/contactus.php?lang=FUZZ",
+      "https://www.vekatech.com/news/",
+      "http://www.vekatech.com/news.php?sid=FUZZ",
+      "http://vekatech.com/changelang.php?file=FUZZ&lang=FUZZ&sid=FUZZ",
+      "http://www.vekatech.com/support.php?sid=FUZZ",
+      "http://www.vekatech.com/newsdetails.php?lang=FUZZ",
+      "http://www.vekatech.com/changelang.php?file=FUZZ&lang=FUZZ&sid=FUZZ",
+      "http://www.vekatech.com/products.php?lang=FUZZ",
+      "http://vekatech.com/support.php?sid=FUZZ",
+      "https://www.vekatech.com/news",
+      "http://www.vekatech.com/joinus.php?sid=FUZZ",
+      "http://vekatech.com/joinus.php?sid=FUZZ",
+      "https://www.vekatech.com/aboutus.php",
+      "https://www.vekatech.com/about",
+      "http://vekatech.com/contactus.php?sid=FUZZ",
+      "https://vekatech.com/newsdetails.php?id=FUZZ",
+      "http://vekatech.com/phpbb3/viewforum.php?f=FUZZ",
+      "http://www.vekatech.com/technology.php?id=FUZZ",
+      "http://www.vekatech.com/lpg/fobos/version.xml",
+      "http://www.vekatech.com/index.php?lang=FUZZ",
+      "https://www.vekatech.com/${this.url}",
+      "http://vekatech.com/changelang.php?file=FUZZ&lang=FUZZ",
+      "http://www.vekatech.com/newsdetails.php?id=FUZZ",
+      "http://www.vekatech.com/news.php?lang=FUZZ",
+      "https://vekatech.com/product_details.php?item=FUZZ",
+      "http://www.vekatech.com/technology2.php?id=FUZZ",
+      "http://www.vekatech.com",
+      "http://vekatech.com/newsdetails.php?id=FUZZ",
+      "http://www.vekatech.com/technology.php?sid=FUZZ",
+      "http://www.vekatech.com/contactus.php?sid=FUZZ",
+      "https://www.vekatech.com/products/",
+      "http://vekatech.com/newsdetails.php?id=FUZZ&sid=FUZZ",
+      "https://www.vekatech.com/contact",
+      "http://www.vekatech.com/support.php?lang=FUZZ",
+      "https://www.vekatech.com/"
+    ],
+    "emails": [
+      "info@vekatech.com"
+    ],
+    "open_ports": {
+      "vk-rz.vekatech.com": {
+        "host": "vk-rz.vekatech.com",
+        "open_ports": [
+          {
+            "port": "25",
+            "service": "smtp",
+            "version": "Exim smtpd 4.84_2"
+          },
+          {
+            "port": "26",
+            "service": "smtp",
+            "version": "Exim smtpd 4.84_2"
+          },
+          {
+            "port": "80",
+            "service": "http",
+            "version": "Apache httpd 2.4.10"
+          },
+          {
+            "port": "111",
+            "service": "rpcbind",
+            "version": "2-4 (RPC #100000)"
+          },
+          {
+            "port": "143",
+            "service": "imap",
+            "version": "Courier Imapd (released 2011)"
+          },
+          {
+            "port": "443",
+            "service": "ssl/http",
+            "version": "Apache httpd 2.4.10"
+          },
+          {
+            "port": "2222",
+            "service": "EtherNetIP-1",
+            "version": "?"
+          },
+          {
+            "port": "3000",
+            "service": "ppp",
+            "version": "?"
+          },
+          {
+            "port": "3005",
+            "service": "ssl/http",
+            "version": "Node.js Express framework"
+          },
+          {
+            "port": "3306",
+            "service": "mysql",
+            "version": "MySQL 5.6.39"
+          },
+          {
+            "port": "9001",
+            "service": "http",
+            "version": "nginx"
+          }
+        ],
+        "cves_found": [],
+        "raw": "Starting Nmap 7.98 ( https://nmap.org ) at 2026-03-20 19:20 -0300\nNmap scan report for vk-rz.vekatech.com (91.235.250.45)\nHost is up (0.23s latency).\nrDNS record for 91.235.250.45: mail.t-service.bg\nNot shown: 975 closed tcp ports (reset), 14 filtered tcp ports (no-response)\nSome closed ports may be reported as filtered due to --defeat-rst-ratelimit\nPORT     STATE SERVICE       VERSION\n25/tcp   open  smtp          Exim smtpd 4.84_2\n26/tcp   open  smtp          Exim smtpd 4.84_2\n80/tcp   open  http          Apache httpd 2.4.10\n111/tcp  open  rpcbind       2-4 (RPC #100000)\n143/tcp  open  imap          Courier Imapd (released 2011)\n443/tcp  open  ssl/http      Apache httpd 2.4.10\n2222/tcp open  EtherNetIP-1?\n3000/tcp open  ppp?\n3005/tcp open  ssl/http      Node.js Express framework\n3306/tcp open  mysql         MySQL 5.6.39\n9001/tcp open  http          nginx\n1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :\nSF-Port3000-TCP:V=7.98%I=7%D=3/20%Time=69BDC865%P=i686-pc-windows-windows%\nSF:r(GetRequest,3908,\"HTTP/1\\.1\\x20200\\x20OK\\r\\ncontent-type:\\x20text/html\nSF:;charset=utf-8\\r\\nx-powered-by:\\x20Nuxt\\r\\nDate:\\x20Fri,\\x2020\\x20Mar\\x\nSF:202026\\x2022:21:25\\x20GMT\\r\\nConnection:\\x20close\\r\\n\\r\\n<!DOCTYPE\\x20h\nSF:tml><html\\x20\\x20data-capo=\\\"\\\"><head><meta\\x20charset=\\\"utf-8\\\">\\n<met\nSF:a\\x20name=\\\"viewport\\\"\\x20content=\\\"width=device-width,\\x20initial-scal\nSF:e=1\\\">\\n<style\\x20id=\\\"vuetify-theme-stylesheet\\\">:root\\x20{\\n\\x20\\x20\\\nSF:x20\\x20\\x20\\x20--v-theme-background:\\x20255,255,255;\\n\\x20\\x20\\x20\\x20\\\nSF:x20\\x20--v-theme-background-overlay-multiplier:\\x201;\\n\\x20\\x20\\x20\\x20\nSF:\\x20\\x20--v-theme-surface:\\x20255,255,255;\\n\\x20\\x20\\x20\\x20\\x20\\x20--v\nSF:-theme-surface-overlay-multiplier:\\x201;\\n\\x20\\x20\\x20\\x20\\x20\\x20--v-t\nSF:heme-surface-bright:\\x20255,255,255;\\n\\x20\\x20\\x20\\x20\\x20\\x20--v-theme\nSF:-surface-bright-overlay-multiplier:\\x201;\\n\\x20\\x20\\x20\\x20\\x20\\x20--v-\nSF:theme-surface-light:\\x20238,238,238;\\n\\x20\\x20\\x20\\x20\\x20\\x20--v-theme\nSF:-surface-light-overlay-multiplier:\\x201;\\n\\x20\\x20\\x20\\x20\\x20\\x20--v-t\nSF:heme-surface-variant:\\x2066,66,66;\\n\\x20\\x20\\x20\\x20\\x20\\x20--v-theme-s\nSF:urface-variant-overlay-multiplier:\\x202;\\n\\x20\\x20\\x20\\x20\\x20\\x20--v-t\nSF:heme-on-surface-variant:\\x20238,238,238;\\n\\x20\\x20\\x20\\x20\\x20\\x20--v-t\nSF:heme-primary:\\x2066,176,229;\\n\\x20\\x20\\x20\\x20\\x20\\x20--v-theme-primary\nSF:-overlay-\")%r(Help,2F,\"HTTP/1\\.1\\x20400\\x20Bad\\x20Request\\r\\nConnection\nSF::\\x20close\\r\\n\\r\\n\")%r(NCP,2F,\"HTTP/1\\.1\\x20400\\x20Bad\\x20Request\\r\\nCo\nSF:nnection:\\x20close\\r\\n\\r\\n\")%r(HTTPOptions,3908,\"HTTP/1\\.1\\x20200\\x20OK\nSF:\\r\\ncontent-type:\\x20text/html;charset=utf-8\\r\\nx-powered-by:\\x20Nuxt\\r\nSF:\\nDate:\\x20Fri,\\x2020\\x20Mar\\x202026\\x2022:21:30\\x20GMT\\r\\nConnection:\\\nSF:x20close\\r\\n\\r\\n<!DOCTYPE\\x20html><html\\x20\\x20data-capo=\\\"\\\"><head><me\nSF:ta\\x20charset=\\\"utf-8\\\">\\n<meta\\x20name=\\\"viewport\\\"\\x20content=\\\"width\nSF:=devic"
+      },
+      "www.vekatech.com": {
+        "host": "www.vekatech.com",
+        "open_ports": [
+          {
+            "port": "22",
+            "service": "ssh",
+            "version": "OpenSSH 9.6p1 Ubuntu 3ubuntu13.15 (Ubuntu Linux; protocol 2.0)"
+          },
+          {
+            "port": "80",
+            "service": "http",
+            "version": "nginx 1.24.0 (Ubuntu)"
+          },
+          {
+            "port": "443",
+            "service": "ssl/http",
+            "version": "nginx 1.24.0 (Ubuntu)"
+          },
+          {
+            "port": "3000",
+            "service": "ppp",
+            "version": "?"
+          }
+        ],
+        "cves_found": [],
+        "raw": "Starting Nmap 7.98 ( https://nmap.org ) at 2026-03-20 19:24 -0300\nNmap scan report for www.vekatech.com (78.130.150.3)\nHost is up (0.26s latency).\nrDNS record for 78.130.150.3: vekatech.com\nNot shown: 994 closed tcp ports (reset), 2 filtered tcp ports (no-response)\nSome closed ports may be reported as filtered due to --defeat-rst-ratelimit\nPORT     STATE SERVICE  VERSION\n22/tcp   open  ssh      OpenSSH 9.6p1 Ubuntu 3ubuntu13.15 (Ubuntu Linux; protocol 2.0)\n80/tcp   open  http     nginx 1.24.0 (Ubuntu)\n443/tcp  open  ssl/http nginx 1.24.0 (Ubuntu)\n3000/tcp open  ppp?\n1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :\nSF-Port3000-TCP:V=7.98%I=7%D=3/20%Time=69BDC916%P=i686-pc-windows-windows%\nSF:r(GetRequest,24EA,\"HTTP/1\\.1\\x20200\\x20OK\\r\\nAccept-CH:\\x20Sec-CH-Prefe\nSF:rs-Color-Scheme\\r\\nVary:\\x20rsc,\\x20next-router-state-tree,\\x20next-rou\nSF:ter-prefetch,\\x20next-router-segment-prefetch,\\x20Accept-Encoding\\r\\nCr\nSF:itical-CH:\\x20Sec-CH-Prefers-Color-Scheme\\r\\nX-Powered-By:\\x20Next\\.js,\nSF:\\x20Payload\\r\\nCache-Control:\\x20private,\\x20no-cache,\\x20no-store,\\x20\nSF:max-age=0,\\x20must-revalidate\\r\\nContent-Type:\\x20text/html;\\x20charset\nSF:=utf-8\\r\\nDate:\\x20Fri,\\x2020\\x20Mar\\x202026\\x2022:24:22\\x20GMT\\r\\nConn\nSF:ection:\\x20close\\r\\n\\r\\n<!DOCTYPE\\x20html><html\\x20lang=\\\"en\\\"><head><m\nSF:eta\\x20charSet=\\\"utf-8\\\"/><meta\\x20name=\\\"viewport\\\"\\x20content=\\\"width\nSF:=device-width,\\x20initial-scale=1\\\"/><link\\x20rel=\\\"stylesheet\\\"\\x20hre\nSF:f=\\\"/_next/static/chunks/65d19b9763681551\\.css\\\"\\x20data-precedence=\\\"n\nSF:ext\\\"/><link\\x20rel=\\\"preload\\\"\\x20as=\\\"script\\\"\\x20fetchPriority=\\\"low\nSF:\\\"\\x20href=\\\"/_next/static/chunks/a8c63a8a355e7f60\\.js\\\"/><script\\x20sr\nSF:c=\\\"/_next/static/chunks/883e58e15d9d7c50\\.js\\\"\\x20async=\\\"\\\"></script>\nSF:<script\\x20src=\\\"/_next/static/chunks/1ea72d1be604ca55\\.js\\\"\\x20async=\\\nSF:\"\\\"></script><script\\x20src=\\\"/_next/sta\")%r(Help,2F,\"HTTP/1\\.1\\x20400\\\nSF:x20Bad\\x20Request\\r\\nConnection:\\x20close\\r\\n\\r\\n\")%r(NCP,2F,\"HTTP/1\\.1\nSF:\\x20400\\x20Bad\\x20Request\\r\\nConnection:\\x20close\\r\\n\\r\\n\")%r(HTTPOptio\nSF:ns,140,\"HTTP/1\\.1\\x20400\\x20Bad\\x20Request\\r\\nAccept-CH:\\x20Sec-CH-Pref\nSF:ers-Color-Scheme\\r\\nvary:\\x20Sec-CH-Prefers-Color-Scheme\\r\\nvary:\\x20rs\nSF:c,\\x20next-router-state-tree,\\x20next-router-prefetch,\\x20next-router-s\nSF:egment-prefetch\\r\\nCritical-CH:\\x20Sec-CH-Prefers-Color-Scheme\\r\\nX-Pow\nSF:ered-By:\\x20Next\\.js,\\x20Payload\\r\\nDate:\\x20Fri,\\x2020\\x20Mar\\x202026\\\nSF:x2022:24:24\\x20GMT\\r\\nConnection:\\x20close\\r\\n\\r\\n\")%r(RTSPRequest,140,\nSF:\"HTTP/1\\.1\\x20400\\x20Bad\\x20Request\\r\\nAccept-CH:\\x20Sec-CH-Prefers-Col\nSF:or-Scheme\\r\\nvary:\\x20Sec-CH-Prefers-Color-Scheme\\r\\nvary:\\x20rsc,\\x20n\nSF:ext-router-state-tree,\\x20next-router-prefetch,\\x20next-router-segment-\nSF:prefetch\\r\\nCritical-CH:\\x20Sec-CH-Prefers-Color-Scheme\\r\\nX-Powered-By\nSF::\\x20Next\\.js,\\x20Payload\\r\\nDate:\\x20Fri,\\x2020\\x20Mar\\x202026\\x2022:2\nSF:4"
+      },
+      "mxs.vekatech.com": {
+        "host": "mxs.vekatech.com",
+        "open_ports": [
+          {
+            "port": "22",
+            "service": "ssh",
+            "version": "OpenSSH 9.6p1 Ubuntu 3ubuntu13.15 (Ubuntu Linux; protocol 2.0)"
+          },
+          {
+            "port": "80",
+            "service": "http",
+            "version": "nginx 1.24.0 (Ubuntu)"
+          },
+          {
+            "port": "443",
+            "service": "ssl/http",
+            "version": "nginx 1.24.0 (Ubuntu)"
+          },
+          {
+            "port": "3000",
+            "service": "ppp",
+            "version": "?"
+          }
+        ],
+        "cves_found": [],
+        "raw": "Starting Nmap 7.98 ( https://nmap.org ) at 2026-03-20 19:24 -0300\nNmap scan report for mxs.vekatech.com (78.130.150.3)\nHost is up (0.26s latency).\nrDNS record for 78.130.150.3: vekatech.com\nNot shown: 994 closed tcp ports (reset), 2 filtered tcp ports (no-response)\nSome closed ports may be reported as filtered due to --defeat-rst-ratelimit\nPORT     STATE SERVICE  VERSION\n22/tcp   open  ssh      OpenSSH 9.6p1 Ubuntu 3ubuntu13.15 (Ubuntu Linux; protocol 2.0)\n80/tcp   open  http     nginx 1.24.0 (Ubuntu)\n443/tcp  open  ssl/http nginx 1.24.0 (Ubuntu)\n3000/tcp open  ppp?\n1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :\nSF-Port3000-TCP:V=7.98%I=7%D=3/20%Time=69BDC93B%P=i686-pc-windows-windows%\nSF:r(GetRequest,24EA,\"HTTP/1\\.1\\x20200\\x20OK\\r\\nAccept-CH:\\x20Sec-CH-Prefe\nSF:rs-Color-Scheme\\r\\nVary:\\x20rsc,\\x20next-router-state-tree,\\x20next-rou\nSF:ter-prefetch,\\x20next-router-segment-prefetch,\\x20Accept-Encoding\\r\\nCr\nSF:itical-CH:\\x20Sec-CH-Prefers-Color-Scheme\\r\\nX-Powered-By:\\x20Next\\.js,\nSF:\\x20Payload\\r\\nCache-Control:\\x20private,\\x20no-cache,\\x20no-store,\\x20\nSF:max-age=0,\\x20must-revalidate\\r\\nContent-Type:\\x20text/html;\\x20charset\nSF:=utf-8\\r\\nDate:\\x20Fri,\\x2020\\x20Mar\\x202026\\x2022:25:00\\x20GMT\\r\\nConn\nSF:ection:\\x20close\\r\\n\\r\\n<!DOCTYPE\\x20html><html\\x20lang=\\\"en\\\"><head><m\nSF:eta\\x20charSet=\\\"utf-8\\\"/><meta\\x20name=\\\"viewport\\\"\\x20content=\\\"width\nSF:=device-width,\\x20initial-scale=1\\\"/><link\\x20rel=\\\"stylesheet\\\"\\x20hre\nSF:f=\\\"/_next/static/chunks/65d19b9763681551\\.css\\\"\\x20data-precedence=\\\"n\nSF:ext\\\"/><link\\x20rel=\\\"preload\\\"\\x20as=\\\"script\\\"\\x20fetchPriority=\\\"low\nSF:\\\"\\x20href=\\\"/_next/static/chunks/a8c63a8a355e7f60\\.js\\\"/><script\\x20sr\nSF:c=\\\"/_next/static/chunks/883e58e15d9d7c50\\.js\\\"\\x20async=\\\"\\\"></script>\nSF:<script\\x20src=\\\"/_next/static/chunks/1ea72d1be604ca55\\.js\\\"\\x20async=\\\nSF:\"\\\"></script><script\\x20src=\\\"/_next/sta\")%r(Help,2F,\"HTTP/1\\.1\\x20400\\\nSF:x20Bad\\x20Request\\r\\nConnection:\\x20close\\r\\n\\r\\n\")%r(NCP,2F,\"HTTP/1\\.1\nSF:\\x20400\\x20Bad\\x20Request\\r\\nConnection:\\x20close\\r\\n\\r\\n\")%r(HTTPOptio\nSF:ns,140,\"HTTP/1\\.1\\x20400\\x20Bad\\x20Request\\r\\nAccept-CH:\\x20Sec-CH-Pref\nSF:ers-Color-Scheme\\r\\nvary:\\x20Sec-CH-Prefers-Color-Scheme\\r\\nvary:\\x20rs\nSF:c,\\x20next-router-state-tree,\\x20next-router-prefetch,\\x20next-router-s\nSF:egment-prefetch\\r\\nCritical-CH:\\x20Sec-CH-Prefers-Color-Scheme\\r\\nX-Pow\nSF:ered-By:\\x20Next\\.js,\\x20Payload\\r\\nDate:\\x20Fri,\\x2020\\x20Mar\\x202026\\\nSF:x2022:25:01\\x20GMT\\r\\nConnection:\\x20close\\r\\n\\r\\n\")%r(RTSPRequest,140,\nSF:\"HTTP/1\\.1\\x20400\\x20Bad\\x20Request\\r\\nAccept-CH:\\x20Sec-CH-Prefers-Col\nSF:or-Scheme\\r\\nvary:\\x20Sec-CH-Prefers-Color-Scheme\\r\\nvary:\\x20rsc,\\x20n\nSF:ext-router-state-tree,\\x20next-router-prefetch,\\x20next-router-segment-\nSF:prefetch\\r\\nCritical-CH:\\x20Sec-CH-Prefers-Color-Scheme\\r\\nX-Powered-By\nSF::\\x20Next\\.js,\\x20Payload\\r\\nDate:\\x20Fri,\\x2020\\x20Mar\\x202026\\x2022:2\nSF:5"
+      },
+      "evalboards.vekatech.com": {
+        "host": "evalboards.vekatech.com",
+        "open_ports": [
+          {
+            "port": "25",
+            "service": "smtp",
+            "version": "Exim smtpd 4.84_2"
+          },
+          {
+            "port": "26",
+            "service": "smtp",
+            "version": "Exim smtpd 4.84_2"
+          },
+          {
+            "port": "80",
+            "service": "http",
+            "version": "Apache httpd 2.4.10"
+          },
+          {
+            "port": "111",
+            "service": "rpcbind",
+            "version": "2-4 (RPC #100000)"
+          },
+          {
+            "port": "143",
+            "service": "imap",
+            "version": "Courier Imapd (released 2011)"
+          },
+          {
+            "port": "443",
+            "service": "ssl/http",
+            "version": "Apache httpd 2.4.10"
+          },
+          {
+            "port": "2222",
+            "service": "EtherNetIP-1",
+            "version": "?"
+          },
+          {
+            "port": "3000",
+            "service": "ppp",
+            "version": "?"
+          },
+          {
+            "port": "3005",
+            "service": "ssl/http",
+            "version": "Node.js Express framework"
+          },
+          {
+            "port": "3306",
+            "service": "mysql",
+            "version": "MySQL 5.6.39"
+          },
+          {
+            "port": "9001",
+            "service": "http",
+            "version": "nginx"
+          }
+        ],
+        "cves_found": [],
+        "raw": "Starting Nmap 7.98 ( https://nmap.org ) at 2026-03-20 19:25 -0300\nNmap scan report for evalboards.vekatech.com (91.235.250.45)\nHost is up (0.23s latency).\nrDNS record for 91.235.250.45: mail.gera.bg\nNot shown: 986 closed tcp ports (reset), 3 filtered tcp ports (no-response)\nSome closed ports may be reported as filtered due to --defeat-rst-ratelimit\nPORT     STATE SERVICE       VERSION\n25/tcp   open  smtp          Exim smtpd 4.84_2\n26/tcp   open  smtp          Exim smtpd 4.84_2\n80/tcp   open  http          Apache httpd 2.4.10\n111/tcp  open  rpcbind       2-4 (RPC #100000)\n143/tcp  open  imap          Courier Imapd (released 2011)\n443/tcp  open  ssl/http      Apache httpd 2.4.10\n2222/tcp open  EtherNetIP-1?\n3000/tcp open  ppp?\n3005/tcp open  ssl/http      Node.js Express framework\n3306/tcp open  mysql         MySQL 5.6.39\n9001/tcp open  http          nginx\n1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :\nSF-Port3000-TCP:V=7.98%I=7%D=3/20%Time=69BDC966%P=i686-pc-windows-windows%\nSF:r(GetRequest,3908,\"HTTP/1\\.1\\x20200\\x20OK\\r\\ncontent-type:\\x20text/html\nSF:;charset=utf-8\\r\\nx-powered-by:\\x20Nuxt\\r\\nDate:\\x20Fri,\\x2020\\x20Mar\\x\nSF:202026\\x2022:25:43\\x20GMT\\r\\nConnection:\\x20close\\r\\n\\r\\n<!DOCTYPE\\x20h\nSF:tml><html\\x20\\x20data-capo=\\\"\\\"><head><meta\\x20charset=\\\"utf-8\\\">\\n<met\nSF:a\\x20name=\\\"viewport\\\"\\x20content=\\\"width=device-width,\\x20initial-scal\nSF:e=1\\\">\\n<style\\x20id=\\\"vuetify-theme-stylesheet\\\">:root\\x20{\\n\\x20\\x20\\\nSF:x20\\x20\\x20\\x20--v-theme-background:\\x20255,255,255;\\n\\x20\\x20\\x20\\x20\\\nSF:x20\\x20--v-theme-background-overlay-multiplier:\\x201;\\n\\x20\\x20\\x20\\x20\nSF:\\x20\\x20--v-theme-surface:\\x20255,255,255;\\n\\x20\\x20\\x20\\x20\\x20\\x20--v\nSF:-theme-surface-overlay-multiplier:\\x201;\\n\\x20\\x20\\x20\\x20\\x20\\x20--v-t\nSF:heme-surface-bright:\\x20255,255,255;\\n\\x20\\x20\\x20\\x20\\x20\\x20--v-theme\nSF:-surface-bright-overlay-multiplier:\\x201;\\n\\x20\\x20\\x20\\x20\\x20\\x20--v-\nSF:theme-surface-light:\\x20238,238,238;\\n\\x20\\x20\\x20\\x20\\x20\\x20--v-theme\nSF:-surface-light-overlay-multiplier:\\x201;\\n\\x20\\x20\\x20\\x20\\x20\\x20--v-t\nSF:heme-surface-variant:\\x2066,66,66;\\n\\x20\\x20\\x20\\x20\\x20\\x20--v-theme-s\nSF:urface-variant-overlay-multiplier:\\x202;\\n\\x20\\x20\\x20\\x20\\x20\\x20--v-t\nSF:heme-on-surface-variant:\\x20238,238,238;\\n\\x20\\x20\\x20\\x20\\x20\\x20--v-t\nSF:heme-primary:\\x2066,176,229;\\n\\x20\\x20\\x20\\x20\\x20\\x20--v-theme-primary\nSF:-overlay-\")%r(Help,2F,\"HTTP/1\\.1\\x20400\\x20Bad\\x20Request\\r\\nConnection\nSF::\\x20close\\r\\n\\r\\n\")%r(NCP,2F,\"HTTP/1\\.1\\x20400\\x20Bad\\x20Request\\r\\nCo\nSF:nnection:\\x20close\\r\\n\\r\\n\")%r(HTTPOptions,3908,\"HTTP/1\\.1\\x20200\\x20OK\nSF:\\r\\ncontent-type:\\x20text/html;charset=utf-8\\r\\nx-powered-by:\\x20Nuxt\\r\nSF:\\nDate:\\x20Fri,\\x2020\\x20Mar\\x202026\\x2022:25:46\\x20GMT\\r\\nConnection:\\\nSF:x20close\\r\\n\\r\\n<!DOCTYPE\\x20html><html\\x20\\x20data-capo=\\\"\\\"><head><me\nSF:ta\\x20charset=\\\"utf-8\\\">\\n<meta\\x20name=\\\"viewport\\\"\\x20content=\\\"width\nSF:=device"
+      },
+      "developmentboards.vekatech.com": {
+        "host": "developmentboards.vekatech.com",
+        "open_ports": [
+          {
+            "port": "25",
+            "service": "smtp",
+            "version": "Exim smtpd 4.84_2"
+          },
+          {
+            "port": "26",
+            "service": "tcpwrapped",
+            "version": "80/tcp   open  http          Apache httpd 2.4.10"
+          },
+          {
+            "port": "111",
+            "service": "rpcbind",
+            "version": "2-4 (RPC #100000)"
+          },
+          {
+            "port": "143",
+            "service": "imap",
+            "version": "Courier Imapd (released 2011)"
+          },
+          {
+            "port": "443",
+            "service": "ssl/http",
+            "version": "Apache httpd 2.4.10"
+          },
+          {
+            "port": "2222",
+            "service": "EtherNetIP-1",
+            "version": "?"
+          },
+          {
+            "port": "3000",
+            "service": "ppp",
+            "version": "?"
+          },
+          {
+            "port": "3005",
+            "service": "deslogin",
+            "version": "?"
+          },
+          {
+            "port": "3306",
+            "service": "mysql",
+            "version": "MySQL 5.6.39"
+          },
+          {
+            "port": "9001",
+            "service": "tcpwrapped",
+            "version": "1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :"
+          }
+        ],
+        "cves_found": [],
+        "raw": "Starting Nmap 7.98 ( https://nmap.org ) at 2026-03-20 19:28 -0300\nNmap scan report for developmentboards.vekatech.com (91.235.250.45)\nHost is up (0.23s latency).\nrDNS record for 91.235.250.45: mail.lastminute.bg\nNot shown: 938 closed tcp ports (reset), 51 filtered tcp ports (no-response)\nSome closed ports may be reported as filtered due to --defeat-rst-ratelimit\nPORT     STATE SERVICE       VERSION\n25/tcp   open  smtp          Exim smtpd 4.84_2\n26/tcp   open  tcpwrapped\n80/tcp   open  http          Apache httpd 2.4.10\n111/tcp  open  rpcbind       2-4 (RPC #100000)\n143/tcp  open  imap          Courier Imapd (released 2011)\n443/tcp  open  ssl/http      Apache httpd 2.4.10\n2222/tcp open  EtherNetIP-1?\n3000/tcp open  ppp?\n3005/tcp open  deslogin?\n3306/tcp open  mysql         MySQL 5.6.39\n9001/tcp open  tcpwrapped\n1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :\nSF-Port3000-TCP:V=7.98%I=7%D=3/20%Time=69BDCA27%P=i686-pc-windows-windows%\nSF:r(GetRequest,3908,\"HTTP/1\\.1\\x20200\\x20OK\\r\\ncontent-type:\\x20text/html\nSF:;charset=utf-8\\r\\nx-powered-by:\\x20Nuxt\\r\\nDate:\\x20Fri,\\x2020\\x20Mar\\x\nSF:202026\\x2022:28:55\\x20GMT\\r\\nConnection:\\x20close\\r\\n\\r\\n<!DOCTYPE\\x20h\nSF:tml><html\\x20\\x20data-capo=\\\"\\\"><head><meta\\x20charset=\\\"utf-8\\\">\\n<met\nSF:a\\x20name=\\\"viewport\\\"\\x20content=\\\"width=device-width,\\x20initial-scal\nSF:e=1\\\">\\n<style\\x20id=\\\"vuetify-theme-stylesheet\\\">:root\\x20{\\n\\x20\\x20\\\nSF:x20\\x20\\x20\\x20--v-theme-background:\\x20255,255,255;\\n\\x20\\x20\\x20\\x20\\\nSF:x20\\x20--v-theme-background-overlay-multiplier:\\x201;\\n\\x20\\x20\\x20\\x20\nSF:\\x20\\x20--v-theme-surface:\\x20255,255,255;\\n\\x20\\x20\\x20\\x20\\x20\\x20--v\nSF:-theme-surface-overlay-multiplier:\\x201;\\n\\x20\\x20\\x20\\x20\\x20\\x20--v-t\nSF:heme-surface-bright:\\x20255,255,255;\\n\\x20\\x20\\x20\\x20\\x20\\x20--v-theme\nSF:-surface-bright-overlay-multiplier:\\x201;\\n\\x20\\x20\\x20\\x20\\x20\\x20--v-\nSF:theme-surface-light:\\x20238,238,238;\\n\\x20\\x20\\x20\\x20\\x20\\x20--v-theme\nSF:-surface-light-overlay-multiplier:\\x201;\\n\\x20\\x20\\x20\\x20\\x20\\x20--v-t\nSF:heme-surface-variant:\\x2066,66,66;\\n\\x20\\x20\\x20\\x20\\x20\\x20--v-theme-s\nSF:urface-variant-overlay-multiplier:\\x202;\\n\\x20\\x20\\x20\\x20\\x20\\x20--v-t\nSF:heme-on-surface-variant:\\x20238,238,238;\\n\\x20\\x20\\x20\\x20\\x20\\x20--v-t\nSF:heme-primary:\\x2066,176,229;\\n\\x20\\x20\\x20\\x20\\x20\\x20--v-theme-primary\nSF:-overlay-\")%r(Help,2F,\"HTTP/1\\.1\\x20400\\x20Bad\\x20Request\\r\\nConnection\nSF::\\x20close\\r\\n\\r\\n\")%r(NCP,2F,\"HTTP/1\\.1\\x20400\\x20Bad\\x20Request\\r\\nCo\nSF:nnection:\\x20close\\r\\n\\r\\n\")%r(HTTPOptions,3908,\"HTTP/1\\.1\\x20200\\x20OK\nSF:\\r\\ncontent-type:\\x20text/html;charset=utf-8\\r\\nx-powered-by:\\x20Nuxt\\r\nSF:\\nDate:\\x20Fri,\\x2020\\x20Mar\\x202026\\x2022:29:04\\x20GMT\\r\\nConnection:\\\nSF:x20close\\r\\n\\r\\n<!DOCTYPE\\x20html><html\\x20\\x20data-capo=\\\"\\\"><head><me\nSF:ta\\x20charset=\\\"utf-8\\\">\\n<meta\\x20name=\\\"viewport\\\"\\x20content=\\\"width\nSF:=device-width,\\x20initial-scale=1\\\">\\n<style\\x20id=\\\""
+      }
+    },
+    "github_findings": [
+      {
+        "query": "vekatech.com secret",
+        "repo": "cirosantilli/expired-domain-names-by-day-2024",
+        "file": "04/02/37",
+        "url": "https://github.com/cirosantilli/expired-domain-names-by-day-2024/blob/7513ce8690e9c92eafb67a37ad07bf6023f4e420/04/02/37"
+      },
+      {
+        "query": "vekatech.com secret",
+        "repo": "cirosantilli/expired-domain-names-by-day-2019",
+        "file": "02/21/42",
+        "url": "https://github.com/cirosantilli/expired-domain-names-by-day-2019/blob/42d73e12ffdf6077d80494ef3b87cc5592f75563/02/21/42"
+      },
+      {
+        "query": "vekatech.com secret",
+        "repo": "cirosantilli/expired-domain-names-by-day-2020",
+        "file": "02/18/11",
+        "url": "https://github.com/cirosantilli/expired-domain-names-by-day-2020/blob/b25dbd97f52600063d217ad953f7a0f8f8fab9a2/02/18/11"
+      },
+      {
+        "query": "vekatech.com secret",
+        "repo": "cirosantilli/expired-domain-names-by-day-2020",
+        "file": "02/18/52",
+        "url": "https://github.com/cirosantilli/expired-domain-names-by-day-2020/blob/b25dbd97f52600063d217ad953f7a0f8f8fab9a2/02/18/52"
+      }
+    ],
+    "ai_fingerprint": {
+      "ai_libraries_found": [],
+      "ai_endpoints_found": [
+        {
+          "url": "https://www.vekatech.com/aboutus.php/v1/chat/completions",
+          "status": 200
+        },
+        {
+          "url": "https://www.vekatech.com/aboutus.php/api/v1/chat",
+          "status": 200
+        },
+        {
+          "url": "https://www.vekatech.com/aboutus.php/api/chat",
+          "status": 200
+        },
+        {
+          "url": "https://www.vekatech.com/aboutus.php/chat",
+          "status": 200
+        },
+        {
+          "url": "https://www.vekatech.com/aboutus.php/api/ai",
+          "status": 200
+        },
+        {
+          "url": "https://www.vekatech.com/aboutus.php/api/ask",
+          "status": 200
+        },
+        {
+          "url": "https://www.vekatech.com/aboutus.php/agent/run",
+          "status": 200
+        },
+        {
+          "url": "https://www.vekatech.com/aboutus.php/agent/invoke",
+          "status": 200
+        },
+        {
+          "url": "https://www.vekatech.com/aboutus.php/langchain/log",
+          "status": 200
+        },
+        {
+          "url": "https://www.vekatech.com/aboutus.php/langchain/run",
+          "status": 200
+        },
+        {
+          "url": "https://www.vekatech.com/aboutus.php/api/copilot",
+          "status": 200
+        },
+        {
+          "url": "https://www.vekatech.com/aboutus.php/api/assistant",
+          "status": 200
+        },
+        {
+          "url": "https://www.vekatech.com/aboutus.php/assistant",
+          "status": 200
+        },
+        {
+          "url": "https://www.vekatech.com/aboutus.php/api/llm",
+          "status": 200
+        },
+        {
+          "url": "https://www.vekatech.com/aboutus.php/llm/chat",
+          "status": 200
+        },
+        {
+          "url": "https://www.vekatech.com/aboutus.php/api/openai",
+          "status": 200
+        },
+        {
+          "url": "https://www.vekatech.com/aboutus.php/api/generate",
+          "status": 200
+        },
+        {
+          "url": "https://www.vekatech.com/aboutus.php/generate",
+          "status": 200
+        }
+      ],
+      "baas_found": [],
+      "llm_endpoints": []
+    },
+    "header_notes": {
+      "https://www.vekatech.com/aboutus.php": [
+        "Tecnologias: Magento, Angular, Nginx, Zendesk, PHP, Vite",
+        "Headers de segurança ausentes: strict-transport-security, x-frame-options, x-content-type-options, content-security-policy",
+        "Server header exposto: nginx/1.24.0 (Ubuntu)"
+      ],
+      "https://www.vekatech.com": [
+        "Tecnologias: Magento, Angular, Nginx, Zendesk, Vite",
+        "Headers de segurança ausentes: strict-transport-security, x-frame-options, x-content-type-options, content-security-policy",
+        "Server header exposto: nginx/1.24.0 (Ubuntu)"
+      ],
+      "http://mxs.vekatech.com": [
+        "Tecnologias: Nginx",
+        "Headers de segurança ausentes: strict-transport-security, x-frame-options, x-content-type-options, content-security-policy",
+        "Server header exposto: nginx/1.24.0 (Ubuntu)"
+      ]
+    },
+    "stack": {
+      "Magento": {
+        "evidence": "js_global:Mage",
+        "urls": [
+          "https://www.vekatech.com/aboutus.php",
+          "https://www.vekatech.com"
+        ]
+      },
+      "Angular": {
+        "evidence": "html:<app-root",
+        "urls": [
+          "https://www.vekatech.com/aboutus.php",
+          "https://www.vekatech.com"
+        ]
+      },
+      "Nginx": {
+        "evidence": "header:server",
+        "urls": [
+          "https://www.vekatech.com/aboutus.php",
+          "https://www.vekatech.com",
+          "http://mxs.vekatech.com"
+        ]
+      },
+      "Zendesk": {
+        "evidence": "js_global:zE",
+        "urls": [
+          "https://www.vekatech.com/aboutus.php",
+          "https://www.vekatech.com"
+        ]
+      },
+      "PHP": {
+        "evidence": "url_path:\\.php",
+        "urls": [
+          "https://www.vekatech.com/aboutus.php"
+        ]
+      },
+      "Vite": {
+        "evidence": "html:type=\"module\"",
+        "urls": [
+          "https://www.vekatech.com/aboutus.php",
+          "https://www.vekatech.com"
+        ]
+      }
+    },
+    "tech_fingerprint": {
+      "by_category": {
+        "E-commerce / CMS": [
+          "Magento"
+        ],
+        "JavaScript Framework": [
+          "Angular"
+        ],
+        "Web Server": [
+          "Nginx"
+        ],
+        "Customer Support": [
+          "Zendesk"
+        ],
+        "Programming Language": [
+          "PHP"
+        ],
+        "JavaScript Bundler / Dev Server": [
+          "Vite"
+        ]
+      },
+      "all": [
+        "Magento",
+        "Angular",
+        "Nginx",
+        "Zendesk",
+        "PHP",
+        "Vite"
+      ]
+    },
+    "whois": {
+      "domain": "vekatech.com",
+      "whois_server": "whois.verisign-grs.com",
+      "parsed": {
+        "Updated Date": "2026-03-15T04:12:50Z",
+        "Creation Date": "2004-06-24T08:49:12Z",
+        "Expiry Date": "2026-06-24T08:49:12Z",
+        "Registrar": "OnlineNIC, Inc.",
+        "DNSSEC": "unsigned",
+        "Name Servers": [
+          "ns1.hostmates.com",
+          "ns2.hostmates.com"
+        ],
+        "Status": [
+          "clientDeleteProhibited",
+          "clientTransferProhibited"
+        ]
+      },
+      "raw": "   Domain Name: VEKATECH.COM\r\n   Registry Domain ID: 123315024_DOMAIN_COM-VRSN\r\n   Registrar WHOIS Server: whois.onlinenic.com\r\n   Registrar URL: http://www.onlinenic.com\r\n   Updated Date: 2026-03-15T04:12:50Z\r\n   Creation Date: 2004-06-24T08:49:12Z\r\n   Registry Expiry Date: 2026-06-24T08:49:12Z\r\n   Registrar: OnlineNIC, Inc.\r\n   Registrar IANA ID: 82\r\n   Registrar Abuse Contact Email: abuse@onlinenic.com\r\n   Registrar Abuse Contact Phone: +1 833-678-1173\r\n   Domain Status: clientDeleteProhibited https://icann.org/epp#clientDeleteProhibited\r\n   Domain Status: clientTransferProhibited https://icann.org/epp#clientTransferProhibited\r\n   Name Server: NS1.HOSTMATES.COM\r\n   Name Server: NS2.HOSTMATES.COM\r\n   DNSSEC: unsigned\r\n   URL of the ICANN Whois Inaccuracy Complaint Form: https://www.icann.org/wicf/\r\n>>> Last update of whois database: 2026-03-20T22:20:19Z <<<\r\n\r\nFor more information on Whois status codes, please visit https://icann.org/epp\r\n\r\nNOTICE: The expiration date displayed in this record is the date the\r\nregistrar's sponsorship of the domain name registration in the registry is\r\ncurrently set to expire. This date does not necessarily reflect the expiration\r\ndate of the domain name registrant's agreement with the sponsoring\r\nregistrar.  Users may consult the sponsoring registrar's Whois database to\r\nview the registrar's reported date of expiration for this registration.\r\n\r\nTERMS OF USE: You are not authorized to access or query our Whois\r\ndatabase through the use of electronic processes that are high-volume and\r\nautomated except as reasonably necessary to register domain names or\r\nmodify existing registrations; the Data in VeriSign Global Registry\r\nServices' (\"VeriSign\") Whois database is provided by VeriSign for\r\ninformation purposes only, and to assist persons in obtaining information\r\nabout or related to a domain name registration record. VeriSign does not\r\nguarantee its accuracy. By submitting a Whois query, you agree to abide\r\nby the following terms of use: You agree that you may use this Data only\r\nfor lawful purposes and that under no circumstances will you use this Data\r\nto: (1) allow, enable, or otherwise support the transmission of mass\r\nunsolicited, commercial advertising or solicitations via e-mail, telephone,\r\nor facsimile; or (2) enable high volume, automated, electronic processes\r\nthat apply to VeriSign (or its computer systems). The compilation,\r\nrepackaging, dissemination or other use of this Data is expressly\r\nprohibited without the prior written consent of VeriSign. You agree not to\r\nuse electronic processes that are automated and high-volume to access or\r\nquery the Whois database except as reasonably necessary to register\r\ndomain names or modify existing registrations. VeriSign reserves the right\r\nto restrict your access to the Whois database in its sole discretion to ensure\r\noperational stability.  VeriSign may restrict or terminate your access to the\r\nWhois database for failure to abide by these terms of use. VeriSign\r\nreserves the right to modify these terms at any time.\r\n\r\nThe Registry database contains ONLY .COM, .NET, .EDU domains and\r\nRegistrars.\r\n"
+    },
+    "shodan": {},
+    "fuzz_paths": {
+      "https://ww.vekatech.com/admin/dashboard": 200,
+      "https://vekatech.com/admin": 200,
+      "https://www.vekatech.com/admin/auth.inc.php": 200,
+      "https://www.vekatech.com/admin": 200,
+      "https://www.vekatech.com/admin/control": 200,
+      "https://www.vekatech.com/admin/home": 200,
+      "https://www.vekatech.com/admin/panel": 200,
+      "https://www.vekatech.com/admin/dashboard": 200,
+      "https://www.vekatech.com/admin/index": 200,
+      "https://www.vekatech.com/api/jobs": 200,
+      "https://www.vekatech.com/api/pages": 200,
+      "https://www.vekatech.com/admin/login": 200,
+      "http://mxs.vekatech.com/?page=admin.auth.inc": 200,
+      "http://mxs.vekatech.com/?page=auth.inc": 200,
+      "http://mxs.vekatech.com/?:": 200,
+      "https://vekatech.com/admin/login": 200,
+      "https://vekatech.com/api/pages": 200,
+      "http://mxs.vekatech.com/?page=auth.inc.php": 200,
+      "https://vekatech.com/api/jobs": 200,
+      "http://spam.vekatech.com/?page=admin.auth.inc": 200,
+      "http://spam.vekatech.com/?:": 200,
+      "http://spam.vekatech.com/?page=auth.inc": 200,
+      "http://spam.vekatech.com/?page=auth.inc.php": 200,
+      "https://vekatech.com/admin/index": 200,
+      "https://spam.vekatech.com/admin": 200,
+      "https://spam.vekatech.com/admin/auth.inc": 200,
+      "https://spam.vekatech.com/admin/auth.inc.php": 200,
+      "https://spam.vekatech.com/admin/console": 200,
+      "https://spam.vekatech.com/admin/control": 200,
+      "https://spam.vekatech.com/admin/dashboard": 200,
+      "https://spam.vekatech.com/admin/home": 200,
+      "https://spam.vekatech.com/admin/panel": 200,
+      "https://spam.vekatech.com/admin/index": 200,
+      "https://spam.vekatech.com/api/jobs": 200,
+      "https://spam.vekatech.com/api/pages": 200,
+      "https://vekatech.com/admin/panel": 200,
+      "https://vekatech.com/admin/home": 200,
+      "https://vekatech.com/admin/auth.inc.php": 200,
+      "https://vekatech.com/admin/console": 200,
+      "https://vekatech.com/admin/dashboard": 200,
+      "https://vekatech.com/admin/control": 200,
+      "https://spam.vekatech.com/admin/login": 200,
+      "https://vekatech.com/admin/auth.inc": 200,
+      "https://ww.vekatech.com/admin/auth.inc.php": 200,
+      "https://ww.vekatech.com/admin/login": 200,
+      "https://ww.vekatech.com/admin": 200,
+      "https://ww.vekatech.com/admin/auth.inc": 200,
+      "https://ww.vekatech.com/admin/console": 200,
+      "https://www.vekatech.com/admin/console": 200,
+      "https://ww.vekatech.com/admin/control": 200,
+      "https://www.vekatech.com/admin/auth.inc": 200,
+      "https://ww.vekatech.com/admin/home": 200,
+      "https://ww.vekatech.com/admin/panel": 200,
+      "https://ww.vekatech.com/admin/index": 200,
+      "https://ww.vekatech.com/api/jobs": 200,
+      "https://ww.vekatech.com/api/pages": 200,
+      "https://vekatech.com/%2e%2e//google.com": 400,
+      "https://www.vekatech.com/%2e%2e//google.com": 400,
+      "http://mxs.vekatech.com/%2e%2e//google.com": 400,
+      "https://ww.vekatech.com/%2e%2e//google.com": 400,
+      "http://spam.vekatech.com/%2e%2e//google.com": 400,
+      "https://spam.vekatech.com/%2e%2e//google.com": 400,
+      "https://ns2.vekatech.com/.cobalt/alert/service.cgi?service=<img%20src=javascript:alert('Vulnerable')>": 400,
+      "https://ns2.vekatech.com/.cobalt/alert/service.cgi?service=<script>alert('Vulnerable')</script>": 400,
+      "https://ns2.vekatech.com/.cobalt/alert/service.cgi?service=<img%20src=javascript:alert('XSS')>": 400,
+      "https://ns2.vekatech.com/.cobalt/alert/service.cgi?service=<script>alert('XSS')</script>": 400,
+      "https://ns2.vekatech.com/phpmyadmin/": 403,
+      "https://spam.vekatech.com/api/users/login": 403,
+      "https://ns2.vekatech.com/.htaccess.old": 403,
+      "https://ns2.vekatech.com/.htaccess.bak": 403,
+      "https://ns2.vekatech.com/.htpasswd": 403,
+      "https://ns2.vekatech.com/.htaccess~": 403,
+      "https://ns2.vekatech.com/cgi-bin/": 403,
+      "https://ns2.vekatech.com/mysql/": 403,
+      "https://ns2.vekatech.com/phpMyAdmin/": 403,
+      "https://ww.vekatech.com/api/users": 403,
+      "https://ns2.vekatech.com/phpmyadmin": 403,
+      "https://ww.vekatech.com/api/users/current": 403,
+      "https://ns2.vekatech.com/server-status": 403,
+      "https://ns2.vekatech.com/webmail/": 403,
+      "https://ns2.vekatech.com/.htaccess.save": 403,
+      "https://ns2.vekatech.com/.htaccess": 403,
+      "https://spam.vekatech.com/api/users/admin": 403,
+      "https://spam.vekatech.com/api/users/current": 403,
+      "https://spam.vekatech.com/api/users": 403,
+      "https://www.vekatech.com/api/users/login": 403,
+      "https://www.vekatech.com/api/users/current": 403,
+      "https://www.vekatech.com/api/users/admin": 403,
+      "https://www.vekatech.com/api/users": 403,
+      "https://vekatech.com/api/users/admin": 403,
+      "https://ww.vekatech.com/api/users/admin": 403,
+      "https://ww.vekatech.com/api/users/login": 403,
+      "https://ns2.vekatech.com/phpmyadmin/index.php": 403,
+      "https://vekatech.com/api/users/login": 403,
+      "https://vekatech.com/api/users/current": 403,
+      "https://vekatech.com/api/users": 403,
+      "https://ns2.vekatech.com/%2e%2e//google.com": 500
+    },
+    "linkfinder": {
+      "js_files_analyzed": 6,
+      "endpoints_found": 12,
+      "endpoints": [
+        "./chunk-L4AMPV2J.js",
+        "./chunk-NJZFAUE6.js",
+        "/about",
+        "/careers",
+        "/contact",
+        "/news",
+        "/news/",
+        "/products",
+        "/products/",
+        "/services",
+        "/services/",
+        "http://www.w3.org/2000/svg"
+      ],
+      "api_endpoints": [],
+      "new_urls_added": 11,
+      "secrets": []
+    },
+    "go_fuzzer": {
+      "duration_sec": 70.141311,
+      "total_requests": 27060,
+      "req_per_sec": 385.79261799084424,
+      "found": 97
+    }
+  },
+  "subdomains": [
+    ".vekatech.com",
+    "devboards.vekatech.com",
+    "developmentboards.vekatech.com",
+    "evalboards.vekatech.com",
+    "evaluationboards.vekatech.com",
+    "hostmaster.vekatech.com",
+    "kits.vekatech.com",
+    "mx.vekatech.com",
+    "mxs.vekatech.com",
+    "ns1.vekatech.com",
+    "ns2.vekatech.com",
+    "spam.vekatech.com",
+    "starterkits.vekatech.com",
+    "support.vekatech.com",
+    "vekatech.com",
+    "vk-rz.vekatech.com",
+    "ww.vekatech.com",
+    "www.vekatech.com"
+  ],
+  "live_urls": [
+    "https://www.vekatech.com/aboutus.php",
+    "https://www.vekatech.com",
+    "http://mxs.vekatech.com",
+    "http://spam.vekatech.com",
+    "https://www.vekatech.com/${t}",
+    "https://spam.vekatech.com",
+    "https://vekatech.com/product_nxp.php?item=FUZZ",
+    "https://ww.vekatech.com",
+    "https://ns2.vekatech.com",
+    "http://www.vekatech.com/VK-RL78_G1x_user_manual_rev1.0_noTOC.pdf",
+    "http://www.vekatech.com/joinus.php?sid=FUZZ",
+    "http://www.vekatech.com/aboutus.php?sid=FUZZ",
+    "http://www.vekatech.com/products.php?id=FUZZ",
+    "http://vekatech.com/technology.php?sid=FUZZ",
+    "http://vekatech.com/changelang.php?file=FUZZ&lang=FUZZ&sid=FUZZ",
+    "http://www.vekatech.com/newsdetails.php?id=FUZZ",
+    "http://www.vekatech.com/newsdetails.php?id=FUZZ&sid=FUZZ",
+    "http://vekatech.com/news.php?sid=FUZZ",
+    "https://www.vekatech.com/${this.url}",
+    "https://vekatech.com",
+    "http://vekatech.com",
+    "http://vekatech.com/support.php?sid=FUZZ",
+    "https://hostmaster.vekatech.com",
+    "https://evalboards.vekatech.com",
+    "https://vk-rz.vekatech.com",
+    "https://developmentboards.vekatech.com",
+    "http://www.vekatech.com/lpg/fobos/version.xml",
+    "https://www.vekatech.com/",
+    "http://mx.vekatech.com",
+    "https://devboards.vekatech.com",
+    "http://www.vekatech.com/technology.php?sid=FUZZ",
+    "https://support.vekatech.com",
+    "http://devboards.vekatech.com",
+    "https://vekatech.com/newsdetails.php?id=FUZZ",
+    "http://vekatech.com/newsdetails.php?id=FUZZ&sid=FUZZ",
+    "https://vekatech.com/product_details.php?item=FUZZ",
+    "https://mx.vekatech.com",
+    "http://vekatech.com/products2.php?id=FUZZ",
+    "http://www.vekatech.com/products.php?sid=FUZZ",
+    "http://vekatech.com/products.php?sid=FUZZ",
+    "http://www.vekatech.com/contactus.php?lang=FUZZ",
+    "http://www.vekatech.com/products.php?lang=FUZZ",
+    "http://vekatech.com/joinus.php?sid=FUZZ",
+    "http://www.vekatech.com/technology.php?id=FUZZ",
+    "http://hostmaster.vekatech.com",
+    "https://kits.vekatech.com",
+    "http://evalboards.vekatech.com",
+    "http://kits.vekatech.com",
+    "http://www.vekatech.com/technology2.php?id=FUZZ",
+    "http://www.vekatech.com/news.php?lang=FUZZ",
+    "http://www.vekatech.com",
+    "http://vekatech.com/newsdetails.php?id=FUZZ",
+    "http://www.vekatech.com/contactus.php?sid=FUZZ",
+    "https://www.vekatech.com/chunk-L4AMPV2J.js",
+    "https://www.vekatech.com/main-3WAVTGHE.js",
+    "http://vekatech.com/aboutus.php?sid=FUZZ",
+    "http://www.vekatech.com/aboutus.php?lang=FUZZ",
+    "http://www.vekatech.com/technology.php?lang=FUZZ",
+    "http://ww.vekatech.com",
+    "https://starterkits.vekatech.com",
+    "http://ns2.vekatech.com",
+    "https://mxs.vekatech.com",
+    "https://evaluationboards.vekatech.com",
+    "http://www.vekatech.com/index.php?sid=FUZZ",
+    "http://www.vekatech.com/joinus.php?lang=FUZZ",
+    "http://www.vekatech.com/news.php?sid=FUZZ",
+    "http://starterkits.vekatech.com",
+    "http://www.vekatech.com/support.php?sid=FUZZ",
+    "http://developmentboards.vekatech.com",
+    "http://evaluationboards.vekatech.com",
+    "http://www.vekatech.com/changelang.php?file=FUZZ&lang=FUZZ&sid=FUZZ",
+    "http://www.vekatech.com/newsdetails.php?lang=FUZZ",
+    "http://vekatech.com/contactus.php?sid=FUZZ",
+    "http://www.vekatech.com/index.php?lang=FUZZ",
+    "http://vekatech.com/changelang.php?file=FUZZ&lang=FUZZ",
+    "http://vekatech.com/phpbb3/viewforum.php?f=FUZZ",
+    "http://support.vekatech.com",
+    "http://www.vekatech.com/support.php?lang=FUZZ",
+    "http://vk-rz.vekatech.com"
+  ],
+  "all_urls": [
+    "http://vk-rz.vekatech.com",
+    "http://www.vekatech.com/VK-RL78_G1x_user_manual_rev1.0_noTOC.pdf",
+    "http://mxs.vekatech.com",
+    "https://www.vekatech.com/./chunk-NJZFAUE6.js",
+    "http://vekatech.com/technology.php?sid=FUZZ",
+    "https://support.vekatech.com",
+    "https://www.vekatech.com/${t}",
+    "https://vekatech.com/product_nxp.php?item=FUZZ",
+    "https://www.vekatech.com/services",
+    "https://evalboards.vekatech.com",
+    "https://www.vekatech.com/news/",
+    "http://vekatech.com/changelang.php?file=FUZZ&lang=FUZZ&sid=FUZZ",
+    "https://spam.vekatech.com",
+    "https://developmentboards.vekatech.com",
+    "http://vekatech.com/support.php?sid=FUZZ",
+    "http://support.vekatech.com",
+    "https://ns2.vekatech.com",
+    "http://www.vekatech.com/joinus.php?sid=FUZZ",
+    "https://www.vekatech.com/aboutus.php",
+    "http://vekatech.com",
+    "https://hostmaster.vekatech.com",
+    "https://www.vekatech.com",
+    "http://www.vekatech.com/newsdetails.php?id=FUZZ",
+    "http://devboards.vekatech.com",
+    "https://www.vekatech.com/products/",
+    "http://www.vekatech.com/aboutus.php?sid=FUZZ",
+    "http://www.vekatech.com/products.php?id=FUZZ",
+    "http://spam.vekatech.com",
+    "http://www.vekatech.com/newsdetails.php?id=FUZZ&sid=FUZZ",
+    "https://www.vekatech.com/./chunk-L4AMPV2J.js",
+    "https://www.vekatech.com/products",
+    "https://ww.vekatech.com",
+    "http://vekatech.com/news.php?sid=FUZZ",
+    "http://evalboards.vekatech.com",
+    "http://starterkits.vekatech.com",
+    "https://vk-rz.vekatech.com",
+    "https://devboards.vekatech.com",
+    "https://vekatech.com",
+    "http://developmentboards.vekatech.com",
+    "https://www.vekatech.com/about",
+    "http://www.vekatech.com/lpg/fobos/version.xml",
+    "https://www.vekatech.com/${this.url}",
+    "http://www.vekatech.com/technology.php?sid=FUZZ",
+    "https://kits.vekatech.com",
+    "http://vekatech.com/newsdetails.php?id=FUZZ&sid=FUZZ",
+    "https://www.vekatech.com/",
+    "https://mx.vekatech.com",
+    "http://kits.vekatech.com",
+    "http://www.vekatech.com/products.php?sid=FUZZ",
+    "https://evaluationboards.vekatech.com",
+    "http://vekatech.com/products2.php?id=FUZZ",
+    "https://www.vekatech.com/careers",
+    "http://vekatech.com/products.php?sid=FUZZ",
+    "https://starterkits.vekatech.com",
+    "http://www.vekatech.com/contactus.php?lang=FUZZ",
+    "http://www.vekatech.com/products.php?lang=FUZZ",
+    "http://vekatech.com/joinus.php?sid=FUZZ",
+    "https://vekatech.com/newsdetails.php?id=FUZZ",
+    "http://www.vekatech.com/technology.php?id=FUZZ",
+    "http://mx.vekatech.com",
+    "http://www.vekatech.com/news.php?lang=FUZZ",
+    "https://vekatech.com/product_details.php?item=FUZZ",
+    "http://www.vekatech.com/technology2.php?id=FUZZ",
+    "http://www.vekatech.com",
+    "http://vekatech.com/newsdetails.php?id=FUZZ",
+    "http://www.vekatech.com/contactus.php?sid=FUZZ",
+    "http://evaluationboards.vekatech.com",
+    "http://www.vekatech.com/aboutus.php?lang=FUZZ",
+    "http://vekatech.com/aboutus.php?sid=FUZZ",
+    "http://www.vekatech.com/technology.php?lang=FUZZ",
+    "http://hostmaster.vekatech.com",
+    "http://www.vekatech.com/index.php?sid=FUZZ",
+    "https://www.vekatech.com/services/",
+    "https://www.vekatech.com/chunk-L4AMPV2J.js",
+    "http://www.vekatech.com/joinus.php?lang=FUZZ",
+    "https://www.vekatech.com/main-3WAVTGHE.js",
+    "http://www.vekatech.com/news.php?sid=FUZZ",
+    "http://www.vekatech.com/support.php?sid=FUZZ",
+    "http://www.vekatech.com/newsdetails.php?lang=FUZZ",
+    "http://www.vekatech.com/changelang.php?file=FUZZ&lang=FUZZ&sid=FUZZ",
+    "https://www.vekatech.com/news",
+    "https://mxs.vekatech.com",
+    "http://vekatech.com/contactus.php?sid=FUZZ",
+    "http://vekatech.com/phpbb3/viewforum.php?f=FUZZ",
+    "http://www.vekatech.com/index.php?lang=FUZZ",
+    "http://vekatech.com/changelang.php?file=FUZZ&lang=FUZZ",
+    "http://ww.vekatech.com",
+    "https://www.vekatech.com/contact",
+    "http://ns2.vekatech.com",
+    "http://www.vekatech.com/support.php?lang=FUZZ",
+    "https://ww.vekatech.com/admin/dashboard",
+    "https://vekatech.com/admin",
+    "https://www.vekatech.com/admin/auth.inc.php",
+    "https://www.vekatech.com/admin",
+    "https://www.vekatech.com/admin/control",
+    "https://www.vekatech.com/admin/home",
+    "https://www.vekatech.com/admin/panel",
+    "https://www.vekatech.com/admin/dashboard",
+    "https://www.vekatech.com/admin/index",
+    "https://www.vekatech.com/api/jobs",
+    "https://www.vekatech.com/api/pages",
+    "https://www.vekatech.com/admin/login",
+    "http://mxs.vekatech.com/?page=admin.auth.inc",
+    "http://mxs.vekatech.com/?page=auth.inc",
+    "http://mxs.vekatech.com/?:",
+    "https://vekatech.com/admin/login",
+    "https://vekatech.com/api/pages",
+    "http://mxs.vekatech.com/?page=auth.inc.php",
+    "https://vekatech.com/api/jobs",
+    "http://spam.vekatech.com/?page=admin.auth.inc",
+    "http://spam.vekatech.com/?:",
+    "http://spam.vekatech.com/?page=auth.inc",
+    "http://spam.vekatech.com/?page=auth.inc.php",
+    "https://vekatech.com/admin/index",
+    "https://spam.vekatech.com/admin",
+    "https://spam.vekatech.com/admin/auth.inc",
+    "https://spam.vekatech.com/admin/auth.inc.php",
+    "https://spam.vekatech.com/admin/console",
+    "https://spam.vekatech.com/admin/control",
+    "https://spam.vekatech.com/admin/dashboard",
+    "https://spam.vekatech.com/admin/home",
+    "https://spam.vekatech.com/admin/panel",
+    "https://spam.vekatech.com/admin/index",
+    "https://spam.vekatech.com/api/jobs",
+    "https://spam.vekatech.com/api/pages",
+    "https://vekatech.com/admin/panel",
+    "https://vekatech.com/admin/home",
+    "https://vekatech.com/admin/auth.inc.php",
+    "https://vekatech.com/admin/console",
+    "https://vekatech.com/admin/dashboard",
+    "https://vekatech.com/admin/control",
+    "https://spam.vekatech.com/admin/login",
+    "https://vekatech.com/admin/auth.inc",
+    "https://ww.vekatech.com/admin/auth.inc.php",
+    "https://ww.vekatech.com/admin/login",
+    "https://ww.vekatech.com/admin",
+    "https://ww.vekatech.com/admin/auth.inc",
+    "https://ww.vekatech.com/admin/console",
+    "https://www.vekatech.com/admin/console",
+    "https://ww.vekatech.com/admin/control",
+    "https://www.vekatech.com/admin/auth.inc",
+    "https://ww.vekatech.com/admin/home",
+    "https://ww.vekatech.com/admin/panel",
+    "https://ww.vekatech.com/admin/index",
+    "https://ww.vekatech.com/api/jobs",
+    "https://ww.vekatech.com/api/pages",
+    "https://vekatech.com/%2e%2e//google.com",
+    "https://www.vekatech.com/%2e%2e//google.com",
+    "http://mxs.vekatech.com/%2e%2e//google.com",
+    "https://ww.vekatech.com/%2e%2e//google.com",
+    "http://spam.vekatech.com/%2e%2e//google.com",
+    "https://spam.vekatech.com/%2e%2e//google.com",
+    "https://ns2.vekatech.com/.cobalt/alert/service.cgi?service=<img%20src=javascript:alert('Vulnerable')>",
+    "https://ns2.vekatech.com/.cobalt/alert/service.cgi?service=<script>alert('Vulnerable')</script>",
+    "https://ns2.vekatech.com/.cobalt/alert/service.cgi?service=<img%20src=javascript:alert('XSS')>",
+    "https://ns2.vekatech.com/.cobalt/alert/service.cgi?service=<script>alert('XSS')</script>",
+    "https://ns2.vekatech.com/phpmyadmin/",
+    "https://spam.vekatech.com/api/users/login",
+    "https://ns2.vekatech.com/.htaccess.old",
+    "https://ns2.vekatech.com/.htaccess.bak",
+    "https://ns2.vekatech.com/.htpasswd",
+    "https://ns2.vekatech.com/.htaccess~",
+    "https://ns2.vekatech.com/cgi-bin/",
+    "https://ns2.vekatech.com/mysql/",
+    "https://ns2.vekatech.com/phpMyAdmin/",
+    "https://ww.vekatech.com/api/users",
+    "https://ns2.vekatech.com/phpmyadmin",
+    "https://ww.vekatech.com/api/users/current",
+    "https://ns2.vekatech.com/server-status",
+    "https://ns2.vekatech.com/webmail/",
+    "https://ns2.vekatech.com/.htaccess.save",
+    "https://ns2.vekatech.com/.htaccess",
+    "https://spam.vekatech.com/api/users/admin",
+    "https://spam.vekatech.com/api/users/current",
+    "https://spam.vekatech.com/api/users",
+    "https://www.vekatech.com/api/users/login",
+    "https://www.vekatech.com/api/users/current",
+    "https://www.vekatech.com/api/users/admin",
+    "https://www.vekatech.com/api/users",
+    "https://vekatech.com/api/users/admin",
+    "https://ww.vekatech.com/api/users/admin",
+    "https://ww.vekatech.com/api/users/login",
+    "https://ns2.vekatech.com/phpmyadmin/index.php",
+    "https://vekatech.com/api/users/login",
+    "https://vekatech.com/api/users/current",
+    "https://vekatech.com/api/users",
+    "https://ns2.vekatech.com/%2e%2e//google.com"
+  ],
+  "vuln_completed_ids": [],
+  "vuln_results": [],
+  "current_group": 0,
+  "auth_cookies": {}
+}

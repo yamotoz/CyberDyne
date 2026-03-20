@@ -5080,7 +5080,8 @@ class VulnScanner:
             r = safe_get(urljoin(self.target, test_url))
             if r and r.status_code == 200:
                 self._add(7,"IDOR","OWASP","CRITICO","VULNERAVEL",
-                          evidence=f"Acesso sem auth: {test_url}",
+                          url=urljoin(self.target, test_url),
+                          evidence=f"URL: {urljoin(self.target, test_url)} | Acesso sem auth ao recurso com ID incrementado",
                           recommendation="Verificar ownership de objetos em cada request.",
                           technique="Incrementar IDs em endpoints; trocar GUID de outro user")
                 return
@@ -5113,7 +5114,8 @@ class VulnScanner:
                     r = safe_get(test_url)
                     if r and any(i in r.text for i in indicators):
                         self._add(8,"Path Traversal / LFI","OWASP","CRITICO","VULNERAVEL",
-                                  evidence=f"{param}={p} → /etc/passwd vazado",
+                                  url=test_url,
+                                  evidence=f"URL: {test_url} | Param: {param} | Payload: {p} → /etc/passwd vazado",
                                   recommendation="Validar e sanitizar parâmetros de arquivo; whitelist de paths.",
                                   technique="Payloads ../../etc/passwd em params de arquivo")
                         return
@@ -5209,7 +5211,8 @@ class VulnScanner:
                     r = safe_get(test_url)
                     if r and any(i in r.text for i in indicators):
                         self._add(10,"OS Command Injection","OWASP","CRITICO","VULNERAVEL",
-                                  evidence=f"{param}={p} → saída de comando detectada",
+                                  url=test_url,
+                                  evidence=f"URL: {test_url} | Param: {param} | Payload: {p} → saída de comando detectada",
                                   recommendation="Nunca passar input do usuário para funções de sistema.",
                                   technique=";id, |whoami em inputs que interagem com SO")
                         return
@@ -5243,7 +5246,8 @@ class VulnScanner:
                     r = safe_get(test_url, timeout=5)
                     if r and any(i in r.text for i in aws_indicators + ["root:x","localhost"]):
                         self._add(11,"SSRF","OWASP","CRITICO","VULNERAVEL",
-                                  evidence=f"{param}={p} → metadata/localhost acessível",
+                                  url=test_url,
+                                  evidence=f"URL: {test_url} | Param: {param} | Payload: {p} → metadata/localhost acessível",
                                   recommendation="Validar e filtrar URLs; bloquear IPs internos/169.254.x.x.",
                                   technique="Apontar param para 169.254.169.254 (AWS metadata)")
                         return
@@ -5382,7 +5386,8 @@ class VulnScanner:
 
         if issues:
             self._add(13,"Broken Authentication / Session","OWASP","CRITICO","VULNERAVEL",
-                      evidence="; ".join(issues[:3]),
+                      url=valid_login if valid_login else self.target,
+                      evidence=f"Endpoint: {valid_login or self.target} | {'; '.join(issues[:3])}",
                       recommendation="Política de senhas forte; flags HttpOnly/Secure/SameSite nos cookies.",
                       technique="Default credentials (10 pares) + cookie flags audit")
         else:
@@ -5433,7 +5438,8 @@ class VulnScanner:
                 issues.append(f"X-Powered-By exposto: {hdrs['x-powered-by']}")
         if issues:
             self._add(15,"Security Misconfiguration","OWASP","ALTO","VULNERAVEL",
-                      evidence="; ".join(issues[:3]),
+                      url=self.target,
+                      evidence=f"URL: {self.target} | {'; '.join(issues[:3])}",
                       recommendation="Remover headers de versão; configurar headers de segurança.",
                       technique="Debug mode, listagem de diretórios, headers de segurança ausentes")
         else:
@@ -6335,7 +6341,8 @@ class VulnScanner:
                         issues.append(f"Cookie {ck} parece PHP serializado")
         if issues:
             self._add(18,"Insecure Deserialization","OWASP","CRITICO","VULNERAVEL",
-                      evidence="; ".join(issues),
+                      url=self.target,
+                      evidence=f"URL: {self.target} | {'; '.join(issues)}",
                       recommendation="Não deserializar dados não confiáveis; usar JSON; validar assinatura.",
                       technique="Payloads serializados em cookies/headers; ysoserial Java")
         else:
@@ -6777,7 +6784,8 @@ class VulnScanner:
                         found.append(f"{label} (in JS)")
         if found:
             self._add(25,"Hardcoded API Keys / Secrets","IA","CRITICO","VULNERAVEL",
-                      evidence=f"Encontrados: {', '.join(found[:3])}",
+                      url=self.target,
+                      evidence=f"URL: {self.target} | Secrets encontrados: {', '.join(found[:3])}",
                       recommendation="Mover segredos para variáveis de ambiente; usar vault.",
                       technique="Grep no JS frontend; GitLeaks em repo; buscar em headers")
         else:
@@ -7414,7 +7422,8 @@ class VulnScanner:
         # ── Resultado ────────────────────────────────────────────────────────
         if findings:
             self._add(36, "Supabase Security Audit", "BaaS", sev, "VULNERAVEL",
-                      evidence=" | ".join(findings[:4]),
+                      url=sb_url if sb_url else self.target,
+                      evidence=f"URL: {sb_url or self.target} | {' | '.join(findings[:4])}",
                       recommendation=(
                           "Habilitar RLS em TODAS as tabelas (ALTER TABLE x ENABLE ROW LEVEL SECURITY). "
                           "Criar policies explícitas para cada operação (SELECT/INSERT/UPDATE/DELETE). "
@@ -7638,7 +7647,8 @@ class VulnScanner:
                     found.append(f"{path} [{r.status_code}] acessível")
         if found:
             self._add(44,"Exposed .env / Config Files","BaaS","CRITICO","VULNERAVEL",
-                      evidence="; ".join(found[:3]),
+                      url=self.target + found[0].split(" ")[0] if found else self.target,
+                      evidence=f"URL: {self.target} | {'; '.join(found[:3])}",
                       recommendation="Bloquear acesso a .env via server config; nunca commitar .env.",
                       technique="GET /.env, /.env.local, /config.json, /appsettings.json")
         else:
@@ -7816,7 +7826,8 @@ class VulnScanner:
                 continue  # security.txt existir é bom, não ruim
         if found:
             self._add(51,"Exposed Admin Panel / Dev Tools","Recon","ALTO","VULNERAVEL",
-                      evidence=f"Painéis encontrados: {', '.join(found[:4])}",
+                      url=self.target + found[0].split(" ")[0] if found else self.target,
+                      evidence=f"URL: {self.target} | Painéis encontrados: {', '.join(found[:4])}",
                       recommendation="Restringir acesso por IP; autenticação forte; remover em produção.",
                       technique="Fuzzing com verificação de conteúdo real de painel")
         else:
@@ -7834,7 +7845,8 @@ class VulnScanner:
                     found.append(f"{path} acessível ({len(r.text)} bytes)")
         if found:
             self._add(52,"Git / SVN Repo exposto","Recon","CRITICO","VULNERAVEL",
-                      evidence="; ".join(found[:2]),
+                      url=self.target + found[0].split(" ")[0] if found else self.target,
+                      evidence=f"URL: {self.target} | {'; '.join(found[:2])}",
                       recommendation="Bloquear acesso a .git/ no servidor web; usar .gitignore.",
                       technique="Acessar /.git/config, /.svn/entries; reconstruir código-fonte")
         else:
@@ -7853,7 +7865,8 @@ class VulnScanner:
                     found.append(f"{base}{ext}")
         if found:
             self._add(53,"Backup Files expostos","Recon","ALTO","VULNERAVEL",
-                      evidence=f"Arquivos encontrados: {', '.join(found[:3])}",
+                      url=self.target + found[0] if found else self.target,
+                      evidence=f"URL: {self.target} | Arquivos encontrados: {', '.join(found[:3])}",
                       recommendation="Remover backups do webroot; configurar 403 para extensões de backup.",
                       technique=".bak, .old, .swp em nomes de arquivo comuns")
         else:
@@ -8294,7 +8307,8 @@ class VulnScanner:
 
         if findings:
             self._add(61, "GraphQL Security Audit", "Infra", "ALTO", "VULNERAVEL",
-                      evidence=" | ".join(findings[:3]),
+                      url=gql_endpoint,
+                      evidence=f"URL: {gql_endpoint} | {' | '.join(findings[:3])}",
                       recommendation="Desabilitar introspection e IDE em produção. Remover field suggestions. Desativar trace mode.",
                       technique=f"graphql-cop: {len(findings)} problemas em {gql_endpoint}")
         else:
@@ -8663,7 +8677,8 @@ class VulnScanner:
             r = safe_get(self.target + path)
             if r and any(i in r.text for i in indicators):
                 self._add(66,"NGINX/Apache Alias Traversal","Infra","ALTO","VULNERAVEL",
-                          evidence=f"/etc/passwd via {path}",
+                          url=self.target + path,
+                          evidence=f"URL: {self.target + path} | Payload: {path} → /etc/passwd vazado",
                           recommendation="Adicionar trailing slash em diretivas alias; atualizar nginx.",
                           technique="/static../etc/passwd; alias sem trailing slash no NGINX")
                 return
@@ -8840,7 +8855,8 @@ class VulnScanner:
                     r = safe_get(test_url)
                     if r and "ldap" in r.text.lower():
                         self._add(73,"LDAP Injection","Infra","ALTO","VULNERAVEL",
-                                  evidence=f"{param}={p} revelou erro LDAP",
+                                  url=test_url,
+                                  evidence=f"URL: {test_url} | Param: {param} | Payload: {p} → erro LDAP na response",
                                   recommendation="Sanitizar caracteres especiais LDAP; usar ORM de diretório.",
                                   technique="Caracteres especiais LDAP em campos de login")
                         return
@@ -8870,7 +8886,8 @@ class VulnScanner:
                     r = safe_get(test_url)
                     if r and ("xpath" in r.text.lower() or "xml" in r.text.lower()):
                         self._add(74,"XPath Injection","Infra","ALTO","VULNERAVEL",
-                                  evidence=f"{param}={p} revelou erro XPath",
+                                  url=test_url,
+                                  evidence=f"URL: {test_url} | Param: {param} | Payload: {p} → erro XPath na response",
                                   recommendation="Usar XPath parameterizado; sanitizar inputs.",
                                   technique="Payloads ' or '1'='1 em apps com XPath")
                         return
@@ -8931,21 +8948,24 @@ class VulnScanner:
                     # Check if injected header appeared
                     if _marker.lower() in resp_hdrs:
                         self._add(75, "CRLF Injection / HTTP Splitting", "Infra", "ALTO", "VULNERAVEL",
-                                  evidence=f"Header {_marker} injetado via {param} com payload: {p[:40]}",
+                                  url=test_url,
+                                  evidence=f"URL: {test_url} | Param: {param} | Payload: {p[:40]} → Header {_marker} injetado",
                                   recommendation="Sanitizar \\r\\n e encodings em input do usuario. Usar framework que bloqueia header injection.",
                                   technique=f"Lockdoor: {len(payloads)} payloads (double encode + 3-byte Unicode + overlong UTF-8)")
                         return
                     # Check Set-Cookie injection
                     if _marker_cookie in resp_hdrs.get("set-cookie", ""):
                         self._add(75, "CRLF Injection / HTTP Splitting", "Infra", "ALTO", "VULNERAVEL",
-                                  evidence=f"Cookie 'crlf=injection' injetado via {param}",
+                                  url=test_url,
+                                  evidence=f"URL: {test_url} | Param: {param} | Payload: {p[:40]} → Cookie 'crlf=injection' injetado",
                                   recommendation="Sanitizar \\r\\n em todos os parametros refletidos em headers.",
                                   technique=f"Lockdoor: Set-Cookie injection via CRLF")
                         return
                     # Check body injection (response splitting)
                     if "<h1>CyberDyne</h1>" in r.text and "%0d%0a%0d%0a" in p:
                         self._add(75, "CRLF Injection / HTTP Response Splitting", "Infra", "CRITICO", "VULNERAVEL",
-                                  evidence=f"HTTP response splitting confirmado via {param} — HTML injetado no body",
+                                  url=test_url,
+                                  evidence=f"URL: {test_url} | Param: {param} | Payload: {p[:40]} → HTTP response splitting confirmado, HTML injetado no body",
                                   recommendation="Bloquear CRLF em todos os parametros. Upgrade do web server.",
                                   technique=f"Lockdoor: HTTP response splitting via double CRLF")
                         return
@@ -9077,7 +9097,8 @@ class VulnScanner:
                     issues.append(f"{name}: sem SameSite")
         if issues:
             self._add(78,"Insecure Cookie Flags","Lógica","MEDIO","VULNERAVEL",
-                      evidence="; ".join(issues[:3]),
+                      url=self.target,
+                      evidence=f"URL: {self.target} | Cookies: {'; '.join(issues[:3])}",
                       recommendation="Adicionar HttpOnly, Secure e SameSite=Strict em cookies de sessão.",
                       technique="Ausência de HttpOnly, Secure, SameSite em cookies de sessão")
         else:
@@ -9129,7 +9150,8 @@ class VulnScanner:
                     found.append(path)
         if found:
             self._add(80,"Directory Listing habilitado","Lógica","BAIXO","VULNERAVEL",
-                      evidence=f"Listagem de diretórios em: {', '.join(found[:3])}",
+                      url=self.target + found[0] if found else self.target,
+                      evidence=f"URL: {self.target} | Listagem de diretórios em: {', '.join(found[:3])}",
                       recommendation="Desabilitar Options Indexes no Apache; autoindex off no NGINX.",
                       technique="Acessar diretórios sem index; listar arquivos de config")
         else:
@@ -9603,7 +9625,8 @@ class VulnScanner:
                 pass
         if issues:
             self._add(94,"TLS/SSL Misconfiguration","Infra","MEDIO","VULNERAVEL",
-                      evidence="; ".join(issues[:2]),
+                      url=self.target,
+                      evidence=f"URL: {self.target} | {'; '.join(issues[:2])}",
                       recommendation="Forçar TLS 1.2+; desabilitar TLS 1.0/1.1 e ciphers fracos.",
                       technique="testssl.sh; SSLv3, TLS 1.0, cipher suites fracas, cert expirado")
         else:
@@ -10600,12 +10623,22 @@ class VulnScanner:
         _ctr_lck = threading.Lock()
 
         _scan_start = time.time()
-        _workers_display = {0.3: 8, 0.6: 12, 1.0: 16}.get(_PAYLOAD_INTENSITY, 12)
+        # ── Auto-scaling de workers ──────────────────────────────────────────
+        # Base workers por intensidade (valores mínimos)
+        _base_workers = {0.3: 12, 0.6: 20, 1.0: 32}.get(_PAYLOAD_INTENSITY, 20)
+        # Escalar com base no número de URLs (mais URLs = mais threads)
+        _n_urls = len(self.urls) if hasattr(self, 'urls') else 1
+        if _n_urls > 100:
+            _base_workers = min(_base_workers + 16, 64)  # até 64 para alvos grandes
+        elif _n_urls > 50:
+            _base_workers = min(_base_workers + 8, 48)   # até 48 para médios
+        _workers_display = _base_workers
+        _intensity_label = {0.3: "MEDIUM", 0.6: "HARD", 1.0: "INSANE"}.get(_PAYLOAD_INTENSITY, "HARD")
         print(f"\n{Fore.CYAN}{Style.BRIGHT}"
               f"  ══════ FASE 2 — {total} CHECKS EM PARALELO ({_workers_display} workers/grupo) ══════"
               f"{Style.RESET_ALL}\n", flush=True)
-        _intensity_label = {0.3: "MEDIUM", 0.6: "HARD", 1.0: "INSANE"}.get(_PAYLOAD_INTENSITY, "HARD")
-        print(f"  {Fore.CYAN}[THREADS] {_workers_display} workers paralelos ({_intensity_label}){Style.RESET_ALL}", flush=True)
+        print(f"  {Fore.CYAN}[THREADS] {_workers_display} workers paralelos ({_intensity_label})"
+              f" | {_n_urls} URLs alvo{Style.RESET_ALL}", flush=True)
 
         _active_checks = {}  # thread_id → label (checks em andamento)
         _active_lock = threading.Lock()
@@ -10637,11 +10670,13 @@ class VulnScanner:
             with _active_lock:
                 _active_checks[tid] = label
             _show_active()
+            # Timeout escalonado: checks com muitas URLs ganham mais tempo
+            _check_timeout = 90 if _PAYLOAD_INTENSITY >= 1.0 else (60 if _PAYLOAD_INTENSITY >= 0.6 else 45)
             try:
-                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as _t:
-                    _t.submit(check_fn).result(timeout=45)
+                with ThreadPoolExecutor(max_workers=1) as _t:
+                    _t.submit(check_fn).result(timeout=_check_timeout)
             except concurrent.futures.TimeoutError:
-                print(f"\r{' '*100}\r  {Fore.YELLOW}[TIMEOUT] {label} >45s — pulado{Style.RESET_ALL}",
+                print(f"\r{' '*100}\r  {Fore.YELLOW}[TIMEOUT] {label} >{_check_timeout}s — pulado{Style.RESET_ALL}",
                       flush=True)
                 self._add(global_idx, name, "ERRO", "BAIXO", "SKIP",
                           evidence="Timeout de 45s excedido", technique="N/A")
@@ -10683,8 +10718,23 @@ class VulnScanner:
             print(f"\n  {Fore.CYAN}{Style.BRIGHT}▶ {group_name} "
                   f"— {len(group_fns)} checks [{_g_done}/{total} total]{Style.RESET_ALL}", flush=True)
             _live_update(phase=f"FASE 2 — {group_name}", progress=_g_done, total=total)
-            _workers = {0.3: 8, 0.6: 12, 1.0: 16}.get(_PAYLOAD_INTENSITY, 12)
-            with concurrent.futures.ThreadPoolExecutor(max_workers=_workers) as pool:
+            # Auto-scaling: se o grupo anterior demorou, escala mais
+            _elapsed_so_far = time.time() - _scan_start
+            _checks_so_far = _counter[0] or 1
+            _avg_per_check = _elapsed_so_far / _checks_so_far
+            _remaining_checks = total - _counter[0]
+            _eta_estimate = _avg_per_check * _remaining_checks
+
+            if _eta_estimate > 1800:  # ETA > 30min → turbo mode
+                _workers = min(_base_workers + 24, 64)
+                if _counter[0] > 0 and _g_done == _counter[0]:
+                    print(f"  {Fore.YELLOW}[AUTO-SCALE] ETA > 30min → {_workers} workers (turbo){Style.RESET_ALL}", flush=True)
+            elif _eta_estimate > 600:  # ETA > 10min → boost
+                _workers = min(_base_workers + 12, 48)
+            else:
+                _workers = _base_workers
+
+            with ThreadPoolExecutor(max_workers=_workers) as pool:
                 futs = []
                 for fn in group_fns:
                     global_idx += 1
@@ -12376,9 +12426,11 @@ class ReportGenerator:
         if self.subdomains:
             story.append(self._section_header("Reconhecimento — Subdomínios"))
             story.append(Spacer(1, 0.3*cm))
+            _subs_ativos = sum(1 for s in self.subdomains if any(s in u for u in self.live_urls))
             story.append(Paragraph(
-                f"Total descobertos: <b>{len(self.subdomains)}</b>  |  "
-                f"Ativos confirmados: <b>{len(self.live_urls)}</b>",
+                f"Subdomínios descobertos: <b>{len(self.subdomains)}</b>  |  "
+                f"Subdomínios ativos: <b>{_subs_ativos}</b>  |  "
+                f"URLs ativas: <b>{len(self.live_urls)}</b>",
                 st["Body"]))
             story.append(Spacer(1, 0.2*cm))
             sub_data = [[Paragraph("<b>Subdomínio</b>", st["Bold"]),
