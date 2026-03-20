@@ -1,13 +1,22 @@
 # =============================================================================
 #  CyberDyne — Docker Compose
+#
 #  Uso:
-#    docker compose run cyberdyne --url https://alvo.com --all -o outputs/scan01
-#    docker compose run cyberdyne --url https://alvo.com --all --live -o outputs/scan01
+#    # Scan leve (sem Playwright)
+#    docker compose run cyberdyne --url https://alvo.com --all --go -o outputs/scan01
+#
+#    # Scan completo com Playwright + Go
+#    docker compose run cyberdyne-full --url https://alvo.com --all --go --browser-mimic-ns -o outputs/scan01
+#
+#    # Com dashboard --live
+#    docker compose run -p 5000:5000 cyberdyne --url https://alvo.com --all --live -o outputs/scan01
+#
+#    # Retomar de checkpoint
 #    docker compose run cyberdyne --resume outputs/scan01/.checkpoint.cyb
 # =============================================================================
 
 services:
-  # ── Versão leve (sem Playwright) ─────────────────────────────────────────
+  # ── Versao leve: Python + Go (sem Playwright, ~300MB) ──────────────────────
   cyberdyne:
     build:
       context: .
@@ -19,9 +28,8 @@ services:
       - "5000:5000"                          # --live dashboard
     stdin_open: true
     tty: true
-    network_mode: host                       # acesso direto à rede (scans)
 
-  # ── Versão completa com Playwright (--browser-mimic) ─────────────────────
+  # ── Versao completa: Python + Go + Playwright (~1.6GB) ─────────────────────
   cyberdyne-full:
     build:
       context: .
@@ -33,4 +41,3 @@ services:
       - "5000:5000"
     stdin_open: true
     tty: true
-    network_mode: host

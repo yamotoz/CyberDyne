@@ -1,22 +1,17 @@
 <div align="center">
 
-<img src="Img_vid/Logo_CY.png" alt="CyberDyne" width="100"/>
+<img src="Img_vid/cyoff.png" alt="CyberDyne" width="400"/>
 
-```
- ██████╗██╗   ██╗██████╗ ███████╗██████╗ ██████╗ ██╗   ██╗███╗   ██╗███████╗
-██╔════╝╚██╗ ██╔╝██╔══██╗██╔════╝██╔══██╗██╔══██╗╚██╗ ██╔╝████╗  ██║██╔════╝
-██║      ╚████╔╝ ██████╔╝█████╗  ██████╔╝██║  ██║ ╚████╔╝ ██╔██╗ ██║█████╗
-██║       ╚██╔╝  ██╔══██╗██╔══╝  ██╔══██╗██║  ██║  ╚██╔╝  ██║╚██╗██║██╔══╝
-╚██████╗   ██║   ██████╔╝███████╗██║  ██║██████╔╝   ██║   ██║ ╚████║███████╗
- ╚═════╝   ╚═╝   ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═════╝    ╚═╝   ╚═╝  ╚═══╝╚══════╝
-```
-
-**v4.5 — Web Vulnerability Scanner & Recon Suite**
+**v5.0 — Web Vulnerability Scanner & Recon Suite**
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python)](https://python.org)
+[![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8?style=flat-square&logo=go)](https://go.dev)
+[![Flask](https://img.shields.io/badge/Flask-Dashboard-black?style=flat-square&logo=flask)](https://flask.palletsprojects.com)
+[![Playwright](https://img.shields.io/badge/Playwright-Chromium-2EAD33?style=flat-square&logo=playwright)](https://playwright.dev)
+[![Gemini](https://img.shields.io/badge/Gemini_AI-Payloads-8E75B2?style=flat-square&logo=google)](https://ai.google.dev)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker)](https://docker.com)
+[![Checks](https://img.shields.io/badge/Vuln_Checks-113%2B-red?style=flat-square)]()
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
-[![Checks](https://img.shields.io/badge/Vulnerability%20Checks-113%2B-red?style=flat-square)]()
-[![Zero Binaries](https://img.shields.io/badge/External%20Binaries-Zero-brightgreen?style=flat-square)]()
 
 > *"O codigo que voce nao testou e o ataque que voce nao viu vir."*
 
@@ -26,378 +21,326 @@
 
 ## O que e o CyberDyne
 
-CyberDyne e um scanner de seguranca web completo em Python puro. Um unico arquivo, zero binarios externos, zero Docker. Voce aponta para um alvo e ele faz tudo sozinho: reconhecimento, analise de 111+ vulnerabilidades, e entrega relatorios prontos para acao.
+Scanner de seguranca web completo. Um unico arquivo Python, zero binarios obrigatorios. Aponte para um alvo e ele faz tudo: reconhecimento, 113+ testes de vulnerabilidade e entrega relatorios prontos para acao.
 
-Nasceu como resposta ao **Vibe Coding** — desenvolvimento acelerado por IA que produz codigo funcional mas inseguro. Se voce ou sua equipe usa IA para codar, o CyberDyne testa se o resultado e seguro.
-
----
-
-## Visao Geral
+Nasceu como resposta ao **Vibe Coding** — desenvolvimento acelerado por IA que produz codigo funcional mas inseguro.
 
 ```
-python CyberDyneWeb.py --url https://alvo.com --all
-```
-
-```
-┌───────────────────────────────────────────────────────────────────┐
-│                     CyberDyneWeb.py                               │
-│                  ~11.000 linhas · Python puro                     │
-│                                                                   │
-│  FASE 1           FASE 2           FASE 3 (FINAL)                │
-│  ┌───────┐        ┌───────┐        ┌───────────────────┐         │
-│  │ RECON │──────▶│ VULNS │──────▶│ RELATORIOS         │         │
-│  │Engine │        │ 111+  │        │ PDF + Recon.pdf   │         │
-│  │13 step│        │checks │        │ prompt_recall.md  │         │
-│  └───────┘        └───────┘        │ Recon.md + JSON   │         │
-│                                    └───────────────────┘         │
-│                                                                   │
-│  CLI completa · --stealth · --ai-payloads · --live dashboard     │
-│  8 APIs OSINT · Gemini AI · Scan autenticado · 29 pastas payload │
-└───────────────────────────────────────────────────────────────────┘
+python CyberDyneWeb.py --url https://alvo.com --all -o meu_projeto
 ```
 
 ---
 
-## Principais Recursos
+<div align="center">
 
-| Recurso | Descricao |
-|---|---|
-| **CLI Completa** | `--url`, `--login`, `-ul`, `-pl`, `--all`, `--recon`, `--vuln`, `--stealth`, `--ai-payloads`, `--live` |
-| **Modo Stealth** | Delay aleatorio entre requests + rotacao automatica de User-Agent para evitar bloqueio por WAFs |
-| **AI Payloads** | Gemini analisa o HTML do alvo e gera 15 payloads especificos por contexto (XSS, SQLi, LFI, RCE, SSTI, SSRF) |
-| **Live Dashboard** | Servidor Flask local (`localhost:5000`) com dashboard visual em tempo real — progresso, subdomínios, vulns |
-| **Scan Autenticado** | Login automatico, crawl da area logada, cookies injetados em todos os 111+ checks |
-| **Gemini AI** | Sumario executivo no PDF + prompt_recall.md com fixes tecnicos gerados por IA |
-| **PDF Elegante** | Capa dark, risk gauge, severity badges, vulnerability cards coloridos, paginacao |
-| **8 APIs OSINT** | Gemini, Shodan, VirusTotal, SecurityTrails, Chaos, Hunter.io, HIBP, GitHub |
-| **33 Pastas Payload** | SQLi, XSS, LFI, SSRF, SSTI, NoSQL, LDAP, XPath, CRLF, WAF-Bypass, XXE, Open-Redirect, User-Agents, Kubernetes, IaC, AWS, Firebase, GraphQL, AI-LLM, Business-Logic e mais |
-| **8 Grupos Paralelos** | 8-16 workers dinamicos por intensity level |
-| **Intensity Levels** | `--medium` (30% rapido) · `--hard` (60% padrao) · `--insane` (100% arsenal completo ~32K payloads) |
-| **Crypto Audit** | TLS + rainbow table MD5/SHA1/SHA256 + base64 decode + ROT13 + hex encoding + entropia de tokens + connection strings + cookies sequenciais |
-| **Retire.js Scanner** | 27 bibliotecas JS monitoradas (jQuery, Angular, Vue, React, Lodash, Moment, Bootstrap...) com CVE correlation |
+## Reconhecimento — Fase 1
+
+<img src="Img_vid/recon.png" alt="Reconhecimento" width="700"/>
+
+</div>
+
+13 etapas automaticas de coleta de inteligencia antes de qualquer teste:
+
+| # | Etapa | O que faz |
+|---|---|---|
+| 1 | **Subdominios** | 6 fontes: crt.sh, HackerTarget, Wayback, VirusTotal, SecurityTrails, Chaos |
+| 2 | **Coleta de URLs** | ParamSpider + OTX AlienVault + Common Crawl + Crawl HTML depth=2 |
+| 3 | **Validacao de URLs** | HEAD+GET em 30 threads, filtra ativas (200-399) |
+| 4 | **Subdomain Takeover** | Fingerprints EdOverflow + CNAME dangling detection |
+| 5 | **WHOIS** | Raw socket 2-fases (IANA → TLD): registrar, datas, nameservers, DNSSEC |
+| 6 | **Fingerprint** | 62 tecnologias, 15 categorias, 8 vetores de deteccao (Wappalyzer-style) |
+| 7 | **Emails** | Scraping + Hunter.io + HIBP (vazamentos) |
+| 8 | **Port Scan** | Top-1000 portas via socket (ou nmap se instalado) |
+| 9 | **GitHub Dorking** | Secrets em commits publicos + 80 dorks extras |
+| 10 | **AI Fingerprint** | Detecta endpoints de IA/BaaS (OpenAI, Supabase, Firebase) |
+| 11 | **Fuzzing Paths** | 12 wordlists + K8s + IaC, 15 threads (~1000+ paths) |
+| 12 | **LinkFinder** | Endpoints e secrets em arquivos JS (5 regex + 13 patterns) |
+| 13 | **Shodan** | Portas, CVEs, organizacao, hostnames pelo IP |
 
 ---
 
-## Fases de Execucao
+<div align="center">
 
-### Fase 1 — Reconhecimento (13 etapas)
+## Vulnerabilidades — Fase 2
 
-Coleta maxima de inteligencia antes de qualquer teste.
+<img src="Img_vid/vulns.png" alt="Vulnerabilidades" width="700"/>
 
-- Enumeracao de subdominios (6 fontes: crt.sh, HackerTarget, Wayback, VirusTotal, SecurityTrails, Chaos)
-- Coleta de URLs com parametros (ParamSpider, OTX, Common Crawl)
-- Validacao de URLs ativas (HEAD+GET, 30 threads)
-- Deteccao de subdomain takeover (fingerprints + CNAME dangling)
-- WHOIS raw socket (registrar, datas, nameservers, DNSSEC)
-- Fingerprint de 62 tecnologias em 15 categorias (8 vetores de deteccao por tech)
-- Coleta de emails (scraping + Hunter.io + HIBP)
-- Port scan top-1000 portas
-- GitHub Dorking (secrets em commits publicos + 80 dorks extras)
-- Deteccao de endpoints AI/BaaS
-- Fuzzing de paths sensiveis (12 wordlists + K8s + IaC, 15 threads)
-- Descoberta de endpoints em JS (5 regex patterns + 13 patterns de secrets)
-- Shodan intelligence (portas, CVEs, org, hostnames)
+</div>
 
-### Fase 2 — 111+ Vulnerability Checks
+113+ checks em 8 grupos paralelos. Cada check com timeout de 45s e evidencia obrigatoria.
 
-8 grupos paralelos, cada check com timeout de 45s. Com `--ai-payloads`, o Gemini gera 15 payloads extras por contexto em tempo real.
+### OWASP Top 10 + Extended (001-020)
 
-**OWASP Top 10 + Extended (001-020)**
-SQL Injection error-based (140 patterns, 30+ DBMS) · SQL Injection time-based (multi-DBMS) · XSS Reflected (filter check + context-aware + 80+ payloads + WAF bypass) · XSS Stored (multi-page forms) · XSS DOM (source-to-sink tracking) · CSRF · SSRF (23 param names + cloud metadata) · LFI/Path Traversal (30 param names) · RFI (canary + baseline) · Command Injection · XXE · Open Redirect (44 payloads) · Insecure Deserialization · Security Misconfiguration · Broken Access Control · Cryptographic Failures · Vulnerable Components · Insufficient Logging · IDOR · Mass Assignment
+| # | Vulnerabilidade | Severidade | CVSS |
+|---|---|---|---|
+| 001 | SQL Injection Error-based (140 patterns, 30+ DBMS) | CRITICO | 9.8 |
+| 002 | SQL Injection Time-based Blind (multi-DBMS) | CRITICO | 9.8 |
+| 003 | XSS Reflected (8 fases, 80+ payloads, WAF bypass) | ALTO | 6.1 |
+| 004 | XSS Stored (POST + GET verification) | ALTO | 6.1 |
+| 005 | XSS DOM-based (13 sources x 19 sinks) | ALTO | 6.1 |
+| 006 | CSRF (ausencia de token em forms POST) | MEDIO | 4.3 |
+| 007 | SSRF (23 param names + cloud metadata 169.254.169.254) | CRITICO | 9.1 |
+| 008 | LFI / Path Traversal (30 param names, /etc/passwd) | CRITICO | 9.8 |
+| 009 | RFI (canary + baseline) | CRITICO | 9.8 |
+| 010 | Command Injection (commix-style, 65+ payloads) | CRITICO | 9.8 |
+| 011 | XXE (XML entity injection) | ALTO | 7.5 |
+| 012 | Open Redirect (44 payloads bypass) | MEDIO | 6.1 |
+| 013 | Insecure Deserialization (magic bytes Java/Python/PHP) | CRITICO | 9.8 |
+| 014 | Security Misconfiguration | MEDIO | 5.3 |
+| 015 | Broken Access Control | ALTO | 8.2 |
+| 016 | Cryptographic Failures (TLS fraco, HTTP sem redirect) | ALTO | 7.5 |
+| 017 | Vulnerable Components (versoes desatualizadas) | ALTO | 7.5 |
+| 018 | Insufficient Logging | MEDIO | 4.0 |
+| 019 | IDOR (IDs sequenciais em APIs) | ALTO | 7.5 |
+| 020 | Mass Assignment (campos extras aceitos) | ALTO | 7.5 |
 
-**IA / JWT / Auth (021-035)**
-JWT Signature Bypass (alg:none 4 variantes + null sig + psychic ECDSA CVE-2022-21449 + blank password) · JWT Weak Secret Cracking (330+ senhas, HS256/384/512) · JWT Advanced (JWKS exposure + KID injection/SQLi + claim tampering) · Prompt Injection (35 payloads, 8 categorias, homoglyph + base64 mutations) · LLM Data Leakage · Race Condition · Prototype Pollution · GraphQL Security (introspection + suggestions + trace + IDE) · GraphQL DoS (5 testes) · API Rate Limit · Stack Trace · Debug Mode · Metrics Exposed · CORS Misconfiguration · WebSocket Auth
+### IA / JWT / Auth (021-035)
 
-**BaaS / Cloud (036-045)**
-Supabase RLS Audit (60+ tabelas + storage + auth + RPC + service_role JWT decode) · Firebase Rules + API key + Storage · S3 Bucket · Cognito · AWS Credentials · Stripe/SendGrid/Twilio/Google keys
+| # | Vulnerabilidade | Severidade | CVSS |
+|---|---|---|---|
+| 021 | JWT Signature Bypass (alg:none + null sig + psychic ECDSA CVE-2022-21449) | CRITICO | 9.8 |
+| 022 | JWT Weak Secret (330+ senhas, HS256/384/512) | CRITICO | 9.8 |
+| 023 | JWT Advanced (JWKS + KID injection/SQLi + claim tampering) | CRITICO | 9.8 |
+| 024 | Prompt Injection (35 payloads, homoglyph + base64 mutations) | ALTO | 8.1 |
+| 025 | LLM Data Leakage | ALTO | 7.5 |
+| 026 | Race Condition (concurrent requests) | ALTO | 8.1 |
+| 027 | Prototype Pollution | ALTO | 7.5 |
+| 028-029 | GraphQL Security (introspection + DoS + suggestions + trace) | ALTO | 7.5 |
+| 030 | API Rate Limit ausente | MEDIO | 5.3 |
+| 031 | Stack Trace / Debug Mode | MEDIO | 5.3 |
+| 032 | Metrics expostos (/metrics, /actuator) | MEDIO | 5.3 |
+| 033 | CORS Misconfiguration | ALTO | 7.5 |
+| 034 | WebSocket sem autenticacao | ALTO | 7.5 |
+| 035 | SSTI (Jinja2, Twig, Freemarker, ERB, Pug — 100+ payloads) | CRITICO | 9.8 |
 
-**Recon / DNS (046-055)**
-Subdomain Takeover · DNS Zone Transfer · SPF/DMARC · Git/SVN exposed · Backups · DS_Store · Source Maps · Wayback JS Leakage
+### BaaS / Cloud (036-045)
 
-**Infra / Headers (056-075)**
-Host Header Injection · HTTP Smuggling · HTTP Splitting · Cache Poisoning · Web Cache Deception · CORS · Clickjacking · MIME Sniffing · CSP · HSTS · Referrer-Policy · Permissions-Policy · Server Version · X-Powered-By · Dangerous HTTP Methods · Directory Listing · Admin Panels · API Auth · GraphQL Playground · Swagger
+| # | Vulnerabilidade | Severidade | CVSS |
+|---|---|---|---|
+| 036 | Supabase RLS Audit (60+ tabelas + storage + RPC + JWT decode) | CRITICO | 9.8 |
+| 037 | Firebase Rules abertas + API key + Storage | CRITICO | 9.1 |
+| 038 | S3 Bucket publico | CRITICO | 9.1 |
+| 039 | Cognito Misconfiguration | ALTO | 7.5 |
+| 040-045 | AWS/Stripe/SendGrid/Twilio/Google keys expostas | CRITICO | 9.1 |
 
-**Logica / Autenticacao (076-100)**
-Broken Auth · File Upload · Insecure Cookies · Account Enumeration · Password Reset · Session Fixation · Function-Level Auth · OAuth · 2FA Bypass · IDOR · Business Logic · NoSQL Injection · ReDoS · XML Bomb · ZIP Slip · LDAP Injection · XPath Injection · SSTI · HPP · Default Credentials · TLS/SSL · Certificate Transparency · Mixed Content · Sensitive Data in URL · Error Messages · Security.txt
+### Recon / DNS (046-055)
 
-**Advanced (101-113)**
-Sensitive Paths (250+) · Swagger/API Docs · HPP · Default Credentials · Deserialization RCE · Web Cache Deception · JS Secrets (14 tipos + 13 patterns) · SQL Injection Boolean Blind · SQL Injection UNION · GraphQL CSRF · WAF Bypass (120 payloads x 5 zones x 5 encodings + vendor detection) · 403 Bypass (path, header, method mutation) · **JS Libraries Vulneraveis (Retire.js-style, 27 libs, CVE correlation)**
+| # | Vulnerabilidade | Severidade | CVSS |
+|---|---|---|---|
+| 046 | Subdomain Takeover | ALTO | 8.2 |
+| 047 | DNS Zone Transfer (AXFR) | ALTO | 7.5 |
+| 048-049 | SPF/DMARC ausente ou fraco | MEDIO | 5.3 |
+| 050-054 | Git/SVN/.DS_Store/Backups/Source Maps expostos | ALTO | 7.5 |
+| 055 | Wayback JS Leakage (secrets em JS historico) | ALTO | 7.5 |
 
-### Fase 2.5 — Browser Mimic (`--browser-mimic`)
+### Infra / Headers (056-075)
 
-> Opcional. Requer `pip install playwright playwright-stealth fake-useragent && playwright install chromium`
+| # | Vulnerabilidade | Severidade | CVSS |
+|---|---|---|---|
+| 056 | Host Header Injection | ALTO | 7.5 |
+| 057 | HTTP Request Smuggling (CL.TE) | CRITICO | 9.8 |
+| 058-060 | HTTP Splitting + Cache Poisoning + Cache Deception | ALTO | 7.5 |
+| 061-067 | Headers ausentes (CORS, Clickjacking, CSP, HSTS, MIME, Referrer, Permissions) | MEDIO | 4.3-6.1 |
+| 068-069 | Server/X-Powered-By versionados | BAIXO | 2.6 |
+| 070-075 | HTTP Methods perigosos + Directory Listing + Admin Panels + API Auth + Swagger | MEDIO-ALTO | 5.3-7.5 |
 
-Abre um Chromium real com anti-fingerprinting, mouse em curvas Bezier e digitacao humana. Testa vulnerabilidades **client-side** invisiveis para HTTP puro:
+### Logica / Autenticacao (076-100)
 
-| Vuln | O que testa |
-|---|---|
-| **DOM XSS Real (201)** | Injeta payloads em params e forms, monitora `console.error` — confirma execucao JS real |
-| **AI-Output Injection (202)** | Envia prompt com HTML malicioso para chat endpoints, verifica se renderiza no DOM |
-| **Prototype Pollution (203)** | `?__proto__[polluted]=X` + `page.evaluate()` verifica se Object.prototype foi alterado |
-| **Storage Leak (204)** | Extrai localStorage + sessionStorage, busca JWT, Stripe keys, AWS keys, passwords |
-| **SPA Hidden Routes (205)** | Detecta React/Next/Vue/Angular, extrai rotas de JS bundles, testa acesso a rotas admin |
-| **Clickjacking Real (206)** | Carrega o site em iframe real — se renderiza, X-Frame-Options/CSP nao esta funcionando |
+| # | Vulnerabilidade | Severidade | CVSS |
+|---|---|---|---|
+| 076 | Broken Auth (credenciais comuns + deteccao de dashboard) | CRITICO | 9.8 |
+| 077 | File Upload sem restricao (canary + acesso ao arquivo) | CRITICO | 9.8 |
+| 078-082 | Cookies inseguros + Account Enum + Password Reset + Session Fixation + OAuth | ALTO | 7.5 |
+| 083-085 | 2FA Bypass + IDOR API + Business Logic (preco negativo) | ALTO | 7.5-8.1 |
+| 086-090 | ReDoS + XML Bomb + ZIP Slip + LDAP Injection + XPath Injection | ALTO | 7.5 |
+| 091 | NoSQL Injection (15+ payloads) | CRITICO | 9.8 |
+| 092-100 | HPP + Default Creds + TLS/SSL + Cert Transparency + Mixed Content + Error Messages + Security.txt | MEDIO-ALTO | 4.3-7.5 |
 
-Evidencia visual: screenshots PNG embedados no PDF + console logs salvos em JSON + DOM dumps.
+### Advanced (101-113)
 
-### Fase 3 — Relatorios (fase final)
+| # | Vulnerabilidade | Severidade | CVSS |
+|---|---|---|---|
+| 101 | Sensitive Paths (250+ paths paralelos) | ALTO | 7.5 |
+| 102 | Swagger/API Docs expostos | MEDIO | 5.3 |
+| 103 | HTTP Parameter Pollution | MEDIO | 5.3 |
+| 104 | Default Credentials (20 pares em forms) | CRITICO | 9.8 |
+| 105 | Deserialization RCE (magic bytes + endpoints RPC) | CRITICO | 9.8 |
+| 106 | Web Cache Deception (.css/.js em URLs privadas) | ALTO | 7.5 |
+| 107 | JS Secrets (14 tipos + 13 patterns regex) | ALTO | 7.5 |
+| 108 | SQL Injection Boolean Blind | CRITICO | 9.8 |
+| 109 | SQL Injection UNION | CRITICO | 9.8 |
+| 110 | GraphQL CSRF | ALTO | 8.1 |
+| 111 | WAF Bypass (120 payloads x 5 zones x 5 encodings) | ALTO | 7.5 |
+| 112 | 403 Bypass (path + header + method mutation) | ALTO | 7.5 |
+| 113 | JS Libraries Vulneraveis (Retire.js-style, 27 libs, CVE correlation) | ALTO | 7.5 |
+
+### Fase 2.5 — Browser Mimic (opcional)
+
+Chromium real com anti-fingerprinting, mouse Bezier e digitacao humana. Testa vulnerabilidades **client-side**:
+
+| # | Vulnerabilidade | Severidade | CVSS |
+|---|---|---|---|
+| 201 | DOM XSS Real (execucao JS confirmada via console) | CRITICO | 9.6 |
+| 202 | AI-Output Injection (HTML malicioso em chat bots) | ALTO | 8.1 |
+| 203 | Prototype Pollution (page.evaluate confirma Object.prototype alterado) | ALTO | 7.5 |
+| 204 | Storage Leak (JWT, AWS, Stripe em localStorage/sessionStorage) | ALTO | 7.5 |
+| 205 | SPA Hidden Routes (rotas admin em React/Next/Vue/Angular) | ALTO | 8.2 |
+| 206 | Clickjacking Real (iframe real — X-Frame-Options testado na pratica) | MEDIO | 6.1 |
+
+---
+
+<div align="center">
+
+## Relatorios — Fase 3 (Final)
+
+<img src="Img_vid/relatorios.png" alt="Relatorios" width="700"/>
+
+</div>
 
 | Arquivo | Descricao |
 |---|---|
-| `CyberDyneWeb_Report.pdf` | Relatorio executivo com capa, risk gauge, vulnerability cards, sumario AI |
-| `Recon.pdf` | Relatorio de reconhecimento consolidado (WHOIS, portas, Shodan, emails, subdomínios, fuzzing, LinkFinder) |
-| `prompt_recall.md` | Prompt direto para agente de IA corrigir as vulns — gerado por Gemini quando disponível |
+| `CyberDyneWeb_Report.pdf` | Relatorio executivo: capa dark, risk gauge, severity badges, vuln cards, sumario Gemini AI |
+| `Recon.pdf` | Reconhecimento consolidado: WHOIS, portas, Shodan, emails, subdominios, fuzzing, LinkFinder |
+| `prompt_recall.md` | Prompt direto para agente de IA corrigir as vulnerabilidades (gerado por Gemini) |
 | `Recon.md` | Mesmos dados do Recon.pdf em Markdown |
-| `raw_results.json` | Dados brutos de todos os 111+ checks |
+| `raw_results.json` | Dados brutos de todos os 113+ checks |
 
 ---
+
+<div align="center">
 
 ## API Keys (Opcionais)
 
-Copie `.env.example` para `.env`. Sem chaves, o script roda normalmente.
+<img src="Img_vid/keys.png" alt="API Keys" width="700"/>
+
+</div>
+
+Copie `.env.example` para `.env`. Sem chaves, o script roda normalmente — apenas pula os modulos que dependem de API.
 
 | API | Variavel | O que ativa |
 |---|---|---|
-| Gemini | `GEMINI_API_KEY` | Sumario executivo AI + prompt_recall + `--ai-payloads` |
-| Shodan | `SHODAN_API_KEY` | Portas/servicos/CVEs pelo IP |
-| VirusTotal | `VIRUSTOTAL_API_KEY` | Subdominios indexados |
-| SecurityTrails | `SECURITYTRAILS_API_KEY` | Historico DNS + subdominios |
-| Chaos | `CHAOS_API_KEY` | Subdominios (ProjectDiscovery) |
-| Hunter.io | `HUNTER_API_KEY` | Emails corporativos |
-| HIBP | `HIBP_API_KEY` | Emails vazados |
-| GitHub | `GITHUB_TOKEN` | Dorking por secrets |
+| **Gemini** | `GEMINI_API_KEY` | Sumario executivo AI + prompt_recall + `--ai-payloads` |
+| **Shodan** | `SHODAN_API_KEY` | Portas, servicos, CVEs pelo IP |
+| **VirusTotal** | `VIRUSTOTAL_API_KEY` | Subdominios indexados |
+| **SecurityTrails** | `SECURITYTRAILS_API_KEY` | Historico DNS + subdominios |
+| **Chaos** | `CHAOS_API_KEY` | Subdominios (ProjectDiscovery) |
+| **Hunter.io** | `HUNTER_API_KEY` | Emails corporativos |
+| **HIBP** | `HIBP_API_KEY` | Emails vazados em breaches |
+| **GitHub** | `GITHUB_TOKEN` | Dorking por secrets em commits |
+| **NVD** | `NVD_API_KEY` | CVEs do NIST (correlation de versoes) |
+| **Vulners** | `VULNERS_API_KEY` | CVE lookup por software/versao |
 
 ---
 
-## Instalacao
+<div align="center">
 
-### Windows / Linux / macOS
+## Instalacao e Execucao
+
+<img src="Img_vid/instalacao.png" alt="Instalacao" width="700"/>
+
+</div>
+
+### Instalacao Rapida
 
 ```bash
 git clone https://github.com/seu-usuario/CyberDyne
 cd CyberDyne
 pip install -r requirements.txt
-playwright install chromium
 cp .env.example .env     # configure suas API keys
 ```
 
-### Android — Termux
+> **Playwright (opcional):** `pip install playwright playwright-stealth fake-useragent && playwright install chromium`
+>
+> **Go Turbo (opcional):** `cd recon_go && go build -o ../cyberdyne-recon.exe . && cd ..`
+
+### Termux (Android)
 
 ```bash
 pkg update && pkg upgrade -y
 pkg install -y python build-essential libffi openssl git
-git clone https://github.com/seu-usuario/CyberDyne
-cd CyberDyne
+git clone https://github.com/seu-usuario/CyberDyne && cd CyberDyne
 pip install -r requirements.txt
-cp .env.example .env
-nano .env
+cp .env.example .env && nano .env
 termux-wake-lock
 python CyberDyneWeb.py --url https://alvo.com --all
 ```
 
-> Se `reportlab` falhar: `pip install --no-build-isolation reportlab`
-> Se ainda falhar, o script roda sem PDF.
-
-### Docker
-
-**Versao leve (sem Playwright, ~250MB):**
-```bash
-docker build -t cyberdyne .
-docker run --rm -v $(pwd)/outputs:/cyberdyne/outputs -v $(pwd)/.env:/cyberdyne/.env:ro \
-  cyberdyne --url https://alvo.com --all -o outputs/scan01
-```
-
-**Versao completa com Playwright (~1.5GB):**
-```bash
-docker build -f Dockerfile.full -t cyberdyne-full .
-docker run --rm -v $(pwd)/outputs:/cyberdyne/outputs -v $(pwd)/.env:/cyberdyne/.env:ro \
-  cyberdyne-full --url https://alvo.com --all --browser-mimic -o outputs/scan01
-```
-
-**Com docker-compose:**
-```bash
-# Scan leve
-docker compose run cyberdyne --url https://alvo.com --all -o outputs/scan01
-
-# Scan completo com Playwright
-docker compose run cyberdyne-full --url https://alvo.com --all --browser-mimic -o outputs/scan01
-
-# Com dashboard --live
-docker compose run -p 5000:5000 cyberdyne --url https://alvo.com --all --live -o outputs/scan01
-
-# Retomar de checkpoint
-docker compose run cyberdyne --resume outputs/scan01/.checkpoint.cyb
-```
-
-> Resultados salvos em `./outputs/` no host. API keys lidas do `.env` em modo read-only.
-
----
-
-## Execucao
-
-### Modo CLI (recomendado)
+### Exemplos de Uso
 
 ```bash
 # Scan completo
 python CyberDyneWeb.py --url https://alvo.com --all -o meu_projeto
 
-# Apenas reconhecimento
-python CyberDyneWeb.py --url https://alvo.com --recon -o recon_alvo
+# Scan autenticado (login + crawl area logada)
+python CyberDyneWeb.py --url https://alvo.com --login https://alvo.com/login -ul admin@email.com -pl senha --all -o auth_scan
 
-# Apenas vulnerabilidades
-python CyberDyneWeb.py --url https://alvo.com --vuln -o vuln_alvo
-
-# Scan autenticado
-python CyberDyneWeb.py --url https://alvo.com --login https://alvo.com/login -ul admin@email.com -pl minhaSenha --all -o projeto_auth
-
-# Modo stealth (anti-WAF)
-python CyberDyneWeb.py --url https://alvo.com --all --stealth -o stealth_scan
-
-# AI payloads contextuais (requer GEMINI_API_KEY)
-python CyberDyneWeb.py --url https://alvo.com --all --ai-payloads -o ai_scan
+# Modo stealth (anti-WAF) + AI payloads contextuais
+python CyberDyneWeb.py --url https://alvo.com --all --stealth --ai-payloads -o stealth_scan
 
 # Dashboard visual em tempo real
 python CyberDyneWeb.py --url https://alvo.com --all --live -o live_scan
 
-# Browser Mimic — testes client-side com Chromium real
-python CyberDyneWeb.py --url https://alvo.com --all --browser-mimic-ns -o browser_scan
+# Browser Mimic visivel (assista o Chromium ao vivo)
+python CyberDyneWeb.py --url https://alvo.com --all --browser-mimic-s -o browser_scan
 
-# Tudo junto — o scan mais completo possivel
-python CyberDyneWeb.py --url https://alvo.com --login https://alvo.com/login -ul admin -pl senha --all --stealth --ai-payloads --live --browser-mimic-s -o full_scan
+# Arsenal maximo — tudo ligado
+python CyberDyneWeb.py --url https://alvo.com --login https://alvo.com/login -ul admin -pl senha --all --stealth --ai-payloads --live --browser-mimic-s --insane --go -o full_scan
+
+# Retomar scan interrompido
+python CyberDyneWeb.py --resume meu_projeto/.checkpoint.cyb
 ```
 
-### Modo Interativo
-
-```bash
-python CyberDyneWeb.py
-```
-
-O script pergunta tudo interativamente: URL, login, credenciais, tipo de scan.
-
-### Flags
+### Todas as Flags
 
 | Flag | Descricao |
 |---|---|
-| `--url URL` | URL alvo |
-| `--login URL` | URL do painel de login (opcional) |
-| `-ul` / `--userlogin` | Email ou usuario para login |
-| `-pl` / `--passlogin` | Senha para login |
+| `--url URL` | URL alvo (obrigatorio) |
+| `-o NOME` | Nome da pasta de output |
 | `--all` | Executa tudo: recon + vuln + relatorios |
 | `--recon` | Apenas reconhecimento |
-| `--vuln` | Apenas scan de vulnerabilidades |
-| `--stealth` | Delay aleatorio (0.3-1.5s) + rotacao de User-Agent |
-| `--ai-payloads` | Gemini gera 15 payloads especificos por alvo (XSS, SQLi, LFI, RCE, SSTI, SSRF) |
+| `--vuln` | Apenas vulnerabilidades |
+| `--login URL` | URL do painel de login |
+| `-ul` / `-pl` | Credenciais de login (usuario / senha) |
+| `--stealth` | Delay aleatorio + rotacao de User-Agent |
+| `--ai-payloads` | Gemini gera 15 payloads por contexto (XSS, SQLi, LFI, RCE, SSTI, SSRF) |
 | `--live` | Dashboard Flask em `localhost:5000` |
-| `--browser-mimic-s` | Browser Mimic **SHOW**: abre Chromium visivel — mouse mexendo, digitando, tudo ao vivo |
-| `--browser-mimic-ns` | Browser Mimic **NO-SHOW**: roda em background (headless, mais rapido) |
-| `--wp` | WordPress Security Audit (plugins, themes, users, xmlrpc, CVEs) |
-| `--medium` | 30% dos payloads — scan rapido, ideal para reconhecimento inicial |
-| `--hard` | 60% dos payloads — balanceado (padrao se nenhum nivel for especificado) |
-| `--insane` | 100% dos payloads — completo, sem piedade, arsenal total (~32K payloads) |
-| `--go` | Reconhecimento via Go (10-50x mais rapido que Python). Requer compilacao do binario |
-| `--resume FILE` | Retomar scan de checkpoint (`.cyb`) — scans longos podem ser pausados e retomados |
-| `-o NOME` / `--output` | Nome da pasta de output (ex: `-o meu_projeto`) |
+| `--browser-mimic-s` | Chromium visivel — mouse, digitacao, tudo ao vivo |
+| `--browser-mimic-ns` | Chromium headless (background, mais rapido) |
+| `--wp` | WordPress Audit (plugins, temas, users, xmlrpc, CVEs) |
+| `--go` | Fuzzing via Go (200 goroutines, 10-50x mais rapido) |
+| `--medium` | 30% dos payloads — scan rapido |
+| `--hard` | 60% dos payloads — balanceado (padrao) |
+| `--insane` | 100% dos payloads — arsenal completo (~32K payloads) |
+| `--resume FILE` | Retomar de checkpoint `.cyb` |
 
-### Go Turbo Recon (`--go`)
+---
 
-Reconhecimento **10-50x mais rapido** usando goroutines do Go. Essa feature e **opcional** — sem ela o script roda normalmente com Python.
+<div align="center">
 
-#### 1. Instalar o Go
+## Docker
 
-Baixe e instale em [https://go.dev/dl/](https://go.dev/dl/) (escolha o instalador do seu sistema).
+<img src="Img_vid/dockeroff.webp" alt="Docker" width="700"/>
 
-Apos instalar, **feche e abra o terminal** para o Go entrar no PATH. Confirme com:
-
-```bash
-go version
-# deve mostrar algo como: go version go1.22.0 windows/amd64
-```
-
-#### 2. Compilar o binario (uma unica vez)
-
-Abra o terminal na pasta do CyberDyne e execute:
-
-**Windows (CMD ou PowerShell):**
-```bash
-cd recon_go
-go build -o ../cyberdyne-recon.exe .
-cd ..
-```
-
-**Linux / macOS:**
-```bash
-cd recon_go
-go build -o ../cyberdyne-recon .
-cd ..
-```
-
-Isso gera o arquivo `cyberdyne-recon.exe` (ou `cyberdyne-recon` no Linux) na raiz do projeto. Esse passo so precisa ser feito **uma vez**.
-
-#### 3. Verificar se compilou
+</div>
 
 ```bash
-# Windows
-dir cyberdyne-recon.exe
+# Build leve (~300MB) — Python + Go, sem Playwright
+docker compose build cyberdyne
 
-# Linux/Mac
-ls -la cyberdyne-recon
+# Scan completo com Go Turbo
+docker compose run cyberdyne --url https://alvo.com --all --go -o outputs/scan01
+
+# Build completo (~1.6GB) — Python + Go + Playwright
+docker compose build cyberdyne-full
+
+# Scan com Browser Mimic
+docker compose run cyberdyne-full --url https://alvo.com --all --go --browser-mimic-ns -o outputs/scan01
+
+# Dashboard --live
+docker compose run -p 5000:5000 cyberdyne --url https://alvo.com --all --live -o outputs/scan01
 ```
 
-Deve mostrar o arquivo (~9MB). Se aparecer, esta pronto.
-
-#### 4. Usar
-
-Adicione `--go` em qualquer comando:
-
-```bash
-# Scan completo com Go Recon
-python CyberDyneWeb.py --url https://alvo.com --all --go -o meu_scan
-
-# Apenas recon com Go
-python CyberDyneWeb.py --url https://alvo.com --recon --go -o recon_rapido
-
-# Scan completo + stealth + Go
-python CyberDyneWeb.py --url https://alvo.com --all --go --stealth --hard -o full_scan
-```
-
-O terminal vai mostrar:
-
-```
-══════════════════════════════════════════════════════════
-  FASE 1 — RECONHECIMENTO (Go Turbo)
-══════════════════════════════════════════════════════════
-  [GO] Usando binário: cyberdyne-recon.exe
-  [GO-RECON] Alvo: https://alvo.com | Dominio: alvo.com
-  [GO-RECON] Enumerando subdomínios (4 fontes paralelas)...
-  [GO-RECON] 47 subdomínios encontrados
-  [GO-RECON] Coletando URLs (Wayback CDX)...
-  [GO-RECON] 312 URLs coletadas | 89 com params (FUZZ)
-  [GO-RECON] Validando URLs ativas (100 goroutines)...
-  [GO-RECON] 23 URLs ativas confirmadas
-  [GO-RECON] Port scan (37 portas)...
-  [GO-RECON] 3 portas abertas encontradas
-  [GO] Completo em 12.3s | 47 subs | 312 URLs | 89 FUZZ | 3 portas
-```
-
-#### Se o Go nao estiver instalado ou o binario nao existir
-
-O script **nao quebra** — ele mostra um aviso e usa o Python automaticamente:
-
-```
-  [GO] Binário não encontrado. Compile com: cd recon_go && go build -o cyberdyne-recon .
-  [GO] Usando Python para reconhecimento...
-```
-
-#### Comparativo de performance
-
-| Etapa | Python | Go |
-|-------|--------|-----|
-| Subdominios (4 fontes) | ~15s | ~2s |
-| Coleta de URLs | ~20s | ~3s |
-| Validacao de URLs | ~30s | ~3s |
-| Port scan (37 portas) | ~20s | ~2s |
-| Crawl HTML (depth=2) | ~25s | ~5s |
-| **Total** | **~2-5 min** | **~15-30s** |
+> Resultados em `./outputs/`. API keys lidas do `.env` (read-only). Go compila automaticamente no build.
 
 ---
 
@@ -416,6 +359,6 @@ O script **nao quebra** — ele mostra um aviso e usa o Python automaticamente:
 
 *"Seguranca nao e um produto. E um processo."* — Bruce Schneier
 
-*v4.5 — 20/03/2026*
+*v5.0 — 21/03/2026*
 
 </div>

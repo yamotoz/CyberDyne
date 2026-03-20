@@ -1,24 +1,37 @@
 # =============================================================================
-#  CyberDyne — Dockerfile.full (~1.5GB)
-#  Versão COMPLETA com Playwright + Chromium (--browser-mimic)
+#  CyberDyne — Dockerfile.full (~1.6GB)
+#  Versao COMPLETA: Go Turbo Recon + Python + Playwright/Chromium
+#  Suporta: --go, --browser-mimic-s, --browser-mimic-ns, --live, tudo.
 # =============================================================================
+
+# ── Stage 1: Compilar Go binary ──────────────────────────────────────────────
+FROM golang:1.22-alpine AS go-builder
+WORKDIR /build
+COPY recon_go/ .
+RUN go build -ldflags="-s -w" -o cyberdyne-recon .
+
+# ── Stage 2: Python + Playwright runtime ─────────────────────────────────────
 FROM mcr.microsoft.com/playwright/python:v1.42.0-jammy
 
 WORKDIR /cyberdyne
 
-# Instalar todas as dependências Python
+# Instalar todas as dependencias Python
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt && \
     playwright install chromium
 
-# Copiar código e payloads
+# Copiar Go binary do stage 1
+COPY --from=go-builder /build/cyberdyne-recon /cyberdyne/cyberdyne-recon
+RUN chmod +x /cyberdyne/cyberdyne-recon
+
+# Copiar codigo e payloads
 COPY CyberDyneWeb.py .
 COPY Payloads_CY/ Payloads_CY/
 
 # Porta do dashboard --live
 EXPOSE 5000
 
-# Volume para outputs e .env
+# Volume para outputs
 VOLUME ["/cyberdyne/outputs"]
 
 ENTRYPOINT ["python", "CyberDyneWeb.py"]
