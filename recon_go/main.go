@@ -14,6 +14,7 @@
 package main
 
 import (
+	"crypto/md5"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -73,10 +74,17 @@ var userAgents = []string{
 }
 var uaIdx int64
 
-func fuzzRequest(rawURL string) (int, int) {
+type fuzzResp struct {
+	status   int
+	bodyLen  int
+	bodyHash string
+	finalURL string
+}
+
+func fuzzRequest(rawURL string) fuzzResp {
 	req, err := http.NewRequest("GET", rawURL, nil)
 	if err != nil {
-		return 0, 0
+		return fuzzResp{}
 	}
 	idx := atomic.AddInt64(&uaIdx, 1)
 	req.Header.Set("User-Agent", userAgents[int(idx)%len(userAgents)])
@@ -85,11 +93,17 @@ func fuzzRequest(rawURL string) (int, int) {
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return 0, 0
+		return fuzzResp{}
 	}
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(io.LimitReader(resp.Body, 50*1024)) // 50KB max
-	return resp.StatusCode, len(body)
+	h := md5.Sum(body)
+	return fuzzResp{
+		status:   resp.StatusCode,
+		bodyLen:  len(body),
+		bodyHash: fmt.Sprintf("%x", h),
+		finalURL: resp.Request.URL.String(),
+	}
 }
 
 // ─── Payload Loader ────────────────────────────────────────────────────────
@@ -238,23 +252,33 @@ func main() {
 	var done int64
 	fuzzStart := time.Now()
 
-	// Baseline: pegar o tamanho da resposta para URLs que não existem
-	// para filtrar soft-404s (sites que retornam 200/403 para tudo)
-	baseline1Status, baseline1Len := fuzzRequest(strings.TrimRight(targetURL, "/") + "/cyberdyne_nonexistent_7f3a9b2e")
-	baseline2Status, baseline2Len := fuzzRequest(strings.TrimRight(targetURL, "/") + "/xz_fake_path_404_check_e8c1d2")
-	// Se ambos retornam o mesmo status e tamanho similar → soft-404
-	baselineStatus := baseline1Status
-	baselineLen := baseline1Len
+	// ── Baseline Fingerprint (anti-soft-404) ────────────────────────────
+	// Captura a "impressão digital" de 2 URLs que sabemos que não existem.
+	// Se ambas retornam response similar → site tem catch-all (soft-404).
+	// Usa 5 critérios: status, body size, body hash, redirect URL, title.
+	type baseline struct {
+		status   int
+		bodyLen  int
+		bodyHash string
+		redirect string
+	}
+	bl1 := fuzzRequest(strings.TrimRight(targetURL, "/") + "/cyberdyne_nonexistent_7f3a9b2e")
+	bl2 := fuzzRequest(strings.TrimRight(targetURL, "/") + "/xz_fake_path_404_check_e8c1d2")
+
+	baselineFP := baseline{status: bl1.status, bodyLen: bl1.bodyLen, bodyHash: bl1.bodyHash, redirect: bl1.finalURL}
 	isSoft404 := false
-	if baselineStatus > 0 && baselineStatus == baseline2Status {
-		diff := baseline1Len - baseline2Len
+	if bl1.status > 0 && bl1.status == bl2.status {
+		diff := bl1.bodyLen - bl2.bodyLen
 		if diff < 0 { diff = -diff }
-		if diff < 500 { // body sizes within 500 bytes = same error page
+		if diff < 500 || bl1.bodyHash == bl2.bodyHash {
 			isSoft404 = true
 		}
 	}
+	soft404Count := int64(0)
 	if isSoft404 {
-		fmt.Fprintf(os.Stderr, "  [!] Soft-%d detectado (%d bytes) — filtrando respostas identicas\n\n", baselineStatus, baselineLen)
+		fmt.Fprintf(os.Stderr, "  [Baseline] Soft-%d detectado (hash=%s, %d bytes, redirect=%s)\n",
+			baselineFP.status, baselineFP.bodyHash[:8], baselineFP.bodyLen, baselineFP.redirect)
+		fmt.Fprintf(os.Stderr, "  [Baseline] Respostas identicas serao filtradas automaticamente\n\n")
 	} else {
 		fmt.Fprintf(os.Stderr, "\n")
 	}
@@ -268,33 +292,47 @@ func main() {
 				defer func() { <-sem }()
 
 				u := strings.TrimRight(b, "/") + p
-				status, bodyLen := fuzzRequest(u)
-				if status == 0 {
+				fr := fuzzRequest(u)
+				if fr.status == 0 {
 					return
 				}
 
-				// Filtros inteligentes
+				// ── Filtros inteligentes (5 critérios) ──────────────────
 				// 1. Ignorar 404, 410 (não existe)
-				if status == 404 || status == 410 {
+				if fr.status == 404 || fr.status == 410 {
 					return
 				}
-				// 2. Ignorar 301/302 para paths genéricos (redirect para home)
-				if status == 301 || status == 302 || status == 307 || status == 308 {
+				// 2. Ignorar redirects puros (301/302 para home)
+				if fr.status == 301 || fr.status == 302 || fr.status == 307 || fr.status == 308 {
+					atomic.AddInt64(&soft404Count, 1)
 					return
 				}
 				// 3. Ignorar respostas muito pequenas (erro genérico)
-				if bodyLen < 50 {
+				if fr.bodyLen < 50 {
 					return
 				}
-				// 4. Soft-404/403: se body é similar ao baseline → mesma página de erro
-				if isSoft404 && status == baselineStatus {
-					diff := bodyLen - baselineLen
+				// 4. Hash idêntico ao baseline → soft-404 (mesma página exata)
+				if isSoft404 && fr.bodyHash == baselineFP.bodyHash {
+					atomic.AddInt64(&soft404Count, 1)
+					return
+				}
+				// 5. Mesmo status + tamanho similar ao baseline → soft-404
+				if isSoft404 && fr.status == baselineFP.status {
+					diff := fr.bodyLen - baselineFP.bodyLen
 					if diff < 0 { diff = -diff }
-					if diff < 500 { return } // dentro de 500 bytes = mesma página
+					if diff < 150 {
+						atomic.AddInt64(&soft404Count, 1)
+						return
+					}
+				}
+				// 6. Redirect para mesma URL que o baseline → catch-all
+				if isSoft404 && baselineFP.redirect != "" && fr.finalURL == baselineFP.redirect {
+					atomic.AddInt64(&soft404Count, 1)
+					return
 				}
 
 				mu.Lock()
-				results = append(results, FuzzResult{URL: u, Status: status, Length: bodyLen})
+				results = append(results, FuzzResult{URL: u, Status: fr.status, Length: fr.bodyLen})
 				mu.Unlock()
 			}(base, path)
 
@@ -320,7 +358,11 @@ func main() {
 	fmt.Fprintf(os.Stderr, "\r%s\r", strings.Repeat(" ", 90))
 	fmt.Fprintf(os.Stderr, "\n  ──────────────────────────────────────────────────────\n")
 	fmt.Fprintf(os.Stderr, "  [GO FUZZER] Completo em %.1fs\n", elapsed)
-	fmt.Fprintf(os.Stderr, "    %d requests | %.0f req/s | %d paths encontrados\n", totalReqs, reqPerSec, len(results))
+	fmt.Fprintf(os.Stderr, "    %d requests | %.0f req/s | %d paths reais encontrados\n", totalReqs, reqPerSec, len(results))
+	sc := atomic.LoadInt64(&soft404Count)
+	if sc > 0 {
+		fmt.Fprintf(os.Stderr, "    %d soft-404 filtrados (baseline fingerprint)\n", sc)
+	}
 	fmt.Fprintf(os.Stderr, "  ──────────────────────────────────────────────────────\n\n")
 
 	// Sort results by status

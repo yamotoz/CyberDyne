@@ -28,3 +28,6 @@ flask>=3.0.0
 playwright>=1.40.0
 playwright-stealth>=1.0.6
 fake-useragent>=1.4.0
+
+# ── Tor SOCKS5 Proxy (--tor) ──────────────────────────────────────────────
+PySocks>=1.7.1

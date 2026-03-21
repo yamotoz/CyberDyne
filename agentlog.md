@@ -1,13 +1,15 @@
 # Diario de Bordo -- CyberDyne (Agente Principal)
 
-## Status Atual: v4.5 -- Em Desenvolvimento Ativo
+## Status Atual: v6.0 -- Em Desenvolvimento Ativo
 
-* **Ultima atualizacao:** 20/03/2026
-* **Scripts ativos:** `CyberDyneWeb.py` (scanner web)
-* **Total de linhas:** ~14.600
-* **Total de checks de vulnerabilidade:** 113+ (core) + 6 browser-mimic + WP Audit
-* **Pastas de payload:** 33 (Payloads_CY/)
-* **Total de payloads:** ~32.000 linhas unicas
+* **Ultima atualizacao:** 21/03/2026
+* **Scripts ativos:** `CyberDyneWeb.py` (scanner web) + `recon_go/main.go` (Go turbo fuzzer)
+* **Total de linhas:** ~16.800+
+* **Total de checks de vulnerabilidade:** 115+ (core) + 16 browser-mimic + WP Audit
+* **Pastas de payload:** 40+ (Payloads_CY/)
+* **Total de payloads:** ~3.8M linhas unicas
+* **APIs integradas:** Gemini + OpenAI (fallback) + Shodan + VirusTotal + SecurityTrails + Chaos + Hunter + HIBP + GitHub + NVD + Vulners
+* **Tecnologias no fingerprint:** 114+ (com implies/excludes/version extraction)
 
 ---
 
@@ -183,7 +185,7 @@ Na v3.0, tecnicas de 7 ferramentas open-source foram extraidas, adaptadas ao cod
 
 ## Payloads_CY -- Integracao Completa
 
-Pasta com 17 subpastas, todas conectadas ao script via `_load_payload(relative_path, limit)`:
+Pasta com 35+ subpastas, todas conectadas ao script via `_load_payload(relative_path, limit)`:
 
 | Pasta | Usada em |
 |---|---|
@@ -199,10 +201,15 @@ Pasta com 17 subpastas, todas conectadas ao script via `_load_payload(relative_p
 | `LFI/` | `check_lfi()` -- filtro de parametros expandido (30 nomes) |
 | `Command-Injection/` | `check_cmd_injection()` |
 | `SSRF/` | `check_ssrf()` -- filtro de parametros expandido (23 nomes) |
+| `SSRF/ssrf-cloud-metadata.json` | GCP/Azure/DO/K8s metadata endpoints (30+ payloads) |
+| `SSRF/ssrf-dns-rebinding.json` | DNS rebinding techniques, fast flux, protocol switch |
+| `SSRF/ssrf-bypass-techniques.json` | IPv6, IP encoding, protocol smuggling (100+ payloads) |
 | `Injection-Other/` | `check_ssti()` (template engines) |
+| `Injection-Other/XXE/xxe-payloads.json` | XXE: OOB, SVG, SOAP, DTD attacks (50 payloads) |
 | `Passwords/` | `check_jwt_weak_secret()`, `check_broken_auth()` |
 | `Usernames/` | `check_broken_auth()` -- agora usa `self.login_url` quando fornecido |
 | `Web-Discovery/` | `fuzz_paths()` (Directories, API, CMS, Web-Servers) |
+| `Web-Discovery/Directories/directory-listing-wordlist.txt` | 350 paths para fuzzing |
 | `Fuzzing-General/` | `fuzz_paths()`, `check_xss_reflected()`, `check_open_redirect()` |
 | `Recon-Secrets/` | `github_dorking()`, `check_env_files()` |
 | `Pattern-Matching/` | `check_env_files()` (sensitive keywords) |
@@ -213,6 +220,23 @@ Pasta com 17 subpastas, todas conectadas ao script via `_load_payload(relative_p
 | `WAF-Bypass/` | `check_waf_bypass()` (vuln 111) |
 | `WAF-Bypass/waf-bypass-payloads.json` | 120 payloads em 16 categorias |
 | `Open-Redirect/` | `check_open_redirect()` |
+| `Open-Redirect/open-redirect-bypass-payloads.json` | URL encoding, backslash, tab/newline, protocol (30 payloads) |
+| `CORS/cors-bypass-payloads.json` | Null origin, subdomain bypass, TLD confusion, IP tricks (20 payloads) |
+| `JavaScript/prototype-pollution-payloads.json` | Lodash, jQuery, Vue, Axios, Angular, React gadgets (30 payloads) |
+| `CRLF/crlf-injection-payloads.json` | HTTP desync, TE.CL/TE.TE, H2.CE, cache poisoning (100+ payloads) |
+| `NoSQL/nosql-injection-payloads.json` | MongoDB, CouchDB, Elasticsearch (45 payloads) |
+| `LDAP/ldap-injection-payloads.json` | LDAP injection basic/advance/blind (45 payloads) |
+| `XPath/xpath-injection-payloads.json` | XPath injection (40 payloads) |
+| `Upload/file-upload-bypass-payloads.json` | Extension, MIME, content bypass (70 payloads) |
+| `Upload/zip-slip-payloads.json` | Zip slip path traversal (25 payloads) |
+| `Kubernetes/k8s-endpoints-paths.json` | K8s API endpoints, secrets, pods (60 endpoints) |
+| `IaC/iac-sensitive-files.json` | Terraform, K8s, Docker, AWS configs (80 files) |
+| `AWS/aws-attack-vectors.json` | S3, IAM, EC2, Lambda attacks (100+ vectors) |
+| `Firebase/firebase-attack-vectors.json` | Firestore, Auth, Storage rules (60 vectors) |
+| `GitHub/github-dorks.json` | Sensitive data dorking (80 dorks) |
+| `GraphQL/graphql-attack-vectors.json` | Introspection, batching, DoS (40 vectors) |
+| `GraphQL/graphql-dangerous-mutations.json` | Privilege escalation, data destruction (60 mutations) |
+| `Business-Logic/` | Account takeover, privilege escalation, price manipulation (165 vectors) |
 
 ---
 
@@ -228,8 +252,9 @@ Pasta com 17 subpastas, todas conectadas ao script via `_load_payload(relative_p
 | **Hunter.io** | `HUNTER_API_KEY` | Integrado | `_python_harvester()` -> emails |
 | **HaveIBeenPwned** | `HIBP_API_KEY` | Integrado | `_python_harvester()` -> email leaks |
 | **GitHub** | `GITHUB_TOKEN` | Integrado | `github_dorking()` |
-| **NVD** | `NVD_API_KEY` | Carregado, nao usado | Pendente: CVE lookup por tech stack |
-| **Vulners** | `VULNERS_API_KEY` | Carregado, nao usado | Pendente: CVE lookup alternativo |
+| **OpenAI** | `OPENAI_API_KEY` | Integrado (v6.0) | Fallback para `_ai_generate_payloads()` quando Gemini falha |
+| **NVD** | `NVD_API_KEY` | Integrado (v4.5) | `_query_nvd()` -> CVE lookup por tech/versao |
+| **Vulners** | `VULNERS_API_KEY` | Integrado (v4.5) | `_query_vulners()` -> CVE lookup primario |
 | **URLScan.io** | `URLSCAN_API_KEY` | Carregado, nao usado | Pendente: scan visual/screenshot |
 | **BinaryEdge** | `BINARYEDGE_API_KEY` | Carregado, nao usado | Pendente: alternativa ao Shodan |
 | **HackerOne** | `HACKERONE_API_KEY` | Carregado, nao usado | Pendente: verificar bug bounty scope |
@@ -381,7 +406,95 @@ Aplica um dos 5 metodos de encoding ao payload:
 
 ---
 
-## Mapa de Vulnerabilidades (111+ checks)
+## Sessao v6.0 — Mega Update (21/03/2026)
+
+### FASE 1: AI Payloads v2 + Fingerprint v2
+
+**AI Payloads v2:**
+- OpenAI fallback (`gpt-4o-mini`) quando Gemini falha — `OPENAI_API_KEY` no `.env`
+- Prompt profissional com contexto rico: tech stack, WAF detectado, form fields, URL params
+- Expandido de 6 para 12 checks com AI payloads (adicionado: NoSQL, XXE, Open Redirect, CRLF, WAF Bypass, LDAP)
+- `_ai_feedback_round()` — round 2 de payloads bypass quando WAF bloqueia (so em --insane)
+- Token tracking para ambos provedores (`_gemini_tokens_used` + `_openai_tokens_used`)
+
+**Fingerprint v2:**
+- 114+ tecnologias (de 89) — adicionadas 25: Remix, SvelteKit, HTMX, Qwik, Auth0, Clerk, NextAuth.js, Keycloak, PocketBase, Appwrite, Cloudflare Pages, Railway, Render, Fly.io, PostHog, Plausible, Apollo GraphQL, tRPC, Zustand, Pinia, Vercel AI SDK, LangChain, Directus, Payload CMS
+- Categorias normalizadas de 60+ para ~20 padronizadas
+- Campos `implies`/`excludes` em 18 techs (ex: Next.js implies React + Node.js, excludes Nuxt.js)
+- `version_pattern` em 9 techs (jQuery, Bootstrap, Tailwind, etc.)
+- `_detect_dns_hosting()` — deteccao por CNAME (14 provedores)
+- `_detect_tls_issuer()` — deteccao por certificado TLS (7 issuers)
+- Post-processing em `detect_technologies()`: implies adiciona techs inferidas, excludes remove conflitos, version extraction
+
+### FASE 2: 14 Checks Melhorados
+
+| Check | Melhoria |
+|---|---|
+| CSRF (014) | Testa se token e VALIDADO (request sem token + token invalido) |
+| IDOR (015) | Compara CONTEUDO entre usuarios (regex email/nome), nao so status |
+| Rate Limit (033) | Burst de 50 requests com ThreadPoolExecutor, mede degradacao |
+| XSS Reflected (005) | 11 mutation payloads (double URL encode, null byte, unicode, CharCode) |
+| SSRF (011) | 10 bypass payloads (IPv6, decimal IP, DNS rebinding, GCP/Azure metadata) |
+| SSTI (020) | Blind timing (Jinja2 range, Spring EL sleep, ERB Thread.sleep) |
+| NoSQL (013) | Timing attack ($where sleep, $regex catastrophic) |
+| HPP (078) | Identifica QUAL valor o server usa (first/last/both) |
+| Broken Auth (024) | Compara response valida vs invalida (size, redirect, status) |
+| Mass Assignment (031) | POST + GET para verificar persistencia |
+| Session Fixation (115) | Testa sem login — cookie arbitrario mantido? |
+| Security.txt (114) | Valida RFC 9116: Contact, Expires, formato |
+| Sensitive Data URL (097) | Shannon entropy em param values (>3.5 + >20 chars = leak) |
+| Logging (019) | 20 requests com SQLi payload, detecta falta de rate-limit |
+
+### FASE 3: Login v2
+
+- `--auth-header "Bearer TOKEN"` — injeta em toda request via `safe_get()`
+- `analyze_session()` — JWT decode (alg, exp, claims), cookie entropy, flags (HttpOnly/Secure/SameSite)
+- Session refresh a cada 30min (`_maybe_refresh_session()`)
+- Deteccao de logout (`_check_auth_alive()`) — 401/403/redirect/body keywords
+- `test_concurrent_sessions()` — 2 logins, verifica se sessao anterior invalida
+- `verify_logout()` — testa se cookie antigo funciona apos logout
+- `enumerate_roles()` — 12 rotas admin + bypass headers (X-Forwarded-For, X-Original-URL)
+- Tudo integrado no `run()` do AuthenticatedCrawler
+
+### FASE 4: Browser Mimic Expandido (6 → 16 checks)
+
+Novos checks (207-216):
+| # | Check | Tecnica |
+|---|---|---|
+| 207 | WebSocket Hijacking | WS connection test + endpoint enum |
+| 208 | Service Worker Spy | SW registration + scope + script analysis |
+| 209 | Clipboard Hijacking | copy/cut/paste event listener detection |
+| 210 | Form Autofill Theft | Hidden inputs com autocomplete sensivel |
+| 211 | CSP Bypass Real | Inline script injection + eval() test real |
+| 212 | Cookie Theft via JS | document.cookie — session cookies sem HttpOnly |
+| 213 | Keylogger Detection | keydown/keypress listeners + exfiltration patterns |
+| 214 | Redirect Chain | Full chain analysis, HTTP downgrade, external domains |
+| 215 | Shadow DOM Leak | Open shadow roots com dados sensiveis |
+| 216 | Network Interception | page.route — auth tokens externos, mixed content |
+
+### FASE 5: --tor Support
+
+- `--tor` flag — SOCKS5 proxy so na Fase 2 (vulnerabilidades)
+- `_check_tor_running()` — verifica via `check.torproject.org/api/ip`
+- `_refresh_tor_circuit()` — NEWNYM signal a cada 50 requests
+- `safe_get()` e `adaptive_request()` usam `_TOR_PROXIES` quando ativo
+- `PySocks>=1.7.1` adicionado ao requirements.txt
+
+### FASE 6: Live Dashboard v2
+
+- Redesign completo: Tailwind CDN + Chart.js
+- Paleta: preto (#000000), vermelho (#dc2626), branco
+- Cards de severidade animados
+- Progress bar com gradiente vermelho
+- Timeline chart (linha vermelha vulns + branca checks)
+- Recon stats panel
+- Vuln feed com slide-in animation
+- Subdomain grid com indicadores
+- Responsivo mobile
+
+---
+
+## Mapa de Vulnerabilidades (115+ checks)
 
 ### OWASP Top 10 (001-020)
 
@@ -765,6 +878,16 @@ Novos payloads conectados na v4.0:
 - **Deduplicacao**: 10.432 linhas duplicadas removidas, 65 arquivos vazios limpos
 - Pastas deletadas: payloads_diversos, Black-Hat-Python-main, PenTest-Scripts, FUZZING, payloadsallthethings
 
+### v4.6 -- 21/03/2026 (Payload Enhancement Sprint)
+- **Novas pastas Payloads_CY**: XXE, SSRF Cloud Metadata, SSRF DNS Rebinding, SSRF Bypass Techniques, CORS Bypass, JavaScript Prototype Pollution, GraphQL Dangerous Mutations
+- **CRLF Enhancement**: HTTP desync (TE.CL, TE.TE, H2.CE), request smuggling, pipeline contamination
+- **SSRF Enhancement**: 150+ payloads including GCP, Azure, DigitalOcean, Oracle, Kubernetes, IPv6 bypass, DNS rebinding
+- **XXE Payloads**: 50 payloads covering OOB FTP/HTTP, SVG, SOAP, RSS, PDF, billion laughs, DTD attacks
+- **Prototype Pollution**: 30 payloads for Lodash, jQuery, Vue, Axios, Angular, React, Express gadgets
+- **CORS Bypass**: 20 payloads including null origin, subdomain bypass, TLD confusion, special chars, IP tricks
+- **Open Redirect Bypass**: 30 payloads with URL encoding, backslash, null byte, tab/newline, protocol tricks
+- **GraphQL Mutations**: 60 dangerous mutations for privilege escalation, data destruction, financial tampering
+
 ### v2.0 -- 17/03/2026
 - Gemini AI, PDF elegante, Payloads_CY, VulnScanner paralelo, Chaos API, 8 APIs
 
@@ -804,4 +927,4 @@ Novos payloads conectados na v4.0:
 
 ---
 
-*Agente responsavel pela ultima atualizacao: Claude Opus 4.6 -- 20/03/2026*
+*Agente responsavel pela ultima atualizacao: opencode/big-pickle -- 21/03/2026*
