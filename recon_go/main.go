@@ -1172,10 +1172,18 @@ func main() {
 		targetHost = strings.Split(parts[0], ":")[0]
 	}
 
-	// ── Executar módulos em paralelo onde possível ───────────────────────────
-	// Stage 1: Port Scan + URL Validation (independentes)
+	// ── Executar módulos em SEQUÊNCIA para output limpo ─────────────────────
+	// Módulos rápidos primeiro → Fuzzing (pesado) → Pós-processamento
 	var openPorts []PortResult
 	var liveURLs []URLValidResult
+	var fuzzResults []FuzzResult
+	var totalPaths, totalReqs int
+	var reqPerSec float64
+	var takeoverResults []TakeoverResult
+	var jsFindings []JSFinding
+	var paramFindings []ParamFinding
+
+	// ── Stage 1: Port Scan + URL Validation + Takeover (rápidos, em paralelo) ──
 	var stage1WG sync.WaitGroup
 
 	if doPortScan && targetHost != "" {
@@ -1194,15 +1202,22 @@ func main() {
 		}()
 	}
 
+	if doTakeover && len(subdomains) > 0 {
+		stage1WG.Add(1)
+		go func() {
+			defer stage1WG.Done()
+			takeoverResults = runTakeoverCheck(subdomains)
+		}()
+	}
+
 	stage1WG.Wait()
+	fmt.Fprintln(os.Stderr) // linha em branco após módulos rápidos
 
 	// Usar URLs validadas como targets de fuzzing (se disponíveis)
 	fuzzTargets := targets
 	if doValidate && len(liveURLs) > 0 {
-		// Pegar bases únicas das URLs vivas para fuzzing
 		baseSet := map[string]bool{targetURL: true}
 		for _, lu := range liveURLs {
-			// Extrair base URL (scheme + host)
 			if strings.Contains(lu.URL, "://") {
 				parts := strings.SplitN(lu.URL, "://", 2)
 				hostPart := strings.SplitN(parts[1], "/", 2)[0]
@@ -1215,36 +1230,13 @@ func main() {
 		}
 	}
 
-	// Stage 2: Fuzzing + Takeover Check (independentes)
-	var fuzzResults []FuzzResult
-	var totalPaths, totalReqs int
-	var reqPerSec float64
-	var takeoverResults []TakeoverResult
-	var stage2WG sync.WaitGroup
+	// ── Stage 2: Fuzzing (pesado — roda sozinho para output limpo) ──────────
+	fuzzResults, totalPaths, totalReqs, reqPerSec = runFuzzing(targetURL, payloadsDir, fuzzTargets)
 
-	stage2WG.Add(1)
-	go func() {
-		defer stage2WG.Done()
-		fuzzResults, totalPaths, totalReqs, reqPerSec = runFuzzing(targetURL, payloadsDir, fuzzTargets)
-	}()
-
-	if doTakeover && len(subdomains) > 0 {
-		stage2WG.Add(1)
-		go func() {
-			defer stage2WG.Done()
-			takeoverResults = runTakeoverCheck(subdomains)
-		}()
-	}
-
-	stage2WG.Wait()
-
-	// Stage 3: JS Mining + Param Discovery (dependem de resultados anteriores)
-	var jsFindings []JSFinding
-	var paramFindings []ParamFinding
+	// ── Stage 3: JS Mining + Param Discovery (pós-fuzzing, em paralelo) ─────
 	var stage3WG sync.WaitGroup
 
 	if doJSMine {
-		// URLs para JS mining: validated live URLs + original URLs
 		jsSourceURLs := allURLs
 		if len(liveURLs) > 0 {
 			for _, lu := range liveURLs {
@@ -1258,7 +1250,7 @@ func main() {
 		}()
 	}
 
-	if doParamDiscovery {
+	if doParamDiscovery && len(fuzzResults) > 0 {
 		stage3WG.Add(1)
 		go func() {
 			defer stage3WG.Done()

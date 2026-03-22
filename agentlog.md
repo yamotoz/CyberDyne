@@ -1,15 +1,28 @@
 # Diario de Bordo -- CyberDyne (Agente Principal)
 
-## Status Atual: v6.0 -- Em Desenvolvimento Ativo
+## Status Atual: v7.0 -- Em Desenvolvimento Ativo
 
-* **Ultima atualizacao:** 21/03/2026
-* **Scripts ativos:** `CyberDyneWeb.py` (scanner web) + `recon_go/main.go` (Go turbo fuzzer)
-* **Total de linhas:** ~16.800+
-* **Total de checks de vulnerabilidade:** 115+ (core) + 16 browser-mimic + WP Audit
+* **Ultima atualizacao:** 22/03/2026
+* **Scripts ativos:** `CyberDyneWeb.py` (scanner web) + `recon_go/main.go` (Go turbo fuzzer v2)
+* **Total de linhas:** ~18.500+
+* **Total de checks de vulnerabilidade:** 118+ (core) + 17 browser-mimic + WP Audit (15)
 * **Pastas de payload:** 40+ (Payloads_CY/)
 * **Total de payloads:** ~3.8M linhas unicas
-* **APIs integradas:** Gemini + OpenAI (fallback) + Shodan + VirusTotal + SecurityTrails + Chaos + Hunter + HIBP + GitHub + NVD + Vulners
+* **APIs integradas:** Gemini + OpenAI (fallback) + Shodan + VirusTotal + SecurityTrails + Chaos + Hunter + HIBP + GitHub + NVD + Vulners + Interactsh (OOB)
 * **Tecnologias no fingerprint:** 114+ (com implies/excludes/version extraction)
+
+### Novidades v7.0 (22/03/2026)
+* **Confidence Score:** Cada finding agora tem 0-100% de confianca (auto-calculado ou explícito via OOB)
+* **OOB Detection (--oob):** Interactsh integration -- confirma SSRF/XXE/RCE/Log4Shell/SSTI blind via callback DNS/HTTP. Confidence=95% quando callback recebido.
+* **WAF Detection Antecipada:** detect_waf_early() identifica 11 WAFs antes da Fase 2 e adapta delay/encoding/rate automaticamente
+* **Auth Refresh:** _maybe_refresh_auth() re-loga automaticamente a cada 30min durante scans longos
+* **Ban Detection:** 5+ 403 consecutivos pausa todas threads 60s para evitar blacklist
+* **Fuzzy Soft-404:** SequenceMatcher similarity ratio alem do hash MD5 exato. SPA detection (React/Next/Vue/Astro) reduz threshold.
+* **Evidence Capture:** curl command + request/response raw nos top checks (SQLi, XSS, LFI, CMD, SSRF)
+* **PDF Melhorado:** Badge de confianca, curl reproduzivel, request/response, prova manual para 118+ IDs, XML escape no texto
+* **Go Engine v2:** Port scan, JS mining, takeover checker, param discovery -- todos com output sequencial limpo
+* **--easy mode:** 10% dos payloads para scans rapidos
+* **UI Fase 2:** Barra de progresso visual, box destaque para vulns, header estilizado por grupo, resumo final com severidades
 
 ---
 

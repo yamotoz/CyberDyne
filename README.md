@@ -2,7 +2,7 @@
 
 <img src="Img_vid/cyoff.png" alt="CyberDyne" width="400"/>
 
-**v6.0 — Web Vulnerability Scanner & Recon Suite**
+**v7.0 — Web Vulnerability Scanner & Recon Suite**
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python)](https://python.org)
 [![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8?style=flat-square&logo=go)](https://go.dev)
@@ -323,8 +323,11 @@ python CyberDyneWeb.py --url https://alvo.com --all --browser-mimic-s -o browser
 # Via Tor — Fase 2 anonima
 python CyberDyneWeb.py --url https://alvo.com --all --tor -o tor_scan
 
+# OOB Detection — confirma SSRF/XXE/RCE blind via callback externo
+python CyberDyneWeb.py --url https://alvo.com --all --oob -o oob_scan
+
 # Arsenal maximo — tudo ligado
-python CyberDyneWeb.py --url https://alvo.com --login https://alvo.com/login -ul admin -pl senha --all --stealth --ai-payloads --live --browser-mimic-s --wp --insane --go -o full_scan
+python CyberDyneWeb.py --url https://alvo.com --login https://alvo.com/login -ul admin -pl senha --all --stealth --ai-payloads --live --browser-mimic-s --wp --insane --go --oob -o full_scan
 
 # Retomar scan interrompido
 python CyberDyneWeb.py --resume meu_projeto/.checkpoint.cyb
@@ -349,6 +352,7 @@ python CyberDyneWeb.py --resume meu_projeto/.checkpoint.cyb
 | `--wp` | WordPress Audit — 15 checks (301-315): plugins, temas, users, xmlrpc, CVEs |
 | `--go` | Fuzzing via Go (200 goroutines, 10-50x mais rapido, anti-soft404) |
 | `--tor` | Fase 2 via rede Tor (SOCKS5, circuit refresh a cada 50 requests) |
+| `--oob` | Out-of-Band detection via Interactsh (confirma SSRF/XXE/RCE/Log4Shell blind) |
 | `--easy` | **10%** dos payloads — reconhecimento rapido (~2 min) |
 | `--medium` | **30%** dos payloads — scan rapido (~5 min) |
 | `--hard` | **60%** dos payloads — balanceado (padrao) |
@@ -401,6 +405,6 @@ docker compose run -p 5000:5000 cyberdyne --url https://alvo.com --all --live -o
 
 *"Seguranca nao é um produto. É um processo."* — Bruce Schneier
 
-*v6.0 — 21/03/2026*
+*v7.0 — 22/03/2026*
 
 </div>
