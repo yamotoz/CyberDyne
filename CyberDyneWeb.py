@@ -2046,7 +2046,7 @@ def _call_gemini(prompt: str) -> str:
 PAYLOADS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Payloads_CY")
 
 # ── Intensity level — controla % de payloads carregados ──────────────────────
-#   0.3 = --medium (30% rápido)  |  0.6 = --hard (60% padrão)  |  1.0 = --insane (100% completo)
+#   0.01 = --low (1% ultra-rápido) | 0.1 = --easy (10%) | 0.3 = --medium (30%) | 0.6 = --hard (60%) | 1.0 = --insane (100%)
 _PAYLOAD_INTENSITY = 0.6
 
 def _load_payload(relative_path: str, limit: int = 0) -> list:
@@ -4898,6 +4898,23 @@ class ReconEngine:
             for pattern, label in self._JS_SECRET_PATTERNS:
                 for m in re.finditer(pattern, js_content, re.I):
                     secret_val = m.group(0)[:80]
+                    # ── Filtrar Supabase anon key (público, não é secret) ──
+                    if label == "JWT Token" or label == "Firebase/Supabase Key":
+                        try:
+                            _jwt_raw = m.group(0).split(".")[1] if "." in m.group(0) else ""
+                            if _jwt_raw:
+                                _pad = _jwt_raw + "=" * (4 - len(_jwt_raw) % 4)
+                                import base64 as _b64
+                                _jwt_payload = json.loads(_b64.urlsafe_b64decode(_pad))
+                                _role = _jwt_payload.get("role", "")
+                                if _role == "anon":
+                                    label = "Supabase Anon Key (público)"
+                                    # Anon key é público por design — não reportar como secret
+                                    continue
+                                elif _role == "service_role":
+                                    label = "⚠ Supabase SERVICE ROLE Key (CRÍTICO)"
+                        except Exception:
+                            pass  # Não é JWT decodificável, manter como está
                     entry = {"type": label, "value": secret_val, "source": js_url[:100]}
                     if entry not in all_secrets:
                         all_secrets.append(entry)
@@ -13008,7 +13025,7 @@ class VulnScanner:
         _scan_start = time.time()
         # ── Auto-scaling de workers ──────────────────────────────────────────
         # Base workers por intensidade (valores mínimos)
-        _base_workers = {0.1: 6, 0.3: 12, 0.6: 20, 1.0: 32}.get(_PAYLOAD_INTENSITY, 20)
+        _base_workers = {0.01: 4, 0.1: 6, 0.3: 12, 0.6: 20, 1.0: 32}.get(_PAYLOAD_INTENSITY, 20)
         # Escalar com base no número de URLs (mais URLs = mais threads)
         _n_urls = len(self.urls) if hasattr(self, 'urls') else 1
         if _n_urls > 100:
@@ -13016,8 +13033,8 @@ class VulnScanner:
         elif _n_urls > 50:
             _base_workers = min(_base_workers + 8, 48)   # até 48 para médios
         _workers_display = _base_workers
-        _intensity_label = {0.1: "EASY", 0.3: "MEDIUM", 0.6: "HARD", 1.0: "INSANE"}.get(_PAYLOAD_INTENSITY, "HARD")
-        _intensity_pct = {0.1: "10%", 0.3: "30%", 0.6: "60%", 1.0: "100%"}.get(_PAYLOAD_INTENSITY, "60%")
+        _intensity_label = {0.01: "LOW", 0.1: "EASY", 0.3: "MEDIUM", 0.6: "HARD", 1.0: "INSANE"}.get(_PAYLOAD_INTENSITY, "HARD")
+        _intensity_pct = {0.01: "1%", 0.1: "10%", 0.3: "30%", 0.6: "60%", 1.0: "100%"}.get(_PAYLOAD_INTENSITY, "60%")
         print(f"\n  {Fore.CYAN + Style.BRIGHT}╔══════════════════════════════════════════════════════════╗{Style.RESET_ALL}")
         print(f"  {Fore.CYAN + Style.BRIGHT}║         FASE 2 — SCAN DE VULNERABILIDADES               ║{Style.RESET_ALL}")
         print(f"  {Fore.CYAN + Style.BRIGHT}╠══════════════════════════════════════════════════════════╣{Style.RESET_ALL}")
@@ -13025,7 +13042,7 @@ class VulnScanner:
               f" Intensidade: {_intensity_label} ({_intensity_pct})"
               f"    {Fore.CYAN + Style.BRIGHT}║{Style.RESET_ALL}")
         print(f"  {Fore.CYAN + Style.BRIGHT}║{Style.RESET_ALL}  URLs alvo: {_n_urls:<6} Grupos: {len(GROUPS):<6}"
-              f" Timeout: {90 if _PAYLOAD_INTENSITY >= 1.0 else (60 if _PAYLOAD_INTENSITY >= 0.6 else (45 if _PAYLOAD_INTENSITY >= 0.3 else 30))}s/check"
+              f" Timeout: {90 if _PAYLOAD_INTENSITY >= 1.0 else (60 if _PAYLOAD_INTENSITY >= 0.6 else (45 if _PAYLOAD_INTENSITY >= 0.3 else (30 if _PAYLOAD_INTENSITY >= 0.1 else 15)))}s/check"
               f"        {Fore.CYAN + Style.BRIGHT}║{Style.RESET_ALL}")
         print(f"  {Fore.CYAN + Style.BRIGHT}╚══════════════════════════════════════════════════════════╝{Style.RESET_ALL}\n", flush=True)
 
@@ -13080,7 +13097,7 @@ class VulnScanner:
                 _active_checks[tid] = {"label": label, "start": _check_start}
             _show_active()
             # Timeout base por intensidade + escalonamento por número de URLs
-            _base_timeout = 90 if _PAYLOAD_INTENSITY >= 1.0 else (60 if _PAYLOAD_INTENSITY >= 0.6 else (45 if _PAYLOAD_INTENSITY >= 0.3 else 30))
+            _base_timeout = 90 if _PAYLOAD_INTENSITY >= 1.0 else (60 if _PAYLOAD_INTENSITY >= 0.6 else (45 if _PAYLOAD_INTENSITY >= 0.3 else (30 if _PAYLOAD_INTENSITY >= 0.1 else 15)))
             _url_bonus = min(60, (len(self.urls) // 500) * 15)
             _check_timeout = _base_timeout + _url_bonus
             try:
@@ -18132,6 +18149,8 @@ Exemplos de uso:
 
     # ── Payload Intensity ─────────────────────────────────────────────────────
     _intensity = parser.add_mutually_exclusive_group()
+    _intensity.add_argument("--low", action="store_true", default=False,
+                            help="1%% dos payloads — ultra-rapido para teste de conectividade (~30s)")
     _intensity.add_argument("--easy", action="store_true", default=False,
                             help="10%% dos payloads — reconhecimento rapido (~2 min)")
     _intensity.add_argument("--medium", action="store_true", default=False,
@@ -18330,7 +18349,9 @@ Exemplos de uso:
         log(f"  {Fore.GREEN}[AUTH] Header Authorization configurado: {_auth_header[:30]}...{Style.RESET_ALL}")
 
     # ── Payload Intensity ────────────────────────────────────────────────────
-    if args.easy:
+    if args.low:
+        _PAYLOAD_INTENSITY = 0.01
+    elif args.easy:
         _PAYLOAD_INTENSITY = 0.1
     elif args.medium:
         _PAYLOAD_INTENSITY = 0.3
@@ -18338,7 +18359,7 @@ Exemplos de uso:
         _PAYLOAD_INTENSITY = 1.0
     else:
         _PAYLOAD_INTENSITY = 0.6  # --hard ou default
-    _intensity_labels = {0.1: "EASY (10%)", 0.3: "MEDIUM (30%)", 0.6: "HARD (60%)", 1.0: "INSANE (100%)"}
+    _intensity_labels = {0.01: "LOW (1%)", 0.1: "EASY (10%)", 0.3: "MEDIUM (30%)", 0.6: "HARD (60%)", 1.0: "INSANE (100%)"}
     log(f"  {Fore.YELLOW}[INTENSITY] {_intensity_labels[_PAYLOAD_INTENSITY]}{Style.RESET_ALL}")
 
     # ── Live Dashboard ─────────────────────────────────────────────────────────
