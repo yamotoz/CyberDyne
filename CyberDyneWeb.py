@@ -4898,6 +4898,23 @@ class ReconEngine:
             for pattern, label in self._JS_SECRET_PATTERNS:
                 for m in re.finditer(pattern, js_content, re.I):
                     secret_val = m.group(0)[:80]
+                    # ── Filtrar Supabase anon key (público, não é secret) ──
+                    if label == "JWT Token" or label == "Firebase/Supabase Key":
+                        try:
+                            _jwt_raw = m.group(0).split(".")[1] if "." in m.group(0) else ""
+                            if _jwt_raw:
+                                _pad = _jwt_raw + "=" * (4 - len(_jwt_raw) % 4)
+                                import base64 as _b64
+                                _jwt_payload = json.loads(_b64.urlsafe_b64decode(_pad))
+                                _role = _jwt_payload.get("role", "")
+                                if _role == "anon":
+                                    label = "Supabase Anon Key (público)"
+                                    # Anon key é público por design — não reportar como secret
+                                    continue
+                                elif _role == "service_role":
+                                    label = "⚠ Supabase SERVICE ROLE Key (CRÍTICO)"
+                        except Exception:
+                            pass  # Não é JWT decodificável, manter como está
                     entry = {"type": label, "value": secret_val, "source": js_url[:100]}
                     if entry not in all_secrets:
                         all_secrets.append(entry)
