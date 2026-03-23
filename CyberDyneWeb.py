@@ -17742,65 +17742,76 @@ _DASHBOARD_HTML = '''<!DOCTYPE html>
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CyberDyne Live</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script>tailwind.config={theme:{extend:{colors:{cyber:'#dc2626'}}}}</script>
+<script>tailwind.config={theme:{extend:{colors:{cyber:'#dc2626'},fontFamily:{sans:['Inter','sans-serif'],mono:['Fira Code','monospace']}}}}</script>
 <style>
-html,body{height:100%;overflow:hidden}
+html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif}
 @keyframes pulse-red{0%,100%{opacity:1}50%{opacity:.5}}
 @keyframes slide-in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@keyframes skeleton-shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
 .pulse-red{animation:pulse-red 2s ease-in-out infinite}
 .slide-in{animation:slide-in 0.25s ease-out}
+.skeleton{background:linear-gradient(90deg,#1a1a1a 25%,#252525 50%,#1a1a1a 75%);background-size:200% 100%;animation:skeleton-shimmer 1.8s ease-in-out infinite;border-radius:4px}
+.glow-red{text-shadow:0 0 8px #ef4444,0 0 20px rgba(239,68,68,0.3)}
+.glow-orange{text-shadow:0 0 8px #f97316,0 0 20px rgba(249,115,22,0.3)}
+.glow-blue{text-shadow:0 0 8px #3b82f6,0 0 20px rgba(59,130,246,0.3)}
+.glow-green{text-shadow:0 0 8px #22c55e,0 0 20px rgba(34,197,94,0.3)}
+.glow-emerald{text-shadow:0 0 8px #10b981,0 0 20px rgba(16,185,129,0.3)}
+.font-mono{font-family:'Fira Code',monospace!important}
 ::-webkit-scrollbar{width:5px;height:5px}
-::-webkit-scrollbar-track{background:#111}
-::-webkit-scrollbar-thumb{background:#2a2a2a;border-radius:3px}
+::-webkit-scrollbar-track{background:#1a1a1a}
+::-webkit-scrollbar-thumb{background:#333;border-radius:3px}
 </style>
 </head>
-<body class="bg-[#050505] text-white font-sans flex flex-col" style="height:100vh;overflow:hidden">
+<body class="bg-[#0d0d0d] text-white font-sans flex flex-col" style="height:100vh;overflow:hidden">
 
 <!-- HEADER — fixed, never scrolls -->
-<header class="shrink-0 border-b border-red-900/20 px-5 py-3 flex items-center justify-between bg-[#0a0a0a]">
+<header class="shrink-0 border-b px-5 py-3 flex items-center justify-between bg-[#0f0f0f]" style="border-color:rgba(220,38,38,0.15)">
   <div class="flex items-center gap-4">
-    <h1 class="text-xl font-bold tracking-tight"><span class="text-red-500">CYBERDYNE</span><span class="text-white/40 ml-1.5 text-base font-normal">LIVE</span></h1>
+    <h1 class="text-xl font-bold tracking-tight"><span class="text-red-500 glow-red">CYBERDYNE</span><span class="text-white/40 ml-1.5 text-base font-normal">LIVE</span></h1>
     <span id="target" class="text-xs text-white/30 font-mono truncate max-w-xs"></span>
   </div>
   <div class="flex items-center gap-3">
-    <span id="status-badge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-red-900/30 text-red-400 pulse-red">SCANNING</span>
+    <span id="status-badge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-red-900/30 text-red-400 pulse-red glow-red">SCANNING</span>
     <span id="elapsed" class="text-xs text-white/30 font-mono"></span>
   </div>
 </header>
 
 <!-- PROGRESS BAR — fixed -->
-<div class="shrink-0 px-5 py-2 border-b border-white/5 bg-[#080808]">
+<div class="shrink-0 px-5 py-2 border-b border-white/5 bg-[#0e0e0e]">
   <div class="flex items-center justify-between mb-1">
     <span id="phase" class="text-xs text-white/50"></span>
     <span id="progress-text" class="text-xs text-white/30 font-mono"></span>
   </div>
-  <div class="w-full bg-white/5 rounded-full h-1.5">
-    <div id="progress-bar" class="bg-gradient-to-r from-red-800 to-red-500 h-1.5 rounded-full transition-all duration-700" style="width:0%"></div>
+  <div class="w-full rounded-full h-1.5" style="background:rgba(255,255,255,0.04)">
+    <div id="progress-bar" class="bg-gradient-to-r from-red-800 to-red-500 h-1.5 rounded-full transition-all duration-700" style="width:0%;box-shadow:0 0 8px rgba(220,38,38,0.4)"></div>
   </div>
 </div>
 
 <!-- SEVERITY CARDS — fixed row -->
 <div class="shrink-0 grid grid-cols-5 gap-2 px-5 py-2 border-b border-white/5">
-  <div class="bg-red-950/20 border border-red-900/30 rounded-lg p-2 text-center">
-    <p id="cnt-critico" class="text-2xl font-bold text-red-500 leading-none">0</p>
+  <div class="rounded-lg p-2 text-center" style="background:#1a1a1a;border:1px solid rgba(239,68,68,0.15)">
+    <p id="cnt-critico" class="text-2xl font-bold text-red-500 font-mono leading-none glow-red">0</p>
     <p class="text-[10px] text-red-400/50 mt-0.5 uppercase tracking-widest">Critico</p>
   </div>
-  <div class="bg-orange-950/15 border border-orange-900/25 rounded-lg p-2 text-center">
-    <p id="cnt-alto" class="text-2xl font-bold text-orange-400 leading-none">0</p>
+  <div class="rounded-lg p-2 text-center" style="background:#1a1a1a;border:1px solid rgba(249,115,22,0.15)">
+    <p id="cnt-alto" class="text-2xl font-bold text-orange-400 font-mono leading-none glow-orange">0</p>
     <p class="text-[10px] text-orange-400/50 mt-0.5 uppercase tracking-widest">Alto</p>
   </div>
-  <div class="bg-blue-950/15 border border-blue-900/25 rounded-lg p-2 text-center">
-    <p id="cnt-medio" class="text-2xl font-bold text-blue-400 leading-none">0</p>
+  <div class="rounded-lg p-2 text-center" style="background:#1a1a1a;border:1px solid rgba(59,130,246,0.15)">
+    <p id="cnt-medio" class="text-2xl font-bold text-blue-400 font-mono leading-none glow-blue">0</p>
     <p class="text-[10px] text-blue-400/50 mt-0.5 uppercase tracking-widest">Medio</p>
   </div>
-  <div class="bg-green-950/15 border border-green-900/25 rounded-lg p-2 text-center">
-    <p id="cnt-baixo" class="text-2xl font-bold text-green-400 leading-none">0</p>
+  <div class="rounded-lg p-2 text-center" style="background:#1a1a1a;border:1px solid rgba(34,197,94,0.15)">
+    <p id="cnt-baixo" class="text-2xl font-bold text-green-400 font-mono leading-none glow-green">0</p>
     <p class="text-[10px] text-green-400/50 mt-0.5 uppercase tracking-widest">Baixo</p>
   </div>
-  <div class="bg-white/5 border border-white/10 rounded-lg p-2 text-center">
-    <p id="cnt-seguro" class="text-2xl font-bold text-emerald-400 leading-none">0</p>
+  <div class="rounded-lg p-2 text-center" style="background:#1a1a1a;border:1px solid rgba(16,185,129,0.15)">
+    <p id="cnt-seguro" class="text-2xl font-bold text-emerald-400 font-mono leading-none glow-emerald">0</p>
     <p class="text-[10px] text-white/30 mt-0.5 uppercase tracking-widest">Seguro</p>
   </div>
 </div>
@@ -17811,40 +17822,50 @@ html,body{height:100%;overflow:hidden}
   <!-- Chart + Stats grid -->
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 px-5 pt-3 pb-2">
     <!-- Timeline Chart -->
-    <div class="lg:col-span-2 bg-[#0c0c0c] border border-white/5 rounded-xl p-3">
+    <div class="lg:col-span-2 rounded-xl p-3" style="background:#1a1a1a;border:1px solid rgba(255,255,255,0.06)">
       <p class="text-[11px] font-semibold text-white/40 mb-2 uppercase tracking-widest">Timeline — Vulnerabilidades x Checks</p>
       <div style="position:relative;height:160px">
         <canvas id="timeline-chart"></canvas>
       </div>
     </div>
     <!-- Stats -->
-    <div class="bg-[#0c0c0c] border border-white/5 rounded-xl p-3">
+    <div class="rounded-xl p-3" style="background:#1a1a1a;border:1px solid rgba(255,255,255,0.06)">
       <p class="text-[11px] font-semibold text-white/40 mb-3 uppercase tracking-widest">Recon Stats</p>
       <div class="space-y-2.5 text-sm">
         <div class="flex justify-between items-center"><span class="text-white/40 text-xs">Subdomínios</span><span id="stat-subs" class="font-mono text-white text-sm">0</span></div>
         <div class="flex justify-between items-center"><span class="text-white/40 text-xs">URLs coletadas</span><span id="stat-urls" class="font-mono text-white text-sm">0</span></div>
         <div class="flex justify-between items-center"><span class="text-white/40 text-xs">Checks feitos</span><span id="stat-checks" class="font-mono text-white text-sm">0</span></div>
-        <div class="flex justify-between items-center"><span class="text-white/40 text-xs">Vulneráveis</span><span id="stat-vulns" class="font-mono text-red-400 font-bold text-sm">0</span></div>
+        <div class="flex justify-between items-center"><span class="text-white/40 text-xs">Vulneráveis</span><span id="stat-vulns" class="font-mono text-red-400 font-bold text-sm glow-red">0</span></div>
       </div>
     </div>
   </div>
 
   <!-- Vuln Feed -->
   <div class="px-5 pb-2">
-    <div class="bg-[#0c0c0c] border border-white/5 rounded-xl p-3">
+    <div class="rounded-xl p-3" style="background:#1a1a1a;border:1px solid rgba(255,255,255,0.06)">
       <p class="text-[11px] font-semibold text-white/40 mb-2 uppercase tracking-widest">Vulnerabilidades Detectadas</p>
       <div id="vuln-feed" class="space-y-1.5 max-h-52 overflow-y-auto">
-        <p class="text-white/20 text-xs italic">Aguardando resultados...</p>
+        <div class="skeleton" style="height:28px;width:100%"></div>
+        <div class="skeleton" style="height:28px;width:92%"></div>
+        <div class="skeleton" style="height:28px;width:97%"></div>
+        <div class="skeleton" style="height:28px;width:88%"></div>
       </div>
     </div>
   </div>
 
   <!-- Subdomains -->
   <div class="px-5 pb-3">
-    <div class="bg-[#0c0c0c] border border-white/5 rounded-xl p-3">
+    <div class="rounded-xl p-3" style="background:#1a1a1a;border:1px solid rgba(255,255,255,0.06)">
       <p class="text-[11px] font-semibold text-white/40 mb-2 uppercase tracking-widest">Subdomínios</p>
       <div id="subdomain-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-1.5 max-h-28 overflow-y-auto">
-        <p class="text-white/20 text-xs italic col-span-full">Nenhum subdomain encontrado ainda</p>
+        <div class="skeleton" style="height:22px"></div>
+        <div class="skeleton" style="height:22px"></div>
+        <div class="skeleton" style="height:22px"></div>
+        <div class="skeleton" style="height:22px"></div>
+        <div class="skeleton" style="height:22px"></div>
+        <div class="skeleton" style="height:22px"></div>
+        <div class="skeleton" style="height:22px"></div>
+        <div class="skeleton" style="height:22px"></div>
       </div>
     </div>
   </div>
@@ -17863,24 +17884,28 @@ const timeLabels=[],vulnData=[],checkData=[];
 let startTime=Date.now();
 
 function initChart(){
-  const ctx=document.getElementById('timeline-chart');
-  if(!ctx||typeof Chart==='undefined')return;
-  chart=new Chart(ctx,{
+  const cvs=document.getElementById('timeline-chart');
+  if(!cvs||typeof Chart==='undefined')return;
+  const ctx=cvs.getContext('2d');
+  const grad=ctx.createLinearGradient(0,0,0,160);
+  grad.addColorStop(0,'rgba(255,107,107,0.25)');
+  grad.addColorStop(1,'rgba(255,107,107,0)');
+  chart=new Chart(cvs,{
     type:'line',
     data:{
       labels:timeLabels,
       datasets:[
-        {label:'Vulneráveis',data:vulnData,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,0.08)',fill:true,tension:0.4,pointRadius:2,pointBackgroundColor:'#ef4444',borderWidth:2},
+        {label:'Vulneráveis',data:vulnData,borderColor:'#FF6B6B',backgroundColor:grad,fill:true,tension:0.4,pointRadius:2,pointBackgroundColor:'#FF6B6B',borderWidth:2},
         {label:'Checks',data:checkData,borderColor:'rgba(255,255,255,0.15)',backgroundColor:'transparent',fill:false,tension:0.4,pointRadius:0,borderWidth:1,borderDash:[4,4]}
       ]
     },
     options:{
       responsive:true,maintainAspectRatio:false,
       animation:{duration:200},
-      plugins:{legend:{display:true,labels:{color:'rgba(255,255,255,0.35)',font:{size:10},boxWidth:12}}},
+      plugins:{legend:{display:true,labels:{color:'rgba(255,255,255,0.35)',font:{size:10,family:'Inter'},boxWidth:12}}},
       scales:{
-        x:{display:true,ticks:{color:'rgba(255,255,255,0.15)',maxTicksLimit:6,font:{size:8}},grid:{color:'rgba(255,255,255,0.04)'}},
-        y:{display:true,ticks:{color:'rgba(255,255,255,0.15)',font:{size:8}},grid:{color:'rgba(255,255,255,0.04)'},beginAtZero:true}
+        x:{display:true,ticks:{color:'rgba(255,255,255,0.15)',maxTicksLimit:6,font:{size:8,family:'Fira Code'}},grid:{color:'rgba(255,255,255,0.04)'}},
+        y:{display:true,ticks:{color:'rgba(255,255,255,0.15)',font:{size:8,family:'Fira Code'}},grid:{color:'rgba(255,255,255,0.04)'},beginAtZero:true}
       }
     }
   });
