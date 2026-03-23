@@ -2,7 +2,7 @@
 
 <img src="Img_vid/cyoff.png" alt="CyberDyne" width="400"/>
 
-**v7.0 — Web Vulnerability Scanner & Recon Suite**
+**v7.1 — Web Vulnerability Scanner & Recon Suite**
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python)](https://python.org)
 [![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8?style=flat-square&logo=go)](https://go.dev)
@@ -10,7 +10,7 @@
 [![Playwright](https://img.shields.io/badge/Playwright-Chromium-2EAD33?style=flat-square&logo=playwright)](https://playwright.dev)
 [![Gemini](https://img.shields.io/badge/Gemini_AI-Payloads-8E75B2?style=flat-square&logo=google)](https://ai.google.dev)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker)](https://docker.com)
-[![Checks](https://img.shields.io/badge/Vuln_Checks-115%2B-red?style=flat-square)]()
+[![Checks](https://img.shields.io/badge/Vuln_Checks-150%2B-red?style=flat-square)]()
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 
 > *"O codigo que voce nao testou e o ataque que voce nao viu vir."*
@@ -21,13 +21,21 @@
 
 ## O que e o CyberDyne
 
-Scanner de seguranca web completo. Um unico arquivo Python, zero binarios obrigatorios. Aponte para um alvo e ele faz tudo: reconhecimento, 113+ testes de vulnerabilidade e entrega relatorios prontos para acao.
+Scanner de seguranca web all-in-one. Um unico arquivo Python, zero binarios obrigatorios. Reconhecimento, 150+ testes de vulnerabilidade, fuzzing Go turbo, browser real com Playwright, IA generativa para payloads, OOB detection, WAF evasion adaptativo e relatorios PDF executivos. Aponte e dispare.
 
 Nasceu como resposta ao **Vibe Coding** — desenvolvimento acelerado por IA que produz codigo funcional mas inseguro.
 
 ```
 python CyberDyneWeb.py --url https://alvo.com --all -o meu_projeto
 ```
+
+<div align="center">
+
+https://github.com/user-attachments/assets/cyberdyne.webm
+
+<video src="Img_vid/cyberdyne.webm" width="600" controls></video>
+
+</div>
 
 ---
 
@@ -48,13 +56,13 @@ python CyberDyneWeb.py --url https://alvo.com --all -o meu_projeto
 | 3 | **Validacao de URLs** | HEAD+GET em 30 threads, filtra ativas (200-399) |
 | 4 | **Subdomain Takeover** | Fingerprints EdOverflow + CNAME dangling detection |
 | 5 | **WHOIS** | Raw socket 2-fases (IANA → TLD): registrar, datas, nameservers, DNSSEC |
-| 6 | **Fingerprint** | 62 tecnologias, 15 categorias, 8 vetores de deteccao (Wappalyzer-style) |
+| 6 | **Fingerprint** | 114+ tecnologias, 15 categorias, 8 vetores (Wappalyzer-style, implies/excludes) |
 | 7 | **Emails** | Scraping + Hunter.io + HIBP (vazamentos) |
-| 8 | **Port Scan** | Top-1000 portas via socket (ou nmap se instalado) |
+| 8 | **Port Scan** | Top-140 portas via socket (ou Go Engine com 500 goroutines via `--go`) |
 | 9 | **GitHub Dorking** | Secrets em commits publicos + 80 dorks extras |
-| 10 | **AI Fingerprint** | Detecta endpoints de IA/BaaS (OpenAI, Supabase, Firebase) |
-| 11 | **Fuzzing Paths** | 12 wordlists + K8s + IaC, 15 threads (~1000+ paths) |
-| 12 | **LinkFinder** | Endpoints e secrets em arquivos JS (5 regex + 13 patterns) |
+| 10 | **AI Fingerprint** | Detecta endpoints de IA/BaaS (OpenAI, Supabase, Firebase, Anthropic) |
+| 11 | **Fuzzing Paths** | 12 wordlists + K8s + IaC, 15 threads (~1000+ paths) ou Go Turbo (200 goroutines) |
+| 12 | **LinkFinder** | Endpoints e secrets em arquivos JS (5 regex + 30 patterns, filtra Supabase anon keys) |
 | 13 | **Shodan** | Portas, CVEs, organizacao, hostnames pelo IP |
 
 ---
@@ -67,24 +75,24 @@ python CyberDyneWeb.py --url https://alvo.com --all -o meu_projeto
 
 </div>
 
-113+ checks em 8 grupos paralelos. Cada check com timeout de 45s e evidencia obrigatoria.
+118 checks em 8 grupos paralelos. Cada check com confidence score (0-100%), baseline diff, contra-prova e canary injection para reducao de falsos positivos.
 
 ### OWASP Top 10 + Extended (001-020)
 
 | # | Vulnerabilidade | Severidade | CVSS |
 |---|---|---|---|
-| 001 | SQL Injection Error-based (140 patterns, 30+ DBMS) | CRITICO | 9.8 |
-| 002 | SQL Injection Time-based Blind (multi-DBMS) | CRITICO | 9.8 |
-| 003 | XSS Reflected (8 fases, 80+ payloads, WAF bypass) | ALTO | 6.1 |
+| 001 | SQL Injection Error-based (140 patterns, 30+ DBMS, baseline diff) | CRITICO | 9.8 |
+| 002 | SQL Injection Time-based Blind (contra-prova SLEEP(0)) | CRITICO | 9.8 |
+| 003 | XSS Reflected (8 fases, 80+ payloads, encoding check, context filter) | ALTO | 6.1 |
 | 004 | XSS Stored (POST + GET verification) | ALTO | 6.1 |
-| 005 | XSS DOM-based (13 sources x 19 sinks) | ALTO | 6.1 |
+| 005 | XSS DOM-based (13 sources x 19 sinks, proximity analysis) | ALTO | 6.1 |
 | 006 | CSRF (ausencia de token em forms POST) | MEDIO | 4.3 |
-| 007 | SSRF (23 param names + cloud metadata 169.254.169.254) | CRITICO | 9.1 |
-| 008 | LFI / Path Traversal (30 param names, /etc/passwd) | CRITICO | 9.8 |
+| 007 | SSRF (23 param names + cloud metadata + OOB callback) | CRITICO | 9.1 |
+| 008 | LFI / Path Traversal (regex exato /etc/passwd, ≥3 linhas) | CRITICO | 9.8 |
 | 009 | RFI (canary + baseline) | CRITICO | 9.8 |
-| 010 | Command Injection (commix-style, 65+ payloads) | CRITICO | 9.8 |
-| 011 | XXE (XML entity injection) | ALTO | 7.5 |
-| 012 | Open Redirect (44 payloads bypass) | MEDIO | 6.1 |
+| 010 | Command Injection (canary echo CYBERDYNE_xxx, contra-prova) | CRITICO | 9.8 |
+| 011 | XXE (XML entity injection + OOB) | ALTO | 7.5 |
+| 012 | Open Redirect (44 payloads, CDN ignore list, destino final check) | MEDIO | 6.1 |
 | 013 | Insecure Deserialization (magic bytes Java/Python/PHP) | CRITICO | 9.8 |
 | 014 | Security Misconfiguration | MEDIO | 5.3 |
 | 015 | Broken Access Control | ALTO | 8.2 |
@@ -98,20 +106,20 @@ python CyberDyneWeb.py --url https://alvo.com --all -o meu_projeto
 
 | # | Vulnerabilidade | Severidade | CVSS |
 |---|---|---|---|
-| 021 | JWT Signature Bypass (alg:none + null sig + psychic ECDSA CVE-2022-21449) | CRITICO | 9.8 |
-| 022 | JWT Weak Secret (330+ senhas, HS256/384/512) | CRITICO | 9.8 |
+| 021 | JWT Signature Bypass (alg:none + null sig + claim comparison) | CRITICO | 9.8 |
+| 022 | JWT Weak Secret (330+ senhas, HS256/384/512, prova criptografica) | CRITICO | 9.8 |
 | 023 | JWT Advanced (JWKS + KID injection/SQLi + claim tampering) | CRITICO | 9.8 |
 | 024 | Prompt Injection (35 payloads, homoglyph + base64 mutations) | ALTO | 8.1 |
 | 025 | LLM Data Leakage | ALTO | 7.5 |
 | 026 | Race Condition (concurrent requests) | ALTO | 8.1 |
-| 027 | Prototype Pollution | ALTO | 7.5 |
+| 027 | Prototype Pollution (canary unico + endpoint diferente) | ALTO | 7.5 |
 | 028-029 | GraphQL Security (introspection + DoS + suggestions + trace) | ALTO | 7.5 |
 | 030 | API Rate Limit ausente | MEDIO | 5.3 |
 | 031 | Stack Trace / Debug Mode | MEDIO | 5.3 |
 | 032 | Metrics expostos (/metrics, /actuator) | MEDIO | 5.3 |
 | 033 | CORS Misconfiguration | ALTO | 7.5 |
 | 034 | WebSocket sem autenticacao | ALTO | 7.5 |
-| 035 | SSTI (Jinja2, Twig, Freemarker, ERB, Pug — 100+ payloads) | CRITICO | 9.8 |
+| 035 | SSTI (contra-prova {{8*8}}=64 confirma execucao) | CRITICO | 9.8 |
 
 ### BaaS / Cloud (036-045)
 
@@ -137,9 +145,9 @@ python CyberDyneWeb.py --url https://alvo.com --all -o meu_projeto
 
 | # | Vulnerabilidade | Severidade | CVSS |
 |---|---|---|---|
-| 056 | Host Header Injection | ALTO | 7.5 |
-| 057 | HTTP Request Smuggling (CL.TE) | CRITICO | 9.8 |
-| 058-060 | HTTP Splitting + Cache Poisoning + Cache Deception | ALTO | 7.5 |
+| 056 | Host Header Injection (context-aware: href/action/Location) | ALTO | 7.5 |
+| 057 | HTTP Request Smuggling (CL.TE, confirmacao manual) | CRITICO | 9.8 |
+| 058-060 | HTTP Splitting + Cache Poisoning (clean request verify) + Cache Deception | ALTO | 7.5 |
 | 061-067 | Headers ausentes (CORS, Clickjacking, CSP, HSTS, MIME, Referrer, Permissions) | MEDIO | 4.3-6.1 |
 | 068-069 | Server/X-Powered-By versionados | BAIXO | 2.6 |
 | 070-075 | HTTP Methods perigosos + Directory Listing + Admin Panels + API Auth + Swagger | MEDIO-ALTO | 5.3-7.5 |
@@ -153,10 +161,10 @@ python CyberDyneWeb.py --url https://alvo.com --all -o meu_projeto
 | 078-082 | Cookies inseguros + Account Enum + Password Reset + Session Fixation + OAuth | ALTO | 7.5 |
 | 083-085 | 2FA Bypass + IDOR API + Business Logic (preco negativo) | ALTO | 7.5-8.1 |
 | 086-090 | ReDoS + XML Bomb + ZIP Slip + LDAP Injection + XPath Injection | ALTO | 7.5 |
-| 091 | NoSQL Injection (15+ payloads) | CRITICO | 9.8 |
+| 091 | NoSQL Injection (JSON record count + timing check) | CRITICO | 9.8 |
 | 092-100 | HPP + Default Creds + TLS/SSL + Cert Transparency + Mixed Content + Error Messages + Security.txt | MEDIO-ALTO | 4.3-7.5 |
 
-### Advanced (101-113)
+### Advanced (101-118)
 
 | # | Vulnerabilidade | Severidade | CVSS |
 |---|---|---|---|
@@ -167,12 +175,17 @@ python CyberDyneWeb.py --url https://alvo.com --all -o meu_projeto
 | 105 | Deserialization RCE (magic bytes + endpoints RPC) | CRITICO | 9.8 |
 | 106 | Web Cache Deception (.css/.js em URLs privadas) | ALTO | 7.5 |
 | 107 | JS Secrets (14 tipos + 13 patterns regex) | ALTO | 7.5 |
-| 108 | SQL Injection Boolean Blind | CRITICO | 9.8 |
+| 108 | SQL Injection Boolean Blind (contra-prova AND 2=2) | CRITICO | 9.8 |
 | 109 | SQL Injection UNION | CRITICO | 9.8 |
 | 110 | GraphQL CSRF | ALTO | 8.1 |
 | 111 | WAF Bypass (120 payloads x 5 zones x 5 encodings) | ALTO | 7.5 |
 | 112 | 403 Bypass (path + header + method mutation) | ALTO | 7.5 |
 | 113 | JS Libraries Vulneraveis (Retire.js-style, 27 libs, CVE correlation) | ALTO | 7.5 |
+| 114 | Null Byte Injection (regex exato /etc/passwd) | ALTO | 7.5 |
+| 115 | Format String Vulnerability (contra-prova offset diferente) | ALTO | 7.5 |
+| 116 | Second-Order SQL Injection (payload fragment check) | CRITICO | 9.8 |
+| 117 | Log4Shell (JNDI, exige --oob para confirmacao) | CRITICO | 9.8 |
+| 118 | BOLA API (campo de identidade cross-user) | ALTO | 7.5 |
 
 ### Fase 2.5 — Browser Mimic (opcional)
 
@@ -196,6 +209,7 @@ Chromium real com anti-fingerprinting, mouse Bezier e digitacao humana. Testa vu
 | 214 | Redirect Chain (dominios suspeitos / HTTP no meio) | MEDIO | 5.3 |
 | 215 | Shadow DOM Leak (shadow roots open com dados sensiveis) | MEDIO | 5.3 |
 | 216 | Network Exfiltration (API calls suspeitas via page.route) | ALTO | 7.5 |
+| 217 | DOM Clobbering (propriedades window sobrescritas via id/name) | ALTO | 7.5 |
 
 ### Fase 2.6 — WordPress Security Audit (--wp)
 
@@ -229,12 +243,12 @@ Chromium real com anti-fingerprinting, mouse Bezier e digitacao humana. Testa vu
 
 | Arquivo | Descricao |
 |---|---|
-| `CyberDyneWeb_Report.pdf` | Relatorio executivo: capa dark, risk gauge, severity badges, vuln cards com **Prova Manual**, secao WordPress, sumario Gemini AI |
+| `CyberDyneWeb_Report.pdf` | Relatorio executivo: capa dark, risk gauge, confidence badges, vuln cards com curl/request/response, Prova Manual, secao WordPress, sumario Gemini AI |
 | `Recon.pdf` | Reconhecimento consolidado: WHOIS, portas, Shodan, emails, subdominios, fuzzing, LinkFinder |
 | `prompt_recall.md` | Prompt direto para agente de IA corrigir as vulnerabilidades (gerado por Gemini) |
 | `Recon.md` | Mesmos dados do Recon.pdf em Markdown |
 | `wp_audit.json` | Dados brutos do WordPress Audit (plugins, temas, users, CVEs, findings) |
-| `raw_results.json` | Dados brutos de todos os 115+ checks |
+| `raw_results.json` | Dados brutos de todos os 150+ checks com confidence scores |
 
 ---
 
@@ -251,6 +265,7 @@ Copie `.env.example` para `.env`. Sem chaves, o script roda normalmente — apen
 | API | Variavel | O que ativa |
 |---|---|---|
 | **Gemini** | `GEMINI_API_KEY` | Sumario executivo AI + prompt_recall + `--ai-payloads` |
+| **OpenAI** | `OPENAI_API_KEY` | Fallback para Gemini (payloads + sumario) |
 | **Shodan** | `SHODAN_API_KEY` | Portas, servicos, CVEs pelo IP |
 | **VirusTotal** | `VIRUSTOTAL_API_KEY` | Subdominios indexados |
 | **SecurityTrails** | `SECURITYTRAILS_API_KEY` | Historico DNS + subdominios |
@@ -280,9 +295,39 @@ pip install -r requirements.txt
 cp .env.example .env     # configure suas API keys
 ```
 
-> **Playwright (opcional):** `pip install playwright playwright-stealth fake-useragent && playwright install chromium`
->
-> **Go Turbo (opcional):** `cd recon_go && go build -o ../cyberdyne-recon.exe . && cd ..`
+### Go Turbo Engine (opcional — 10-50x mais rapido)
+
+O Go Engine adiciona fuzzing com 200 goroutines, port scan com 500 goroutines, JS mining, subdomain takeover check e parameter discovery — tudo em paralelo.
+
+**Requisitos:** [Go 1.22+](https://go.dev/dl/) instalado e no PATH.
+
+```bash
+# 1. Verificar instalacao do Go
+go version
+# Deve retornar: go version go1.22+ ...
+
+# 2. Compilar o binario dentro do projeto
+cd recon_go
+go build -o ../cyberdyne-recon.exe .    # Windows
+# go build -o ../cyberdyne-recon .      # Linux/macOS
+cd ..
+
+# 3. Verificar que o binario esta na raiz do projeto
+ls cyberdyne-recon*
+# Deve mostrar: cyberdyne-recon.exe (ou cyberdyne-recon)
+
+# 4. Testar
+python CyberDyneWeb.py --url https://example.com --all --go --low -o teste_go
+```
+
+> O binario `cyberdyne-recon.exe` deve ficar na **raiz do projeto** (mesmo diretorio que `CyberDyneWeb.py`). O script detecta automaticamente. Nao suba o `.exe` para o GitHub — ele ja esta no `.gitignore`.
+
+### Playwright / Browser Mimic (opcional)
+
+```bash
+pip install playwright playwright-stealth fake-useragent
+playwright install chromium
+```
 
 ### Termux (Android)
 
@@ -299,13 +344,16 @@ python CyberDyneWeb.py --url https://alvo.com --all
 ### Exemplos de Uso
 
 ```bash
+# Teste rapido de conectividade — 1% dos payloads (~30s)
+python CyberDyneWeb.py --url https://alvo.com --all --low -o teste
+
 # Scan completo (padrao 60% payloads)
 python CyberDyneWeb.py --url https://alvo.com --all -o meu_projeto
 
 # Reconhecimento rapido — 10% dos payloads
 python CyberDyneWeb.py --url https://alvo.com --all --easy -o scan_rapido
 
-# Scan autenticado (login + crawl area logada + validacao live/dead)
+# Scan autenticado (login + crawl area logada + sessao persistente)
 python CyberDyneWeb.py --url https://alvo.com --login https://alvo.com/login -ul admin@email.com -pl senha --all -o auth_scan
 
 # WordPress completo — audit dedicado
@@ -314,16 +362,19 @@ python CyberDyneWeb.py --url https://alvo.com --all --wp -o wp_scan
 # Modo stealth (anti-WAF) + AI payloads contextuais
 python CyberDyneWeb.py --url https://alvo.com --all --stealth --ai-payloads -o stealth_scan
 
-# Dashboard visual em tempo real (viewport fixo, grafico ao vivo)
+# Dashboard visual em tempo real
 python CyberDyneWeb.py --url https://alvo.com --all --live -o live_scan
 
-# Browser Mimic visivel — assista o Chromium ao vivo (16 checks client-side)
+# Browser Mimic visivel — assista o Chromium ao vivo (17 checks client-side)
 python CyberDyneWeb.py --url https://alvo.com --all --browser-mimic-s -o browser_scan
+
+# Go Turbo — fuzzing + portscan + jsmine + takeover + param discovery
+python CyberDyneWeb.py --url https://alvo.com --all --go -o go_scan
 
 # Via Tor — Fase 2 anonima
 python CyberDyneWeb.py --url https://alvo.com --all --tor -o tor_scan
 
-# OOB Detection — confirma SSRF/XXE/RCE blind via callback externo
+# OOB Detection — confirma SSRF/XXE/RCE/Log4Shell blind via callback externo
 python CyberDyneWeb.py --url https://alvo.com --all --oob -o oob_scan
 
 # Arsenal maximo — tudo ligado
@@ -342,17 +393,18 @@ python CyberDyneWeb.py --resume meu_projeto/.checkpoint.cyb
 | `--all` | Executa tudo: recon + vuln + relatorios |
 | `--recon` | Apenas reconhecimento |
 | `--vuln` | Apenas vulnerabilidades |
-| `--login URL` | URL do painel de login (valida URLs vivas/mortas automaticamente) |
+| `--login URL` | URL do painel de login (sessao persistente na Fase 2, refresh automatico) |
 | `-ul` / `-pl` | Credenciais de login (usuario / senha) |
 | `--stealth` | Delay aleatorio + rotacao de User-Agent |
 | `--ai-payloads` | Gemini/OpenAI gera 15 payloads por contexto (XSS, SQLi, LFI, RCE, SSTI, SSRF) |
 | `--live` | Dashboard Flask em `localhost:5000` (viewport fixo, Chart.js em tempo real) |
-| `--browser-mimic-s` | Chromium visivel — mouse, digitacao, tudo ao vivo (16 checks client-side) |
+| `--browser-mimic-s` | Chromium visivel — mouse, digitacao, tudo ao vivo (17 checks client-side) |
 | `--browser-mimic-ns` | Chromium headless (background, mais rapido) |
 | `--wp` | WordPress Audit — 15 checks (301-315): plugins, temas, users, xmlrpc, CVEs |
-| `--go` | Fuzzing via Go (200 goroutines, 10-50x mais rapido, anti-soft404) |
+| `--go` | Go Engine v2 — 6 modulos paralelos (fuzz, portscan, jsmine, takeover, paramdiscovery, urlvalid) |
 | `--tor` | Fase 2 via rede Tor (SOCKS5, circuit refresh a cada 50 requests) |
 | `--oob` | Out-of-Band detection via Interactsh (confirma SSRF/XXE/RCE/Log4Shell blind) |
+| `--low` | **1%** dos payloads — teste de conectividade ultra-rapido (~30s) |
 | `--easy` | **10%** dos payloads — reconhecimento rapido (~2 min) |
 | `--medium` | **30%** dos payloads — scan rapido (~5 min) |
 | `--hard` | **60%** dos payloads — balanceado (padrao) |
@@ -405,6 +457,6 @@ docker compose run -p 5000:5000 cyberdyne --url https://alvo.com --all --live -o
 
 *"Seguranca nao é um produto. É um processo."* — Bruce Schneier
 
-*v7.0 — 22/03/2026*
+*v7.1 — 23/03/2026*
 
 </div>
