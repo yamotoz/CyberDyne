@@ -1,7 +1,5 @@
 <div align="center">
 
-<img src="Img_vid/cyoff.png" alt="CyberDyne" width="400"/>
-
 **v7.1 — Web Vulnerability Scanner & Recon Suite**
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python)](https://python.org)
@@ -31,9 +29,7 @@ python CyberDyneWeb.py --url https://alvo.com --all -o meu_projeto
 
 <div align="center">
 
-https://github.com/user-attachments/assets/cyberdyne.webm
-
-<video src="Img_vid/cyberdyne.webm" width="600" controls></video>
+https://github.com/user-attachments/assets/02e85ec1-a5cd-4b3f-aa97-84d54efe6f70
 
 </div>
 
