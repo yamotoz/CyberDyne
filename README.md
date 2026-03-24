@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="Img_vid/cyoff.png" alt="CyberDyne" width="400"/>
+
 **v7.1 — Web Vulnerability Scanner & Recon Suite**
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python)](https://python.org)
