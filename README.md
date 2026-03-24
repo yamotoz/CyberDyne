@@ -29,7 +29,7 @@ python CyberDyneWeb.py --url https://alvo.com --all -o meu_projeto
 
 <div align="center">
 
-https://github.com/user-attachments/assets/02e85ec1-a5cd-4b3f-aa97-84d54efe6f70
+https://github.com/user-attachments/assets/16df8ab2-839d-498b-a3db-69d66cef4c0f
 
 </div>
 
