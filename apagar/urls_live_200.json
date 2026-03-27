@@ -1,0 +1,486 @@
+[
+  {
+    "url": "https://www.thebuildcode.com.br/serenity-scan",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://www.thebuildcode.com.br/login",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://www.thebuildcode.com.br/",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://www.thebuildcode.com.br/_astro/cyberdyne-scan.astro_astro_type_script_index_0_lang.CumzogBj.js",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://www.thebuildcode.com.br/privacidade",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://www.thebuildcode.com.br/_astro/precos.astro_astro_type_script_index_1_lang.K8YoGGo1.js",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "http://www.thebuildcode.com.br",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://www.thebuildcode.com.br/_astro/AnalyticsDashboard.CN8Rp-ht.js",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://www.thebuildcode.com.br/_astro/app.astro_astro_type_script_index_0_lang.vupnswwz.js",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://www.thebuildcode.com.br/_astro/biblioteca.astro_astro_type_script_index_0_lang.DNxjvuet.js",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://www.thebuildcode.com.br/biblioteca",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://www.thebuildcode.com.br/_astro/precos.astro_astro_type_script_index_0_lang.DWtmmdp5.js",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://www.thebuildcode.com.br/_astro/client.CEBcrvnw.js",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://www.thebuildcode.com.br/termos",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://www.thebuildcode.com.br/cyberdyne-scan",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://www.thebuildcode.com.br/analytics",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://www.thebuildcode.com.br/admin",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://thebuildcode.com.br",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://thebuildcode.com.br/serenity",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://thebuildcode.com.br/analytics",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://thebuildcode.com.br/marketing",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://thebuildcode.com.br/precos",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://www.thebuildcode.com.br/_astro/marketing.astro_astro_type_script_index_0_lang.G59h62ap.js",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://thebuildcode.com.br/biblioteca",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://thebuildcode.com.br/_astro/AnalyticsDashboard.CN8Rp-ht.js",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://www.thebuildcode.com.br",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://thebuildcode.com.br/serenity-scan",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://www.thebuildcode.com.br/marketing",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://thebuildcode.com.br/privacidade",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://thebuildcode.com.br/_vercel/insights/script.js",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "Vercel"
+    ]
+  },
+  {
+    "url": "http://thebuildcode.com.br",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://www.thebuildcode.com.br/_vercel/insights/script.js",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://thebuildcode.com.br/cyberdyne",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://www.thebuildcode.com.br/cyberdyne",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://www.thebuildcode.com.br/app",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://thebuildcode.com.br/",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://www.thebuildcode.com.br/serenity",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://www.thebuildcode.com.br/perfil",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://www.thebuildcode.com.br/cyberdyne.webm",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://www.thebuildcode.com.br/precos",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://thebuildcode.com.br/login",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://www.thebuildcode.com.br/_astro/Header.astro_astro_type_script_index_0_lang.iD61Kc2-.js",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://thebuildcode.com.br/cyberdyne-scan",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://thebuildcode.com.br/_astro/precos.astro_astro_type_script_index_1_lang.K8YoGGo1.js",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://www.thebuildcode.com.br/_astro/login.astro_astro_type_script_index_0_lang.DV5EEcoA.js",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://thebuildcode.com.br/termos",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://thebuildcode.com.br/_astro/Header.astro_astro_type_script_index_0_lang.iD61Kc2-.js",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://thebuildcode.com.br/_astro/client.CEBcrvnw.js",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://thebuildcode.com.br/app",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://thebuildcode.com.br/perfil",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://thebuildcode.com.br/_astro/precos.astro_astro_type_script_index_0_lang.DWtmmdp5.js",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://www.thebuildcode.com.br/_astro/perfil.astro_astro_type_script_index_0_lang.DIuXGi3o.js",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://www.thebuildcode.com.br/img/serenity.webm",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  },
+  {
+    "url": "https://www.thebuildcode.com.br/api/biblioteca",
+    "status": 200,
+    "server": "Vercel",
+    "tech": [
+      "BuildCode",
+      "Vercel"
+    ]
+  }
+]
