@@ -14,11 +14,24 @@ import urllib.request, urllib.error, http.client, ssl
 
 try:
     import requests
+    from requests.adapters import HTTPAdapter
     import urllib3
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 except ImportError:
     print("[ERRO] requests não encontrado. Execute: pip install requests")
     sys.exit(1)
+
+# ── Session pool global — reutiliza conexões TCP (2-5x mais rápido) ──────────
+_SESSION = requests.Session()
+_SESSION.verify = False
+_adapter = HTTPAdapter(
+    pool_connections=50,   # conexões paralelas por host
+    pool_maxsize=60,       # máximo de conexões no pool
+    max_retries=0,         # retries manuais no safe_get
+    pool_block=False,
+)
+_SESSION.mount("http://", _adapter)
+_SESSION.mount("https://", _adapter)
 
 try:
     from bs4 import BeautifulSoup
@@ -1999,7 +2012,7 @@ BANNER_INFO = """
 # ─────────────────────────────────────────────────────────────────────────────
 # CONFIGURAÇÕES GLOBAIS
 # ─────────────────────────────────────────────────────────────────────────────
-DEFAULT_TIMEOUT   = int(os.getenv("SCAN_DEFAULT_TIMEOUT", "8"))
+DEFAULT_TIMEOUT   = int(os.getenv("SCAN_DEFAULT_TIMEOUT", "5"))
 DEFAULT_THREADS   = int(os.getenv("SCAN_MAX_THREADS", "10"))
 DEFAULT_UA        = os.getenv("SCAN_USER_AGENT", "Mozilla/5.0 (compatible; CyberDyneWeb/2.0; Security Scanner)")
 BASE_DELAY        = float(os.getenv("SCAN_DELAY_SECONDS", "0.1"))   # era 0.5 — reduzido para 0.1
@@ -2258,13 +2271,13 @@ def safe_get(url, params=None, headers=None, timeout=DEFAULT_TIMEOUT,
             h["Authorization"] = _auth_header
         ck = _auth_cookies or None
         if method == "POST":
-            r = requests.post(url, data=data, params=params, headers=h,
-                              timeout=timeout, verify=False,
+            r = _SESSION.post(url, data=data, params=params, headers=h,
+                              timeout=timeout,
                               allow_redirects=allow_redirects, cookies=ck,
                               proxies=_proxies)
         else:
-            r = requests.get(url, params=params, headers=h, timeout=timeout,
-                             verify=False, allow_redirects=allow_redirects,
+            r = _SESSION.get(url, params=params, headers=h, timeout=timeout,
+                             allow_redirects=allow_redirects,
                              cookies=ck, proxies=_proxies)
         # ── WAF adaptive: retry 1x no 403 quando WAF detectado ──
         if r and r.status_code == 403 and _detected_waf_name:
@@ -2272,11 +2285,12 @@ def safe_get(url, params=None, headers=None, timeout=DEFAULT_TIMEOUT,
                 _consecutive_blocks += 1
                 _cb = _consecutive_blocks
             if _cb >= 5:
-                # Ban detection — pausa global 60s
-                print(f"\r{' '*120}\r  {Fore.RED}[BAN] {_cb}+ bloqueios consecutivos — pausando 60s{Style.RESET_ALL}",
+                # Ban detection — pausa global
+                _ban_pause = 15 if _PAYLOAD_INTENSITY <= 0.1 else (30 if _PAYLOAD_INTENSITY <= 0.3 else 60)
+                print(f"\r{' '*120}\r  {Fore.RED}[BAN] {_cb}+ bloqueios consecutivos — pausando {_ban_pause}s{Style.RESET_ALL}",
                       flush=True)
                 _rate_pause.clear()
-                time.sleep(60)
+                time.sleep(_ban_pause)
                 _rate_pause.set()
                 with _consecutive_blocks_lock:
                     _consecutive_blocks = 0
@@ -2286,13 +2300,13 @@ def safe_get(url, params=None, headers=None, timeout=DEFAULT_TIMEOUT,
                 time.sleep(random.uniform(*_delay))
                 h["User-Agent"] = random.choice(_STEALTH_UAS) if '_STEALTH_UAS' in dir() else HEADERS_BASE["User-Agent"]
                 if method == "POST":
-                    r = requests.post(url, data=data, params=params, headers=h,
-                                      timeout=timeout, verify=False,
+                    r = _SESSION.post(url, data=data, params=params, headers=h,
+                                      timeout=timeout,
                                       allow_redirects=allow_redirects, cookies=ck,
                                       proxies=_proxies)
                 else:
-                    r = requests.get(url, params=params, headers=h, timeout=timeout,
-                                     verify=False, allow_redirects=allow_redirects,
+                    r = _SESSION.get(url, params=params, headers=h, timeout=timeout,
+                                     allow_redirects=allow_redirects,
                                      cookies=ck, proxies=_proxies)
         # Reset consecutive blocks on success
         if r and r.status_code not in (403, 429, 503):
@@ -2300,18 +2314,19 @@ def safe_get(url, params=None, headers=None, timeout=DEFAULT_TIMEOUT,
                 _consecutive_blocks = 0
         return r
     except requests.exceptions.Timeout:
-        # Retry 1x com timeout dobrado em rede lenta
-        try:
-            if method == "POST":
-                return requests.post(url, data=data, params=params, headers={**HEADERS_BASE, **(headers or {})},
-                                     timeout=timeout * 2, verify=False, allow_redirects=allow_redirects,
-                                     cookies=_auth_cookies or None, proxies=_proxies)
-            else:
-                return requests.get(url, params=params, headers={**HEADERS_BASE, **(headers or {})},
-                                    timeout=timeout * 2, verify=False, allow_redirects=allow_redirects,
-                                    cookies=_auth_cookies or None, proxies=_proxies)
-        except Exception:
-            return None
+        # Retry 1x com timeout dobrado (só se não for --low/--easy — velocidade > resiliência)
+        if _PAYLOAD_INTENSITY >= 0.3:
+            try:
+                if method == "POST":
+                    return _SESSION.post(url, data=data, params=params, headers={**HEADERS_BASE, **(headers or {})},
+                                         timeout=timeout * 2, allow_redirects=allow_redirects,
+                                         cookies=_auth_cookies or None, proxies=_proxies)
+                else:
+                    return _SESSION.get(url, params=params, headers={**HEADERS_BASE, **(headers or {})},
+                                        timeout=timeout * 2, allow_redirects=allow_redirects,
+                                        cookies=_auth_cookies or None, proxies=_proxies)
+            except Exception:
+                return None
     except Exception:
         return None
 
@@ -2751,7 +2766,9 @@ def adaptive_request(url, **kwargs):
             _refresh_tor_circuit()
     _proxies = _TOR_PROXIES if _TOR_MODE else PROXIES
     _rate_pause.wait()
-    time.sleep(BASE_DELAY + random.uniform(0, 0.3))
+    # Delay só quando necessário: stealth, WAF, ou tor
+    if _STEALTH_MODE or _detected_waf_name or _TOR_MODE:
+        time.sleep(BASE_DELAY + random.uniform(0, 0.3))
     try:
         headers = kwargs.pop("headers", {**HEADERS_BASE})
         timeout = kwargs.pop("timeout", DEFAULT_TIMEOUT)
@@ -4081,6 +4098,10 @@ class ReconEngine:
             log(f"  {Fore.YELLOW}[~] GITHUB_TOKEN ausente — pulando GitHub Dorking{Style.RESET_ALL}")
             self.github_findings = findings
             return findings
+        if _PAYLOAD_INTENSITY <= 0.1:
+            log(f"  {Fore.YELLOW}[~] GitHub Dorking pulado no modo rápido (--low/--easy){Style.RESET_ALL}")
+            self.github_findings = findings
+            return findings
 
         headers = {**HEADERS_BASE, "Authorization": f"token {GITHUB_TOKEN}",
                    "Accept": "application/vnd.github.v3+json"}
@@ -5219,7 +5240,12 @@ class VulnScanner:
         return r
 
     def _get_urls_with_params(self):
-        return [u for u in self.urls if "?" in u]
+        _all = [u for u in self.urls if "?" in u]
+        # Limitar URLs por intensidade — controla tempo total do scan
+        # low=~1min | easy=~5min | medium=~20min | hard=~1h | insane=~3h
+        _limits = {0.01: 3, 0.1: 8, 0.3: 12, 0.6: 20, 1.0: 40}
+        _max = _limits.get(_PAYLOAD_INTENSITY, 20)
+        return _all[:_max]
 
     # ── OWASP 1–20 ────────────────────────────────────────────────────────────
 
@@ -7880,27 +7906,49 @@ class VulnScanner:
             parsed = urlparse(url)
             params = parse_qs(parsed.query)
             for param in params:
+                # Baseline: capturar resposta com valor original para checar se "49" já existe
+                _base_r = safe_get(url)
+                _base_text = _base_r.text if _base_r else ""
+                # Contar ocorrências de "49" no baseline
+                _base_49_count = _base_text.count("49")
                 for p, meta in payloads.items():
                     new_params = {k: (p if k == param else v[0]) for k, v in params.items()}
                     test_url = parsed._replace(query=urlencode(new_params)).geturl()
                     r = safe_get(test_url)
-                    if r and meta["expect"] in r.text:
-                        # Contra-prova: enviar expressão diferente no mesmo param
-                        _ssti_conf = 60
-                        _cp_payload = p.replace("7*7", "8*8") if "7*7" in p else p
-                        if _cp_payload != p:
-                            _cp_params = {k: (_cp_payload if k == param else v[0]) for k, v in params.items()}
-                            _cp_url = parsed._replace(query=urlencode(_cp_params)).geturl()
-                            _r_cp_ssti = safe_get(_cp_url)
-                            if _r_cp_ssti and "64" in _r_cp_ssti.text:
-                                _ssti_conf = 95  # Confirmado: ambas expressões avaliadas
-                        self._add(20,"Server-Side Template Injection (SSTI)","OWASP","CRITICO","VULNERAVEL",
-                                  evidence=f"{param}={p} → avaliou para {meta['expect']}"
-                                           + (f" | contra-prova 8*8→64 confirmada" if _ssti_conf == 95 else ""),
-                                  recommendation="Nunca renderizar input do usuário como template.",
-                                  technique="Payloads {{7*7}}, ${7*7} em campos de template",
-                                  confidence=_ssti_conf)
-                        return
+                    if not r or meta["expect"] not in r.text:
+                        continue
+                    # Anti-falso-positivo: "49" já existia no baseline?
+                    _payload_49_count = r.text.count("49")
+                    if _base_49_count >= _payload_49_count:
+                        # "49" NÃO é novo — já existia antes do payload. Skip.
+                        continue
+                    # Anti-SPA: verificar se não é homepage
+                    if self._is_homepage(r, test_url):
+                        continue
+                    # Contra-prova OBRIGATÓRIA: {{8*8}} deve retornar "64"
+                    _cp_payload = p.replace("7*7", "8*8") if "7*7" in p else p
+                    _ssti_conf = 40  # Sem contra-prova = baixa confiança
+                    if _cp_payload != p:
+                        _cp_params = {k: (_cp_payload if k == param else v[0]) for k, v in params.items()}
+                        _cp_url = parsed._replace(query=urlencode(_cp_params)).geturl()
+                        _r_cp_ssti = safe_get(_cp_url)
+                        if _r_cp_ssti:
+                            _base_64_count = _base_text.count("64")
+                            _cp_64_count = _r_cp_ssti.text.count("64")
+                            if _cp_64_count > _base_64_count:
+                                _ssti_conf = 95  # Confirmado: AMBAS expressões produziram resultado novo
+                            else:
+                                # 8*8 não retornou "64" extra — primeiro "49" pode ser coincidência
+                                continue  # Pular — não é SSTI real
+                    else:
+                        continue  # Sem contra-prova possível — pular
+                    self._add(20,"Server-Side Template Injection (SSTI)","OWASP","CRITICO","VULNERAVEL",
+                              evidence=f"{param}={p} → avaliou para {meta['expect']}"
+                                       + (f" | contra-prova 8*8→64 confirmada" if _ssti_conf == 95 else ""),
+                              recommendation="Nunca renderizar input do usuário como template.",
+                              technique="Payloads {{7*7}}, ${7*7} em campos de template",
+                              confidence=_ssti_conf)
+                    return
 
         # ── Blind SSTI — timing-based (no output reflection needed) ──────────
         _ssti_blind = [
@@ -11480,19 +11528,34 @@ class VulnScanner:
         vuln = False
         evidence = ""
         evidence_parts = []
-        patterns = [r'[?&](api_key|apikey|token|key|secret|access_token)=([A-Za-z0-9_\-]{8,})',
-                    r'[?&](auth|authorization)=([A-Za-z0-9_\-\.]{10,})']
-        for url in self.urls + [self.target]:
-            for pat in patterns:
-                m = re.search(pat, url, re.I)
-                if m:
-                    vuln = True
-                    evidence_parts.append(f"Chave na URL: {m.group(1)}=...{m.group(2)[-4:]}")
-                    break
+        _vuln_url = ""
+        # Nomes de params que indicam chaves/tokens
+        _key_params = {"api_key", "apikey", "token", "key", "secret", "access_token",
+                       "auth", "authorization", "private_key", "secret_key", "api_secret",
+                       "client_secret", "auth_token", "bearer"}
+        # Nomes de params que são NORMAIS (não são chaves) — ignorar
+        _normal_params = {"page", "id", "ver", "v", "t", "p", "s", "q", "lang", "ref",
+                          "utm_source", "utm_medium", "utm_campaign", "callback", "format",
+                          "type", "action", "redirect", "return", "next", "state", "code",
+                          "nonce", "timestamp", "ts", "hash", "sig", "signature", "session",
+                          "jsessionid", "phpsessid", "csrf", "csrf_token", "_", "service"}
+
+        # Check 1: params com nomes explícitos de chave
+        for url in self.urls[:20] + [self.target]:
+            parsed = urlparse(url)
+            params = parse_qs(parsed.query)
+            for param_name, param_vals in params.items():
+                if param_name.lower() in _key_params:
+                    val = param_vals[0] if param_vals else ""
+                    if len(val) >= 10:
+                        vuln = True
+                        _vuln_url = url
+                        evidence_parts.append(f"Chave na URL: {param_name}={val[:20]}...{val[-6:]} ({len(val)} chars)")
+                        break
             if vuln:
                 break
 
-        # ── Shannon entropy analysis on URL parameter values ─────────────────
+        # Check 2: Shannon entropy — só em params NÃO normais com entropia ALTA
         def _shannon_entropy(data):
             if not data:
                 return 0
@@ -11505,32 +11568,39 @@ class VulnScanner:
                 entropy -= p * math.log2(p)
             return entropy
 
-        _high_entropy_found = []
-        for url in self.urls + [self.target]:
-            parsed = urlparse(url)
-            params = parse_qs(parsed.query)
-            for param_name, param_vals in params.items():
-                for val in param_vals:
-                    if len(val) > 20:
-                        ent = _shannon_entropy(val)
-                        if ent > 3.5:
-                            _high_entropy_found.append(
-                                f"{param_name}=...{val[-6:]} (len={len(val)}, entropy={ent:.2f})")
-                            if not vuln:
+        if not vuln:
+            for url in self.urls[:20] + [self.target]:
+                parsed = urlparse(url)
+                params = parse_qs(parsed.query)
+                for param_name, param_vals in params.items():
+                    # Ignorar params normais (session IDs, hashes internos, etc.)
+                    if param_name.lower() in _normal_params:
+                        continue
+                    for val in param_vals:
+                        if len(val) > 30:  # Mais rigoroso: >30 chars (era >20)
+                            ent = _shannon_entropy(val)
+                            if ent > 4.0:  # Mais rigoroso: >4.0 (era >3.5)
                                 vuln = True
-
-        if _high_entropy_found:
-            evidence_parts.append(f"High-entropy params (token/secret vazado na URL): "
-                                  f"{'; '.join(_high_entropy_found[:3])}")
+                                _vuln_url = url
+                                evidence_parts.append(
+                                    f"High-entropy param: {param_name}={val[:20]}...{val[-6:]} "
+                                    f"(len={len(val)}, entropy={ent:.2f}) em {url[:80]}")
+                                break
+                    if vuln:
+                        break
+                if vuln:
+                    break
 
         if evidence_parts:
             evidence = " | ".join(evidence_parts)
 
         status = "VULNERAVEL" if vuln else "SEGURO"
         self._add(92,"API Key in URL / Logs","Lógica","CRITICO",status,
+                  url=_vuln_url or self.target,
                   evidence=evidence,
                   recommendation="Nunca passar chaves em URLs; usar headers Authorization.",
-                  technique="Buscar ?api_key=, ?token= em URLs; análise de entropia Shannon (>3.5 + len>20)")
+                  technique="Buscar ?api_key=, ?token= em URLs; análise de entropia Shannon (>4.0 + len>30)",
+                  confidence=85 if any("Chave na URL" in p for p in evidence_parts) else 50)
 
     def check_wayback_js_leakage(self):
         """
@@ -13094,13 +13164,13 @@ class VulnScanner:
         _scan_start = time.time()
         # ── Auto-scaling de workers ──────────────────────────────────────────
         # Base workers por intensidade (valores mínimos)
-        _base_workers = {0.01: 4, 0.1: 6, 0.3: 12, 0.6: 20, 1.0: 32}.get(_PAYLOAD_INTENSITY, 20)
+        _base_workers = {0.01: 30, 0.1: 35, 0.3: 40, 0.6: 45, 1.0: 50}.get(_PAYLOAD_INTENSITY, 40)
         # Escalar com base no número de URLs (mais URLs = mais threads)
         _n_urls = len(self.urls) if hasattr(self, 'urls') else 1
         if _n_urls > 100:
-            _base_workers = min(_base_workers + 16, 64)  # até 64 para alvos grandes
+            _base_workers = min(_base_workers + 15, 60)
         elif _n_urls > 50:
-            _base_workers = min(_base_workers + 8, 48)   # até 48 para médios
+            _base_workers = min(_base_workers + 10, 55)
         _workers_display = _base_workers
         _intensity_label = {0.01: "LOW", 0.1: "EASY", 0.3: "MEDIUM", 0.6: "HARD", 1.0: "INSANE"}.get(_PAYLOAD_INTENSITY, "HARD")
         _intensity_pct = {0.01: "1%", 0.1: "10%", 0.3: "30%", 0.6: "60%", 1.0: "100%"}.get(_PAYLOAD_INTENSITY, "60%")
@@ -13262,11 +13332,11 @@ class VulnScanner:
             _eta_estimate = _avg_per_check * _remaining_checks
 
             if _eta_estimate > 1800:  # ETA > 30min → turbo mode
-                _workers = min(_base_workers + 24, 64)
+                _workers = min(_base_workers + 15, 60)
                 if _counter[0] > 0 and _g_done == _counter[0]:
                     print(f"  {Fore.YELLOW}[AUTO-SCALE] ETA > 30min → {_workers} workers (turbo){Style.RESET_ALL}", flush=True)
             elif _eta_estimate > 600:  # ETA > 10min → boost
-                _workers = min(_base_workers + 12, 48)
+                _workers = min(_base_workers + 10, 55)
             else:
                 _workers = _base_workers
 
@@ -18738,8 +18808,11 @@ Exemplos de uso:
         _live_data["target"] = target
         _start_live_dashboard()
 
-    # ── Criar pasta de output ──────────────────────────────────────────────────
-    output_dir = os.path.join(os.getcwd(), project_name)
+    # ── Criar pasta de output (dentro de Scans/) ──────────────────────────────
+    _script_dir = os.path.dirname(os.path.abspath(__file__))
+    _scans_dir = os.path.join(_script_dir, "Scans")
+    os.makedirs(_scans_dir, exist_ok=True)
+    output_dir = os.path.join(_scans_dir, project_name)
     os.makedirs(output_dir, exist_ok=True)
     log(f"\n{Fore.GREEN}[✓] Pasta de saída: {output_dir}{Style.RESET_ALL}")
 

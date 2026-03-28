@@ -391,7 +391,6 @@ perl/-e%20print%20Hello
 admin.cgi
 interscan/
 vgn/legacy/save
-
 IDSWebApp/IDSjsp/Login.jsp
 quikstore.cfg
 quikstore.cgi
@@ -480,8 +479,6 @@ cgi-bin/query
 cgi-bin/test-cgi.tcl
 cgi-bin/test-env
 .perf
-
-
 admin-serv/config/admpw
 test.php%20
 *.*
@@ -1252,8 +1249,6 @@ na_admin/ataglance.html
 scripts/samples/search/qfullhit.htw
 scripts/samples/search/qsumrhit.htw
 JUNK(5).htw
-
-
 ttp://127.0.0.1:2301/
 file/../../../../../../../../etc/
 level/16/exec/-///pwd
@@ -1422,33 +1417,9 @@ counter/1/n/n/0/3/5/0/a/123.gif
 iissamples/exair/search/search.asp
 cgi-bin/webcart/webcart.cgi?CONFIG=mountain&CHANGE=YES&NEXTPAGE=;cat%20/etc/passwd|&CODE=PHOLD
 ../webserver.ini
-
 na_admin/
-
-
 cpqlogin.htm
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 main_page.php
-
 cpanel/
 shopexd.asp?catalogid='42
 shopping/diag_dbtest.asp
@@ -1468,7 +1439,6 @@ cgi-bin/photo/
 iissamples/issamples/oop/qfullhit.htw?CiWebHitsFile=/iissamples/issamples/oop/qfullhit.htw&CiRestriction=none&CiHiliteType=Full
 iissamples/issamples/oop/qsumrhit.htw?CiWebHitsFile=/iissamples/issamples/oop/qsumrhit.htw&CiRestriction=none&CiHiliteType=Full
 null.htw?CiWebHitsFile=/default.asp%20&CiRestriction=none&CiHiliteType=Full
-
 jsp/jspsamp/jspexamples/viewsource.jsp?source=/../../../../../../../../../boot.ini
 jsp/jspsamp/jspexamples/viewsource.jsp?source=/../../../../../../../../../etc/passwd
 cgi-bin/include/new-visitor.inc.php
@@ -2981,7 +2951,6 @@ basilix/
 bottom.html
 interchange/
 sca/menu.jsp
-
 icons/
 manual/images/
 doc/packages/
@@ -5064,7 +5033,6 @@ webacc
 webgui
 welcome
 wgate
-
 *.jsp
 AQApp
 AQApp/
@@ -8938,7 +8906,6 @@ CertAuthServlet
 BasicAuthServlet
 com.netscape.server.servlet.jsp.JSPRunner
 classes
-
 test1
 test2
 test00
@@ -8970,7 +8937,6 @@ Prova
 Provas
 DEMO
 Demo
-
 ROOT
 add
 balancer
@@ -9116,7 +9082,6 @@ vgn
 vr
 Ping.jsp
 HelloWorld.jsp
-
 *
 *.gif
 *.gif/

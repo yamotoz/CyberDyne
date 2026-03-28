@@ -1,6 +1,5 @@
 # Copyright (c) 2006-2026 sqlmap developers (https://sqlmap.org)
 # See the file 'LICENSE' for copying permission
-
 users
 customer
 user
@@ -1422,9 +1421,7 @@ Contributor
 wallet
 balance
 flag
-
 # Various Joomla tables
-
 jos_vm_product_download
 jos_vm_coupons
 jos_vm_product_reviews
@@ -1513,9 +1510,7 @@ users_tmp
 users_club
 publicusers
 cmsusers
-
 # List provided by Anastasios Monachos (anastasiosm@gmail.com)
-
 blacklist
 cost
 moves
@@ -1565,9 +1560,7 @@ TBLTRANSACTIONS
 TBLRETAILUSERS
 TBLCORPUSERS
 TBLCORPORATEUSERS
-
 # List from schemafuzz.py (http://www.beenuarora.com/code/schemafuzz.py)
-
 tbladmins
 sort
 _wfspro_admin
@@ -1848,9 +1841,7 @@ UserAdmin
 Admins
 Login
 Logins
-
 # List from http://nibblesec.org/files/MSAccessSQLi/MSAccessSQLi.html
-
 accnts
 accnt
 user_id
@@ -1898,9 +1889,7 @@ user_passw
 user_pwrd
 user_pwd
 user_passwd
-
 # List from hyrax (http://sla.ckers.org/forum/read.php?16,36047)
-
 wsop
 Admin
 Config
@@ -2183,9 +2172,7 @@ server
 ststaff
 yhm
 yhmm
-
 # site:it
-
 utenti
 categorie
 attivita
@@ -2240,9 +2227,7 @@ decodifica_campi
 dcerpcrequests
 discipline_utenti
 jos_jf_content
-
 # site:fr
-
 factures
 devis
 bon_commande
@@ -2417,9 +2402,7 @@ nuke_poll_data
 nuke_bbprivmsgs
 spip_ortho_dico
 spip_caches
-
 # site:ru
-
 spravochnik
 nomenklatura
 dokument
@@ -2451,9 +2434,7 @@ jubjub_errors
 vykachka
 phpshop_opros
 order_item
-
 # site:de
-
 tt_content
 kunde
 medien
@@ -2595,9 +2576,7 @@ seite_layout
 virgator_table
 wp_categories
 chessmessages
-
 # site:br
-
 endereco
 pessoa
 usuarios
@@ -2758,9 +2737,7 @@ manutencao
 LT_CUSTOM1
 LT_CUSTOM2
 LT_CUSTOM3
-
 # site:es
-
 jos_respuestas
 DEPARTAMENTO
 EMPLEADO
@@ -2801,9 +2778,7 @@ aclaraciones
 preguntas
 personas
 estadisticas
-
 # site:cn
-
 yonghu
 dingdan
 shangpin
@@ -2933,9 +2908,7 @@ zl_advertisement
 guanggaotp
 pw_memberinfo
 aliastype
-
 # site:tr
-
 kullanici
 kullanicilar
 yonetici
@@ -3152,11 +3125,7 @@ tbl_puan
 tbl_Bulten
 tbl_favori
 tbl_onlineusers
-
-
-
 # List provided by Pedrito Perez (0ark1ang3l@gmail.com)
-
 adminstbl
 admintbl
 affiliateUsers
@@ -3169,13 +3138,9 @@ tuser
 tusers
 userstbl
 usertbl
-
 # WebGoat
-
 user_data
-
 # https://laurent22.github.io/so-injections/
-
 baza_site
 benutzer
 credentials
@@ -3204,9 +3169,7 @@ userregister
 wm_products
 wp_payout_history
 zamowienia
-
 # https://deliciousbrains.com/tour-wordpress-database/
-
 wp_blogmeta
 wp_blogs
 wp_blog_versions
@@ -3216,9 +3179,7 @@ wp_signups
 wp_site
 wp_sitemeta
 wp_termmeta
-
 # https://docs.joomla.org/Tables
-
 assets
 bannerclient
 bannertrack
@@ -3258,13 +3219,9 @@ user_profiles
 user_usergroup_map
 viewlevels
 weblinks
-
 # site:nl
-
 gebruikers
-
 # asp.net
-
 AspNetUsers
 AspNetRoles
 AspNetUserRoles
@@ -3273,9 +3230,7 @@ AspNetUserLogins
 AspNetRoleClaims
 AspNetUserTokens
 __EFMigrationsHistory
-
 # django
-
 auth_user
 auth_group
 auth_permission
@@ -3283,9 +3238,7 @@ django_session
 django_migrations
 django_content_type
 django_admin_log
-
 # laravel
-
 migrations
 password_resets
 failed_jobs
@@ -3294,16 +3247,12 @@ job_batches
 model_has_roles
 model_has_permissions
 role_has_permissions
-
 # rails
-
 schema_migrations
 ar_internal_metadata
 active_storage_blobs
 active_storage_attachments
-
 # misc.
-
 flyway_schema_history
 databasechangelog
 databasechangeloglock

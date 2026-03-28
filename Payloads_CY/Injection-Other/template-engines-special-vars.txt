@@ -6,12 +6,10 @@
 # 
 # Indicate to your fuzzer to ignore a line starting with: "# " (space is important)
 # You can also filter the dictionary before to use it via the command: grep -v "# " > dict.txt
-# 
 # Sources:
 # https://portswigger.net/research/server-side-template-injection
 # https://github.com/epinna/tplmap
 # Custom personal labs
-# 
 # GENERIC: To cause an error and perhaps get technical information
 1/0
 # FREEMARKER (JAVA)

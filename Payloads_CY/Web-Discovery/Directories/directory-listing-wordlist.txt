@@ -2,10 +2,8 @@
 # CyberDyne Security - Version 2.0
 # 2026 Updated - 250+ paths for sensitive file and directory enumeration
 # Organized by category for comprehensive coverage
-
 # ============================================
 # CONFIGURATION & ENVIRONMENT FILES
-# ============================================
 .env
 .env.local
 .env.production
@@ -61,10 +59,7 @@ config.php.bak
 config.php.old
 config.php.save
 settings.inc
-
-# ============================================
 # ADMIN & MANAGEMENT PANELS
-# ============================================
 /admin/
 /admin/login
 /admin/dashboard
@@ -112,10 +107,7 @@ settings.inc
 /login
 /signin
 /signin/
-
-# ============================================
 # WORDPRESS SPECIFIC
-# ============================================
 /wp-config.php
 /wp-config.php.bak
 /wp-config.php.old
@@ -148,10 +140,7 @@ settings.inc
 /install/
 /wp-admin/install.php
 /wp-admin/upgrade.php
-
-# ============================================
 # DRUPAL SPECIFIC
-# ============================================
 /sites/default/settings.php
 /sites/default/settings.php.bak
 /sites/default/settings.php.old
@@ -163,20 +152,14 @@ settings.inc
 /update.php
 /install.php
 authorize.php
-
-# ============================================
 # JOOMLA SPECIFIC
-# ============================================
 /configuration.php
 /configuration.php.bak
 /configuration.php.old
 /installation/
 /tmp/
 /logs/
-
-# ============================================
 # LARAVEL / PHP FRAMEWORKS
-# ============================================
 /.env
 /.env.backup
 /.env.production
@@ -192,10 +175,7 @@ authorize.php
 /routes/api.php
 /config/app.php
 /config/database.php
-
-# ============================================
 # SPRING BOOT / JAVA
-# ============================================
 /actuator
 /actuator/health
 /actuator/healthz
@@ -229,10 +209,7 @@ authorize.php
 /openapi/
 /openapi.yaml
 /openapi.json
-
-# ============================================
 # NODE.JS / EXPRESS
-# ============================================
 /node_modules/
 /node_modules/.bin/
 /package.json
@@ -250,10 +227,7 @@ authorize.php
 /public/
 /static/
 /staticfiles/
-
-# ============================================
 # PYTHON / DJANGO
-# ============================================
 /requirements.txt
 /Pipfile
 /Pipfile.lock
@@ -269,10 +243,7 @@ authorize.php
 DEBUG.log
 error.log
 debug.log
-
-# ============================================
 # RUBY / RAILS
-# ============================================
 /Gemfile
 /Gemfile.lock
 /config.ru
@@ -283,10 +254,7 @@ debug.log
 /config/database.yml
 /config/secrets.yml
 /secret_key_base
-
-# ============================================
 # .NET / ASP.NET
-# ============================================
 /Web.config
 /Web.config.bak
 /Web.Debug.config
@@ -297,10 +265,7 @@ debug.log
 /Views/_ViewStart.cshtml
 /bin/
 /obj/
-
-# ============================================
 # JAVA / JSP
-# ============================================
 /WEB-INF/web.xml
 /WEB-INF/applicationContext.xml
 /WEB-INF/classes/
@@ -314,10 +279,7 @@ debug.log
 /log4j.xml
 /application.properties
 /spring-security-config.xml
-
-# ============================================
 # GIT / VERSION CONTROL
-# ============================================
 /.git/
 /.git/config
 /.git/HEAD
@@ -336,10 +298,7 @@ debug.log
 /.hg/branch
 /.bzr/
 /.bzr/branch/branch.conf
-
-# ============================================
 # CI/CD & DEPLOYMENT
-# ============================================
 /.travis.yml
 /.circleci/config.yml
 /.circleci/
@@ -357,10 +316,7 @@ debug.log
 /deployment/
 /release/
 /releases/
-
-# ============================================
 # DOCKER & CONTAINERIZATION
-# ============================================
 /Dockerfile
 /docker-compose.yml
 /docker-compose.yaml
@@ -370,10 +326,7 @@ debug.log
 /.dockerignore
 /.docker/
 /Containerfile
-
-# ============================================
 # CLOUD & INFRASTRUCTURE
-# ============================================
 /.aws/credentials
 /.aws/config
 /aws/credentials
@@ -392,10 +345,7 @@ debug.log
 /kubernetes/
 /kubernetes.json
 /k8s/
-
-# ============================================
 # MONITORING & LOGGING
-# ============================================
 /health
 /healthz
 /healthcheck
@@ -422,10 +372,7 @@ debug.log
 /elasticsearch/
 /splunk/
 /datadog/
-
-# ============================================
 # DEBUG & DEVELOPMENT TOOLS
-# ============================================
 /console.html
 /shell/
 /_shell/
@@ -446,10 +393,7 @@ debug.log
 /php.php
 /echo
 /debug
-
-# ============================================
 # BACKUP & ARCHIVE FILES
-# ============================================
 /backup.zip
 /backup.tar.gz
 /backup.tar
@@ -476,10 +420,7 @@ debug.log
 /html.zip
 /backup.tar.bz2
 /dump.tar.gz
-
-# ============================================
 # LOG FILES
-# ============================================
 /log.txt
 /debug.log
 /error.log
@@ -496,10 +437,7 @@ debug.log
 /elasticsearch.log
 /system.log
 /event.log
-
-# ============================================
 # SENSITIVE DATA PATHS
-# ============================================
 /var/log/
 /var/log/apache2/
 /var/log/nginx/
@@ -514,10 +452,7 @@ debug.log
 /files/
 /private/
 /private/tmp/
-
-# ============================================
 # API & WEB SERVICE PATHS
-# ============================================
 /api/
 /api/v1/
 /api/v2/
@@ -537,10 +472,7 @@ debug.log
 /soap?wsdl
 /api/1.0/
 /api/2.0/
-
-# ============================================
 # CONTENT MANAGEMENT
-# ============================================
 /cms/
 /editor/
 /filemanager/
@@ -551,10 +483,7 @@ debug.log
 /documents/
 /attachments/
 /downloads/
-
-# ============================================
 # ERROR & REDIRECT PAGES
-# ============================================
 /error
 /errors
 /error404
@@ -566,10 +495,7 @@ debug.log
 /forbidden
 /internalerror
 /maintenance
-
-# ============================================
 # SECURITY & POLICY
-# ============================================
 /.well-known/security.txt
 /security.txt
 /security-policy
@@ -577,10 +503,7 @@ debug.log
 /host-meta.json
 /.well-known/dnt-policy.txt
 /dnt-policy.txt
-
-# ============================================
 # OAUTH & AUTHENTICATION
-# ============================================
 /oauth/
 /oauth/authorize
 /oauth/token
@@ -593,10 +516,7 @@ debug.log
 /authenticate
 /.auth/
 /auth0/
-
-# ============================================
 # WEB SOCKET & REALTIME
-# ============================================
 /ws
 /wss
 /socket.io/
@@ -605,10 +525,7 @@ debug.log
 /signalr/hubs
 /graphql/ws
 /subscriptions
-
-# ============================================
 # FILE DISCLOSURE PATTERNS
-# ============================================
 crossdomain.xml
 clientaccesspolicy.xml
 /.htaccess
@@ -619,10 +536,7 @@ clientaccesspolicy.xml
 /web.config.bak
 /global.asax
 /applicationhost.config
-
-# ============================================
 # CLOUD STORAGE PATTERNS
-# ============================================
 /api/storage
 /storage
 /files
@@ -638,10 +552,7 @@ clientaccesspolicy.xml
 /media
 /documents
 /cdn/
-
-# ============================================
 # SEARCH & INDEXING
-# ============================================
 /search
 /search?q=
 /query
@@ -653,10 +564,7 @@ clientaccesspolicy.xml
 /feeds/
 /rss/
 /atom/
-
-# ============================================
 # PAYMENT & ECOMMERCE
-# ============================================
 /checkout
 /payment
 /pay
@@ -671,10 +579,7 @@ clientaccesspolicy.xml
 /api/payment
 /stripe/webhook
 /paypal/ipn
-
-# ============================================
 # USER & ACCOUNT MANAGEMENT
-# ============================================
 /users
 /user
 /profile
@@ -696,10 +601,7 @@ clientaccesspolicy.xml
 /users/admin
 /api/users
 /api/admin/users
-
-# ============================================
 # DOCUMENTATION
-# ============================================
 /docs/
 /documentation/
 /api/docs/
