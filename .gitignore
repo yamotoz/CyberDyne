@@ -28,7 +28,8 @@ recon_go/cyberdyne-recon.exe
 */paramspider/
 
 # Ou ignore todas as pastas de output (ajuste conforme o padrão de nome)
-Scans/
+Scans/*
+!Scans/.gitkeep
 cyberdyne_output_*/
 scan_*/
 
