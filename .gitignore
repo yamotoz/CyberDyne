@@ -1,37 +1,38 @@
 # =============================================================================
-#  CyberDyne — .gitignore
+#  CyberDyne — .gitignore (VITRINE — código-fonte privado)
 # =============================================================================
 
-# ── Segredos — NUNCA commitar ─────────────────────────────────────────────────
+# ── Código-fonte — repositório privado ───────────────────────────────────────
+CyberDyneWeb.py
+recon_go/
+Payloads_CY/
+agentlog.md
+
+# ── Segredos — NUNCA commitar ────────────────────────────────────────────────
 .env
 .env.local
 .env.production
 .env.staging
+.env.example
 *.pem
 *.key
 id_rsa
 id_ed25519
 
-# ── Go binários compilados — cada pessoa compila o seu ───────────────────────
+# ── Go binários compilados ───────────────────────────────────────────────────
 cyberdyne-recon
 cyberdyne-recon.exe
-recon_go/cyberdyne-recon
-recon_go/cyberdyne-recon.exe
 
-# ── Resultados de scans — dados sensíveis do alvo ────────────────────────────
-# Cada projeto gera uma pasta com relatórios; não commitar por padrão
-*/cyberdyne_report.pdf
-*/prompt_recall.md
-*/raw_results.json
-*/recon_*.json
-*/bruteforce_probe.json
-*/paramspider/
-
-# Ou ignore todas as pastas de output (ajuste conforme o padrão de nome)
+# ── Resultados de scans ──────────────────────────────────────────────────────
 Scans/*
 !Scans/.gitkeep
-cyberdyne_output_*/
-scan_*/
+
+# ── Docker (manter compose, esconder Dockerfiles de build) ───────────────────
+Dockerfile
+Dockerfile.full
+
+# ── Workspace ────────────────────────────────────────────────────────────────
+*.code-workspace
 
 # ── Python ───────────────────────────────────────────────────────────────────
 __pycache__/
@@ -41,31 +42,15 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
-pip-log.txt
-pip-delete-this-directory.txt
 .tox/
 .coverage
-.coverage.*
-htmlcov/
 .pytest_cache/
 *.egg-info/
 dist/
 build/
-eggs/
-parts/
-var/
-sdist/
-develop-eggs/
-.installed.cfg
-lib/
-lib64/
-
-# ── Virtual environments ──────────────────────────────────────────────────────
 venv/
 .venv/
 env/
-ENV/
-.env/
 
 # ── IDEs ─────────────────────────────────────────────────────────────────────
 .vscode/
