@@ -2,7 +2,7 @@
 
 <img src="Img_vid/cyoff.png" alt="CyberDyne" width="400"/>
 
-**v7.1 — Web Vulnerability Scanner & Recon Suite**
+**v7.7.2 — Web Vulnerability Scanner & Recon Suite + Dependency Auditor (Auditor-Grade)**
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python)](https://python.org)
 [![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8?style=flat-square&logo=go)](https://go.dev)
@@ -27,6 +27,18 @@ Nasceu como resposta ao **Vibe Coding** — desenvolvimento acelerado por IA que
 
 ```
 python CyberDyneWeb.py --url https://alvo.com --all -o meu_projeto
+```
+
+Testando aplicacao local?
+
+```
+python CyberDyneWeb.py --url-local http://localhost:8080 --all -o meu_lab
+```
+
+Auditoria de dependências do repositório local junto com o scan?
+
+```
+python CyberDyneWeb.py --url-local http://localhost:8080 --all --fedora C:\Users\diluc\Desktop\BuildCode -o meu_lab
 ```
 
 <div align="center">
@@ -375,8 +387,17 @@ python CyberDyneWeb.py --url https://alvo.com --all --tor -o tor_scan
 # OOB Detection — confirma SSRF/XXE/RCE/Log4Shell blind via callback externo
 python CyberDyneWeb.py --url https://alvo.com --all --oob -o oob_scan
 
-# Arsenal maximo — tudo ligado
-python CyberDyneWeb.py --url https://alvo.com --login https://alvo.com/login -ul admin -pl senha --all --stealth --ai-payloads --live --browser-mimic-s --wp --insane --go --oob -o full_scan
+# Testar aplicacao local (localhost / IP privado)
+python CyberDyneWeb.py --url-local http://localhost:8080 --all -o lab_local
+
+# Localhost com Go Turbo + Browser Mimic
+python CyberDyneWeb.py --url-local http://192.168.1.50:3000 --all --go --browser-mimic-s -o lab_full
+
+# Localhost + Auditoria Fedora do repositorio local
+python CyberDyneWeb.py --url-local http://localhost:5173 --all --fedora ./meu-projeto -o lab_full
+
+# Arsenal maximo — tudo ligado (com Fedora)
+python CyberDyneWeb.py --url https://alvo.com --login https://alvo.com/login -ul admin -pl senha --all --stealth --ai-payloads --live --browser-mimic-s --wp --insane --go --oob --fedora /caminho/do/repo -o full_scan
 
 # Retomar scan interrompido
 python CyberDyneWeb.py --resume meu_projeto/.checkpoint.cyb
@@ -387,6 +408,8 @@ python CyberDyneWeb.py --resume meu_projeto/.checkpoint.cyb
 | Flag | Descricao |
 |---|---|
 | `--url URL` | URL alvo (obrigatorio) |
+| `--url-local URL` | URL local para testes — pula OSINT/DNS (subdominios, WHOIS, emails, Shodan, takeover) |
+| `--fedora PATH` | Auditoria de dependências (Fedora) no repositorio local — 15+ ecossistemas + CVE OSV.dev |
 | `-o NOME` | Nome da pasta de output |
 | `--all` | Executa tudo: recon + vuln + relatorios |
 | `--recon` | Apenas reconhecimento |
@@ -408,6 +431,107 @@ python CyberDyneWeb.py --resume meu_projeto/.checkpoint.cyb
 | `--hard` | **60%** dos payloads — balanceado (padrao) |
 | `--insane` | **100%** dos payloads — arsenal completo (~32K payloads) |
 | `--resume FILE` | Retomar de checkpoint `.cyb` |
+
+---
+
+## Modo Localhost (`--url-local`)
+
+Teste aplicacoes locais sem ruido. A flag `--url-local` desativa automaticamente os modulos que dependem de DNS e internet publica, mantendo apenas o que funciona em ambiente local.
+
+| Modulo | Sem flag | Com `--url-local` |
+|---|---|---|
+| Subdominios | Roda | Pulado |
+| Subdomain Takeover | Roda | Pulado |
+| WHOIS | Roda | Pulado |
+| Email Harvester | Roda | Pulado |
+| GitHub Dorking | Roda | Pulado |
+| Shodan | Roda | Pulado |
+| Go Takeover | Roda | Pulado |
+| **Headers/Fingerprint** | **Roda** | **Roda** |
+| **Crawl + Validacao URLs** | **Roda** | **Roda** |
+| **Port Scan** | **Roda** | **Roda** |
+| **Fuzzing Paths** | **Roda** | **Roda** |
+| **LinkFinder** | **Roda** | **Roda** |
+| **AI Fingerprint** | **Roda** | **Roda** |
+| **Fase 2 completa (150+ vulns)** | **Roda** | **Roda** |
+
+```bash
+# App rodando no localhost
+python CyberDyneWeb.py --url-local http://localhost:8080 --all -o meu_lab
+
+# VM ou container na rede local
+python CyberDyneWeb.py --url-local http://192.168.1.100:3000 --all --go -o lab_go
+
+# OWASP Juice Shop, DVWA, etc.
+python CyberDyneWeb.py --url-local http://localhost:3000 --all --insane -o juice_shop
+```
+
+---
+
+## Auditoria de Dependências (`--fedora PATH`)
+
+Roda a auditoria Fedora em paralelo ao scan OU **standalone** (sem scan web): varre o repositorio local, identifica todas as dependencias, consulta versoes oficiais nos registros (npm/PyPI/Maven/Cargo/Go/Packagist/...), correlaciona CVEs via OSV.dev e gera findings completos integrados ao relatorio do CyberDyne.
+
+### Dois modos de operação
+
+**1. Modo combinado (scan web + auditoria de deps):**
+```bash
+python CyberDyneWeb.py --url-local http://localhost:8080 --all --fedora ./meu-projeto -o lab
+```
+
+**2. Modo standalone (apenas auditoria, sem scan web):**
+```bash
+python CyberDyneWeb.py --fedora ./meu-projeto -o auditoria_deps
+```
+> Sem `--url`/`--url-local`, o CyberDyne pula Fase 1/2 e gera relatórios apenas com a seção Fedora.
+> Útil para auditar repositórios sem precisar testar URL alguma.
+
+**15+ ecossistemas suportados:** npm, PyPI, Maven, Cargo, Go, RubyGems, Packagist, NuGet, pub.dev, Hex.pm, Swift PM, Helm, Terraform Provider, GitHub Actions, runtimes (Node/Python/Ruby/Go/Rust/.NET/Bun/Deno/Java).
+
+**Output do Fedora aparece em todos os relatorios:**
+
+| Relatorio | Onde aparece |
+|---|---|
+| **PDF** (`CyberDyneWeb_Report.pdf`) | Secao dedicada apos Validador — tabelas de criticos/altos/medios + ecossistemas + CVEs |
+| **HTML** (`CyberDyne_Report.html`) | Painel laranja com cards por severidade, chart por ecossistema, lista de findings |
+| **prompt_recall.md** | Secao "FEDORA — Auditoria de Dependencias" listando criticos e altos com CVE/CVSS |
+| **--live** Dashboard | Painel laranja em tempo real: stats por severidade, top findings, ecossistemas |
+| **`fedora_audit/`** | Bundle completo: `relatorio.pdf`, `findings.json`, `sbom.cdx.json` |
+
+```bash
+# Localhost + auditoria de deps do mesmo projeto
+python CyberDyneWeb.py --url-local http://localhost:8080 --all --fedora ./meu-projeto -o lab
+
+# Producao + auditoria do repo correspondente
+python CyberDyneWeb.py --url https://api.alvo.com --all --fedora /home/user/repo --insane -o full
+
+# Arsenal maximo + Fedora + Live
+python CyberDyneWeb.py --url-local http://localhost:5173 --all --go --oob --live --browser-mimic-ns --fedora C:\Users\diluc\Desktop\BuildCode -o full_audit
+```
+
+**Severidades Fedora (auditor-grade — apenas CVE real escala):**
+
+| Sev | Critério |
+|---|---|
+| 🔴 `CRITICAL` | **CVE confirmado** com CVSS ≥ 9.0 ou exploit ativo (cruzado com OSV.dev/GHSA) |
+| 🟠 `HIGH` | CVE com CVSS 7.0-8.9 OU pacote sem manutenção > 18 meses em superfície exposta |
+| 🟡 `MEDIUM` | CVE com CVSS 4.0-6.9 OU major version atrás SEM CVE (em pacote direto) |
+| 🟢 `LOW` | minor/patch atrás sem CVE conhecida (em pacote direto) |
+| ⚪ `INFO` | dependência **transitiva** sem CVE — usuário não atualiza diretamente |
+| ✅ `UP_TO_DATE` | versão atual = latest, sem CVEs |
+| ❓ `UNKNOWN` | não foi possível resolver via API |
+
+> JAMAIS classifica CRITICAL/HIGH baseado apenas em delta de versão. Apenas CVE real escala. Major version atrás sem CVE em pacote direto = MEDIUM, não CRITICAL.
+
+**Output em 3 tabelas (PDF/HTML/MD):**
+
+1. **🚨 Tabela 1 — Ações Requeridas** — CVEs confirmados ou major desatualizados em diretas. Inclui pacote pai se transitiva, GHSA/CVE ID, CVSS, fixed_in, comando exato (`npm i <pkg>@latest`).
+2. **ℹ️ Tabela 2 — Informacional** — transitivas + minor/patch sem CVE. Resolvidas quando o pai atualizar.
+3. **✅ Tabela 3 — Compliance OK** — dependências alinhadas com latest, sem CVEs.
+
+**Runtime LTS-aware:** Node 20/22 = `UP_TO_DATE` (LTS oficial). Node 16/EOL = `HIGH`. Não trata "não está na última major" como crítico se a atual está em LTS suportada.
+
+> O Fedora roda como subprocess apos a Fase 2 (vulnerabilidades), antes da Fase 3 (relatorios). Nao bloqueia o scan se o caminho for invalido. Cache SQLite em `~/.cache/fedora` — segunda run < 1s.
 
 ---
 
@@ -455,6 +579,6 @@ docker compose run -p 5000:5000 cyberdyne --url https://alvo.com --all --live -o
 
 *"Seguranca nao é um produto. É um processo."* — Bruce Schneier
 
-*v7.1 — 23/03/2026*
+*v7.7.2 — 04/05/2026 — Fedora Auditor-Grade (severidade CVE-driven, 3 tabelas, runtime LTS-aware)*
 
 </div>
